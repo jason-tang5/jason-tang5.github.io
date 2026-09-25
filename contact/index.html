@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact - Jason Tang</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header><h1><a href="../index.html">Jason Tang</a> <nav aria-label="Main navigation"><a href="../experiences/index.html">Experiences</a> <a href="../projects/index.html">Projects</a> <a href="../contact/index.html" aria-current="page">Contact</a></nav></h1></header>
+  <main>
+    <section id="contact" class="home-section" aria-label="Contact">
+      <p id="breakout-help" class="sr-only">Break the bricks to uncover my email. Move with mouse, touch, or &larr; &rarr;. Left-click or tap the game to add a ball.</p>
+      <div class="breakout" role="group" aria-label="Breakout email reveal">
+        <div class="breakout-board">
+          <div class="breakout-email"><span>Email coming soon</span></div>
+          <canvas id="breakout" width="300" height="300" tabindex="0" aria-label="Breakout. Use left and right arrow keys, mouse, or touch to move. Click to play; further clicks add balls. Press Space to start or pause, or B to add a ball." aria-describedby="breakout-help"></canvas>
+        </div>
+        <div class="breakout-progress" id="breakout-progress" role="status" aria-live="polite" aria-label="Email reveal progress"></div>
+        <div class="breakout-actions">
+          <button id="breakout-start" type="button">Play</button>
+          <button id="breakout-add-ball" type="button">Add ball</button>
+        </div>
+        <p class="sr-only" id="breakout-status" role="status" aria-live="polite">112 bricks to go.</p>
+      </div>
+    </section>
+  </main>
+  <script src="../breakout.js" defer></script>
+</body>
+</html>
