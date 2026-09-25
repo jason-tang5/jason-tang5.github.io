@@ -1004,6 +1004,39 @@ a.raised:hover:not(.pressed):not(:active),
   min-height: 31px;
 }
 
+/* small monospace table of lifts under the buttons */
+.lift-table {
+  margin-top: 18px;
+  border-collapse: collapse;
+  font: 12px/1.6 'Courier New', monospace;
+  color: #3d3d3a;
+}
+
+.lift-table caption {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #6b6b66;
+  padding-bottom: 4px;
+}
+
+.lift-table th,
+.lift-table td {
+  padding: 2px 0;
+  border-bottom: 1px dotted #bbbcb3;
+}
+
+.lift-table th {
+  font-weight: normal;
+  text-align: left;
+  padding-right: 32px;
+}
+
+.lift-table td {
+  text-align: right;
+  font-weight: bold;
+}
+
 /* stack the portrait on top when the about window is narrow */
 @container (max-width: 700px) {
   .about-grid {

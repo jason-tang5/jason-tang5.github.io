@@ -82,6 +82,15 @@ function clearSaved() {
               <button class="raised" @click="emit('open', 'contact')">Contact</button>
             </div>
           </div>
+          <table class="lift-table">
+            <caption>lifts (lb)</caption>
+            <tbody>
+              <tr v-for="[lift, weight] in profile.lifts" :key="lift">
+                <th scope="row">{{ lift }}</th>
+                <td>{{ weight }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

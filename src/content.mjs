@@ -7,6 +7,13 @@ export const profile = {
   bio: 'When I’m not coding, I’m usually playing badminton or volleyball, at the gym, or trying out another sport.',
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],
+  // best lifts in lb, shown in a small table at the bottom of the about window
+  lifts: [
+    ['Power clean', '265'],
+    ['Squat', '405'],
+    ['Bench', '265'],
+    ['Pull-up', '+100'],
+  ],
 };
 
 // the breakout game in the contact window spells this out
