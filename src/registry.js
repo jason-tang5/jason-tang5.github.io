@@ -13,7 +13,7 @@ const app = (id, label, icon, width, height, minWidth = 340, minHeight = 260) =>
 });
 
 export const apps = [
-  app('about', 'About Jason', 'person', 850, 700, 430, 350),
+  app('about', 'About Jason', 'person', 900, 740, 430, 350),
   app('projects', 'Projects', 'folder', 720, 480, 430, 310),
   app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('resume', 'Resume', 'document', 740, 650),
