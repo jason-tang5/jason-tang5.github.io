@@ -1,0 +1,12 @@
+// cloudflare workers config for jasontang.dev.
+// right now it only serves the built site in dist/ as static files.
+{
+  "name": "jasontang-dev",
+  "compatibility_date": "2026-09-25",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    { "pattern": "jasontang.dev", "custom_domain": true }
+  ]
+}

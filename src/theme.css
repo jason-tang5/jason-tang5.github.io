@@ -1,0 +1,2217 @@
+@import '../assets/classic-cursor.css';
+
+/* windows 95 look for the whole desktop.
+   the palette and bevels are adapted from vuejs-os-template by don chia (mit,
+   see licenses/vuejs-os-template-MIT.txt). the icons are all my own svgs. */
+
+@font-face {
+  font-family: 'Pixel MS Sans Serif';
+  src: url(../assets/fonts/ms_sans_serif_bold.woff2) format('woff2');
+  font-weight: bold;
+  font-display: swap;
+}
+
+:root {
+  font-family: Tahoma, 'MS Sans Serif', Arial, sans-serif;
+  font-size: 13px;
+  color: #171717;
+  color-scheme: light;
+  --surface: #c0c0c0;
+  --light: #fff;
+  --shadow: #808080;
+  --edge: #000;
+  --navy: #000080;
+  --taskbar-height: 40px;
+}
+
+
+/* ---- base ---- */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: var(--classic-pointer);
+  color: inherit;
+  border-radius: 0;
+}
+
+/* the classic engraved look for disabled text */
+button:disabled {
+  cursor: var(--classic-disabled);
+  color: #626262;
+  text-shadow: 1px 1px #fff;
+}
+
+a {
+  color: #000080;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: -4px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: -2px;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid #808080;
+  border-bottom: 1px solid white;
+  margin: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+
+/* ---- bevels ----
+   raised = buttons and panels that stick out, inset = fields that sink in.
+   light on the top left, dark on the bottom right, and flipped when pressed. */
+
+.raised,
+.window-style {
+  background: var(--surface);
+  border: 2px solid;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  box-shadow: inset -1px -1px var(--shadow), inset 1px 1px #dfdfdf;
+}
+
+.raised {
+  padding: 6px 13px;
+}
+
+.raised:active:not(:disabled),
+.raised.pressed {
+  border-color: var(--edge) var(--light) var(--light) var(--edge);
+  box-shadow: inset 1px 1px var(--shadow);
+}
+
+.inset {
+  border: 2px solid;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  box-shadow: inset 1px 1px #000;
+}
+
+
+/* ---- icons ---- */
+
+.retro-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  vertical-align: middle;
+}
+
+.retro-icon.small {
+  width: 16px;
+  height: 16px;
+}
+
+
+/* ---- ascii art (AsciiImage + KnockoffAscii) ---- */
+
+.ascii-image {
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.ascii-original,
+.ascii-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ascii-original {
+  object-fit: cover;
+}
+
+.ascii-layer > div {
+  width: 100%;
+  height: 100%;
+}
+
+/* the smashable canvas sits on top of the real photo */
+.ascii-knockoff {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.ascii-knockoff:focus-visible {
+  outline: 2px dashed #fff;
+  outline-offset: -4px;
+}
+
+/* normal / ascii toggle in the bottom left */
+.ascii-mode-controls {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  gap: 0;
+  margin: 0;
+  z-index: 2;
+}
+
+.ascii-mode-controls .raised {
+  padding: 3px 8px;
+  font-size: 11px;
+  min-height: 25px;
+}
+
+/* hammer size slider in the bottom right, styled like a win98 trackbar */
+.ascii-hammer {
+  --hammer-thumb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='20' viewBox='0 0 11 20'%3E%3Cpath fill='%23c0c0c0' d='M0 0h11v14l-5.5 6L0 14z'/%3E%3Cpath fill='none' stroke='%23fff' d='M.5 13.5V.5h9'/%3E%3Cpath fill='none' stroke='%23404040' d='M10.5.5v13L5.5 19 .5 14'/%3E%3Cpath fill='none' stroke='%23808080' d='M9 2v11l-3.5 4'/%3E%3C/svg%3E");
+  position: absolute;
+  z-index: 2;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 146px;
+  max-width: calc(100% - 12px);
+  box-sizing: border-box;
+  padding: 1px 5px;
+  color: #222;
+  background: #c0c0c0;
+  font: 9px/1.2 Tahoma, 'MS Sans Serif', Arial, sans-serif;
+}
+
+.ascii-hammer span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* the tick marks under the slider */
+.ascii-hammer-track {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  background: repeating-linear-gradient(to right, #505050 0 1px, transparent 1px 9px) left 5px bottom 2px / calc(100% - 10px) 3px no-repeat;
+}
+
+.ascii-hammer input {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ascii-hammer input::-webkit-slider-runnable-track {
+  height: 3px;
+  background: #808080;
+  border-top: 1px solid #404040;
+  border-bottom: 1px solid #fff;
+}
+
+.ascii-hammer input::-moz-range-track {
+  height: 1px;
+  background: #808080;
+  border-top: 1px solid #404040;
+  border-bottom: 1px solid #fff;
+}
+
+.ascii-hammer input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 11px;
+  height: 20px;
+  margin-top: -8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--hammer-thumb) center / contain no-repeat;
+}
+
+.ascii-hammer input::-moz-range-thumb {
+  width: 11px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--hammer-thumb) center / contain no-repeat;
+}
+
+.ascii-hammer input:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
+/* squeeze the controls on tiny images */
+@container (max-width: 260px) {
+  .ascii-mode-controls .raised {
+    padding: 3px 4px;
+    font-size: 9px;
+  }
+
+  .ascii-hammer {
+    width: calc(100% - 100px);
+    gap: 2px;
+    padding: 1px 3px;
+    font-size: 8px;
+  }
+}
+
+
+/* ---- desktop ---- */
+
+.desktop-shell {
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--desktop, #008080);
+}
+
+.desktop {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.desktop-wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .88;
+}
+
+/* icons fill top to bottom, then wrap to the next column like real windows.
+   App.vue snaps dragged icons to this same grid, so keep the sizes in sync */
+.desktop-grid {
+  position: absolute;
+  inset: 16px auto 50px 14px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fill, 83px);
+  grid-auto-columns: 86px;
+  align-content: start;
+  gap: 5px 12px;
+}
+
+.desktop-shortcut {
+  background: transparent;
+  border: 0;
+  width: 86px;
+  height: 83px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: white;
+  font-size: 12px;
+  transition: transform .1s ease-out;
+}
+
+.desktop-shortcut span {
+  padding: 2px 4px;
+  line-height: 16px;
+  max-width: 86px;
+  text-shadow: 1px 1px #004a4a;
+}
+
+.desktop-shortcut.selected span,
+.desktop-shortcut:focus-visible span {
+  background: var(--navy);
+  outline: 1px dotted #fff;
+  text-shadow: none;
+}
+
+.desktop-shortcut:focus-visible {
+  outline: none;
+}
+
+.desktop-shortcut.dragging {
+  position: relative;
+  z-index: 1;
+  opacity: .8;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-shortcut {
+    transition: none;
+  }
+}
+
+.desktop-signature {
+  position: absolute;
+  right: 36px;
+  bottom: 44px;
+  color: #b3dfdb;
+  text-align: right;
+  pointer-events: none;
+  opacity: .64;
+}
+
+.desktop-signature > span {
+  display: block;
+  font: bold 22px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  letter-spacing: 4px;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* the yellow help note on first visit */
+.first-tip {
+  position: absolute;
+  right: 24px;
+  top: 25px;
+  width: 256px;
+  padding: 10px 12px 12px;
+  background: #ffffdf;
+  font-size: 12px;
+  z-index: 0;
+}
+
+.tip-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tip-heading button {
+  border: 0;
+  background: none;
+  margin-left: auto;
+  padding: 0 3px;
+  font-weight: bold;
+  font-size: 17px;
+}
+
+.first-tip p {
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.first-tip small {
+  font-size: 11px;
+}
+
+
+/* ---- windows ---- */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  min-height: 0;
+  max-width: 100%;
+}
+
+.window:focus {
+  outline: none;
+}
+
+/* title bar is grey until the window is active */
+.top-bar {
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--shadow);
+  color: #eee;
+  padding: 2px 3px;
+  gap: 4px;
+  touch-action: none;
+  user-select: none;
+  cursor: var(--classic-move);
+}
+
+.active .top-bar {
+  background: var(--navy);
+  color: #fff;
+}
+
+.window-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.system-button {
+  background: none;
+  border: 0;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+/* minimize / maximize / close */
+.triple-button {
+  display: flex;
+  gap: 3px;
+}
+
+.control {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  box-shadow: inset -1px -1px #808080;
+  color: #000;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 16px;
+}
+
+.control:active:not(:disabled) {
+  border-color: #000 #fff #fff #000;
+  box-shadow: none;
+}
+
+.control:disabled {
+  opacity: .6;
+}
+
+.min-symbol {
+  width: 9px;
+  height: 3px;
+  background: currentColor;
+  margin-top: 9px;
+}
+
+.max-symbol {
+  width: 11px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-top-width: 3px;
+}
+
+/* two overlapping boxes, the back one drawn with box-shadow */
+.restore-symbol {
+  width: 10px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-top-width: 3px;
+  box-shadow: 2px -2px var(--surface), 3px -3px currentColor;
+}
+
+.window-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* invisible grab handles around the edges */
+.resize-edge {
+  position: absolute;
+  touch-action: none;
+  z-index: 3;
+}
+
+.resize-edge.n,
+.resize-edge.s {
+  height: 5px;
+  left: 6px;
+  right: 6px;
+  cursor: var(--classic-ns);
+}
+
+.resize-edge.n { top: -2px; }
+.resize-edge.s { bottom: -2px; }
+
+.resize-edge.e,
+.resize-edge.w {
+  width: 5px;
+  top: 6px;
+  bottom: 6px;
+  cursor: var(--classic-ew);
+}
+
+.resize-edge.e { right: -2px; }
+.resize-edge.w { left: -2px; }
+
+.resize-edge.ne,
+.resize-edge.nw,
+.resize-edge.se,
+.resize-edge.sw {
+  width: 9px;
+  height: 9px;
+}
+
+.resize-edge.ne { top: -2px; right: -2px; cursor: var(--classic-nesw); }
+.resize-edge.nw { top: -2px; left: -2px; cursor: var(--classic-nwse); }
+.resize-edge.se { bottom: -2px; right: -2px; cursor: var(--classic-nwse); }
+.resize-edge.sw { bottom: -2px; left: -2px; cursor: var(--classic-nesw); }
+
+/* the menu from the icon in the top left corner */
+.system-menu {
+  position: absolute;
+  top: 30px;
+  left: 3px;
+  width: 170px;
+  z-index: 10;
+  padding: 3px;
+}
+
+.system-menu button {
+  display: block;
+  text-align: left;
+  background: none;
+  border: 0;
+  width: 100%;
+  padding: 7px 12px;
+}
+
+.keyboard-hint {
+  background: #ffffdf;
+  padding: 7px;
+  font-size: 12px;
+}
+
+
+/* ---- bits shared by most apps ---- */
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.content-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+}
+
+.status-bar {
+  margin: 3px 0 0;
+  display: flex;
+  gap: 3px;
+  font-size: 11px;
+  min-height: 23px;
+  flex-shrink: 0;
+}
+
+.status-bar > span {
+  border: 1px solid;
+  border-color: #888 #fff #fff #888;
+  padding: 4px 7px;
+}
+
+.status-bar > span:first-child {
+  flex: 1;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 7px;
+  border-bottom: 1px solid #888;
+  min-height: 38px;
+  font-size: 12px;
+}
+
+.toolbar .raised {
+  padding: 5px 10px;
+}
+
+.toolbar-link {
+  margin-left: auto;
+}
+
+.address-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+.address-bar .inset {
+  background: #fff;
+  padding: 5px 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* links that look like buttons */
+.link-button {
+  display: inline-block;
+  color: #111;
+  text-decoration: none;
+  text-align: center;
+}
+
+
+/* ---- taskbar ---- */
+
+.taskbar {
+  height: calc(var(--taskbar-height) + env(safe-area-inset-bottom));
+  padding: 3px 4px calc(3px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  background: var(--surface);
+  border-top: 2px solid #fff;
+  z-index: 100000;
+  flex-shrink: 0;
+}
+
+.start-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  font-size: 13px;
+}
+
+.start-button .retro-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.taskbar-divider {
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+  margin: 2px;
+}
+
+.show-desktop {
+  padding: 3px 6px;
+}
+
+.task-items {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.task-button {
+  flex: 0 1 170px;
+  min-width: 115px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  padding: 3px 7px;
+}
+
+.task-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-button.pressed {
+  font-weight: bold;
+  background: #dedede;
+}
+
+.tray {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.clock {
+  min-width: 83px;
+  background: var(--surface);
+  font-size: 11px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.calendar {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: 235px;
+  padding: 15px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.calendar p {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+
+
+/* ---- start menu ---- */
+
+.start-menu {
+  position: absolute;
+  bottom: calc(var(--taskbar-height) + env(safe-area-inset-bottom));
+  left: 4px;
+  width: 270px;
+  display: flex;
+  padding: 3px;
+  z-index: 100001;
+  max-height: calc(100dvh - var(--taskbar-height) - env(safe-area-inset-bottom));
+  overflow: auto;
+}
+
+/* the grey strip down the side with my name written sideways */
+.identity-strip {
+  background: #808080;
+  color: white;
+  width: 31px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.identity-strip > span {
+  position: sticky;
+  display: block;
+  top: 6px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 22px;
+  font-weight: bold;
+  padding: 10px 4px;
+}
+
+.identity-light {
+  font-weight: normal;
+  color: #ddd;
+  margin-top: 5px;
+}
+
+.identity-strip small {
+  font-size: 9px;
+  letter-spacing: 3px;
+  margin-top: 18px;
+  color: #ddd;
+}
+
+.start-entries {
+  flex: 1;
+  min-width: 0;
+}
+
+.start-entries button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #111;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.start-entries .retro-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.start-entries button:hover,
+.start-entries button:focus-visible,
+.system-menu button:hover:not(:disabled),
+.system-menu button:focus-visible {
+  background: var(--navy);
+  color: white;
+}
+
+
+/* ---- about ---- */
+
+.about-content {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  background: #f5f4ed;
+  padding: 20px 24px;
+}
+
+.about-grid {
+  display: grid;
+  flex: 1 0 auto;
+  grid-template-columns: 390px minmax(0, 1fr);
+  gap: 25px;
+  align-items: stretch;
+}
+
+.portrait-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  background: var(--surface);
+  transform: none;
+}
+
+.portrait-frame img {
+  display: block;
+  width: 100%;
+  height: 510px;
+  object-fit: cover;
+}
+
+.portrait-ascii {
+  width: 100%;
+  aspect-ratio: 1525 / 1940;
+}
+
+/* on wide screens the portrait stretches to match the text next to it */
+.portrait-frame .portrait-ascii {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.portrait-frame .ascii-original {
+  height: 100%;
+}
+
+.about-copy h1 {
+  font-size: 32px;
+  letter-spacing: -1px;
+  margin: 4px 0 7px;
+  font-weight: bold;
+}
+
+.about-copy .subtitle {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #51514d;
+  margin: 0 0 16px;
+}
+
+.about-copy p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+
+.about-copy .intro {
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+
+.about-bottom {
+  border-top: 1px solid #bbbcb3;
+  margin-top: 22px;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.button-row button {
+  font-size: 12px;
+  min-height: 31px;
+}
+
+/* stack the portrait on top when the about window is narrow */
+@container (max-width: 700px) {
+  .about-grid {
+    flex: none;
+    grid-template-columns: 1fr;
+  }
+
+  .portrait-frame {
+    width: min(390px, 100%);
+  }
+
+  .portrait-frame .portrait-ascii {
+    flex: none;
+    aspect-ratio: 1525 / 1940;
+  }
+}
+
+
+/* ---- projects ---- */
+
+.project-explorer {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  background: white;
+}
+
+.project-preview {
+  background: #eeeee7;
+  border-right: 1px solid #bbb;
+  padding: 24px 18px;
+}
+
+.project-preview h2 {
+  font-size: 19px;
+  margin: 18px 0 12px;
+}
+
+.project-preview p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.project-preview small {
+  display: block;
+  line-height: 1.65;
+  font-size: 11px;
+  color: #4c4c4c;
+  margin: 16px 0 24px;
+}
+
+.project-preview button {
+  font-size: 12px;
+}
+
+.project-list {
+  min-width: 0;
+}
+
+.list-header {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  background: var(--surface);
+  border-bottom: 1px solid #888;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.project-row {
+  width: 100%;
+  padding: 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: white;
+  text-align: left;
+  font-size: 12px;
+}
+
+.project-row small {
+  margin-left: auto;
+  width: 92px;
+  font-size: 10px;
+  color: #555;
+}
+
+.project-row.selected {
+  background: var(--navy);
+  color: white;
+}
+
+.project-row.selected small {
+  color: white;
+}
+
+.list-help {
+  color: #666;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 18px 12px;
+}
+
+
+/* ---- documents (single project, experience) ---- */
+
+.document {
+  background: #fff;
+  padding: 26px 30px;
+  font-size: 15px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.document h1 {
+  font-size: 28px;
+  letter-spacing: -.7px;
+  line-height: 1.2;
+  margin: 8px 0 16px;
+}
+
+.document h2 {
+  font-size: 19px;
+  margin: 24px 0 8px;
+  line-height: 1.3;
+}
+
+.document h3 {
+  font-size: 16px;
+}
+
+.document p {
+  margin: 10px 0 18px;
+}
+
+.document .intro {
+  font-size: 18px;
+}
+
+.document .tech-line {
+  font: 12px/1.7 'Courier New', monospace;
+  padding: 10px 0;
+  border-block: 1px solid #ccc;
+}
+
+.document ul {
+  padding-left: 20px;
+}
+
+.document li {
+  margin: 10px 0;
+}
+
+.eyebrow {
+  font: 11px 'Courier New', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #555;
+  margin: 0 0 10px;
+}
+
+.role {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 12px;
+  margin-bottom: 25px;
+}
+
+.role:last-child {
+  border: none;
+}
+
+.role .role-date {
+  font: 11px/1.5 'Courier New', monospace;
+  color: #666;
+  margin-bottom: 7px;
+}
+
+.role h2 {
+  margin-top: 0;
+}
+
+.role > strong {
+  font-size: 14px;
+}
+
+
+/* ---- resume ---- */
+
+.resume-viewer {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  background: white;
+}
+
+
+/* ---- blog ---- */
+
+.blog-reading {
+  background: #f9f8f3;
+  padding: clamp(20px, 5vw, 48px);
+  font: 16px/1.75 Georgia, serif;
+}
+
+.blog-reading article {
+  max-width: 65ch;
+  margin: auto;
+}
+
+.blog-reading h1 {
+  font: bold clamp(28px, 4vw, 40px)/1.15 Georgia, serif;
+  margin: 12px 0;
+}
+
+.blog-reading h2 {
+  margin-top: 1.7em;
+  line-height: 1.3;
+}
+
+.blog-reading time {
+  color: #62626a;
+  font: 12px Tahoma, sans-serif;
+}
+
+.blog-reading figure {
+  margin: 28px 0;
+}
+
+.blog-reading img {
+  max-width: 100%;
+  height: auto;
+}
+
+.blog-reading figcaption {
+  font-size: 13px;
+  color: #555;
+}
+
+.blog-demo {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #888;
+  margin-top: 24px;
+}
+
+.code-block {
+  background: #19182b;
+  color: #e7defb;
+  padding: 14px;
+  margin: 24px 0;
+}
+
+.code-block > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 12px Tahoma, sans-serif;
+}
+
+.code-block pre {
+  overflow: auto;
+  font-size: 13px;
+}
+
+.code-block button {
+  color: #111;
+}
+
+.blog-list {
+  list-style: none;
+  padding: 0;
+}
+
+.blog-list li {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+
+.blog-list button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: #000080;
+  text-decoration: underline;
+}
+
+
+/* ---- settings ---- */
+
+.settings-content {
+  padding: 20px;
+}
+
+.settings-content h1 {
+  font-size: 20px;
+  margin: 0 0 18px;
+}
+
+.monitor-preview {
+  width: 210px;
+  height: 110px;
+  margin: 0 auto 20px;
+  color: #fff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 11px;
+}
+
+fieldset {
+  margin: 0 0 20px;
+  padding: 14px;
+  border: 1px solid #808080;
+}
+
+.swatches {
+  display: flex;
+  gap: 10px;
+}
+
+.swatch {
+  width: 44px;
+  height: 38px;
+  padding: 0;
+  color: #fff;
+  font-size: 20px;
+}
+
+
+/* ---- notepad ---- */
+
+.notepad {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  background: white;
+  color: black;
+  border-radius: 0;
+  padding: 12px;
+  font: 15px/1.6 'Courier New', monospace;
+}
+
+.note-status {
+  height: auto;
+}
+
+.note-status span {
+  line-height: 1.4;
+}
+
+
+/* ---- cd player ----
+   a smaller title bar with the win98 gradient, like the real cd player */
+
+.window[data-window="music"] .top-bar {
+  height: 20px;
+}
+
+.window[data-window="music"].active .top-bar {
+  background: linear-gradient(90deg, #7899df, #b5a4cf);
+}
+
+.window[data-window="music"] .control {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+.window[data-window="music"] .system-button {
+  width: 17px;
+  height: 17px;
+}
+
+.window[data-window="music"] .system-button .retro-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.cd-app {
+  position: relative;
+  overflow: auto;
+  font: 11px Tahoma, Arial, sans-serif;
+}
+
+.cd-face {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 14px;
+  padding: 12px 10px 12px 12px;
+  min-height: 128px;
+}
+
+/* the disc is a 12 frame sprite sheet, stepped through to fake a spin */
+.cd-disc {
+  display: block;
+  width: 100px;
+  height: 100px;
+  background: url(../assets/cd-disc-frames.png) 0 0 / 1200px 100px no-repeat;
+  image-rendering: pixelated;
+  animation: cd-spin 2.4s steps(12) infinite paused;
+}
+
+.cd-disc.spinning {
+  animation-play-state: running;
+}
+
+@keyframes cd-spin {
+  to { background-position: -1200px 0; }
+}
+
+/* music notes floating off the disc. --dx and --dy are set per note in Music.vue */
+.cd-note {
+  position: absolute;
+  z-index: 10000;
+  pointer-events: none;
+  line-height: 0;
+  filter: drop-shadow(3px 3px 0 #fff);
+  translate: -50% -50%;
+  opacity: 0;
+  animation: cd-note-float 3s steps(24) forwards;
+}
+
+@keyframes cd-note-float {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 1; }
+  55% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)); }
+}
+
+.cd-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.cd-track {
+  width: 100%;
+  min-width: 0;
+  height: 23px;
+  padding: 1px;
+  font: inherit;
+  border-radius: 0;
+  color: #111;
+  background: #fff;
+}
+
+.cd-timeline {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 0 7px;
+  height: 19px;
+}
+
+.cd-timeline output {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cd-timeline input {
+  appearance: none;
+  min-width: 0;
+  width: 100%;
+  height: 3px;
+  background: #888;
+  border-bottom: 1px solid white;
+  margin: 0;
+  border-radius: 0;
+}
+
+.cd-timeline input::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 21px;
+  border: 2px solid;
+  border-color: white #555 #555 white;
+  background: #c0c0c0;
+  border-radius: 0;
+}
+
+.cd-timeline input::-moz-range-thumb {
+  width: 8px;
+  height: 18px;
+  border: 2px solid;
+  border-color: white #555 #555 white;
+  background: #c0c0c0;
+  border-radius: 0;
+}
+
+.cd-transport {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 5px;
+}
+
+.cd-transport .raised {
+  width: 36px;
+  height: 25px;
+  padding: 3px 6px;
+  min-height: 0;
+}
+
+.cd-transport svg {
+  display: block;
+  width: 20px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* the spotify panel is visually hidden, not display: none, so the embed keeps playing */
+.cd-spotify {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.cd-spotify.expanded {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  padding: 0 8px 8px;
+}
+
+.cd-spotify p {
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.cd-embed {
+  min-width: 270px;
+}
+
+.cd-embed iframe {
+  border: 0;
+  display: block;
+}
+
+
+/* ---- contact (breakout) ---- */
+
+.contact-game .game-content {
+  padding: 12px;
+  background: #c0c0c0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
+/* always square, as big as fits */
+.contact-game .breakout-board {
+  position: relative;
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  background: #eeeee7;
+  container-type: inline-size;
+}
+
+/* the email link hides behind the canvas until the board is cleared.
+   the position has to line up with where breakout.js expects the letters */
+.contact-game .breakout-email {
+  position: absolute;
+  inset: 13.3333% 0 auto;
+  height: 18.6667%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* courier new is 0.6em wide per character, so this makes the address span 96% of the board */
+.contact-game .breakout-email a {
+  width: 96%;
+  max-width: none;
+  color: #000080;
+  font: bold calc(96cqw / (var(--email-chars) * .6)) "Courier New", monospace;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.contact-game .breakout-board.is-revealed .breakout-email {
+  z-index: 1;
+}
+
+.contact-game canvas {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+  cursor: var(--classic-pointer);
+}
+
+.contact-game canvas:focus-visible {
+  outline: 1px dotted #000080;
+  outline-offset: -3px;
+}
+
+/* the add ball button flashes "+ 1" over its label without changing width */
+.contact-game #breakout-add-ball {
+  position: relative;
+}
+
+.contact-game .ball-added {
+  border-color: #000 #fff #fff #000;
+  color: transparent;
+}
+
+.contact-game .ball-added::after {
+  content: '+ 1';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #171717;
+}
+
+.contact-game .status-bar {
+  font-family: "Courier New", monospace;
+}
+
+
+/* ---- my pictures ---- */
+
+.pictures-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 10px;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  background: #20202b;
+}
+
+/* biggest size that fits the stage while keeping the photo's shape */
+.pictures-hero {
+  position: relative;
+  margin: 0;
+  width: min(calc(100cqw - 80px), calc(100cqh * var(--photo-ratio)));
+  aspect-ratio: var(--photo-ratio);
+}
+
+.pictures-hero .ascii-original,
+.pictures-hero .ascii-layer,
+.picture-thumbnails img {
+  filter: brightness(1.22) saturate(1.25);
+}
+
+.picture-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 30px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.picture-arrow-prev {
+  left: 5px;
+}
+
+.picture-arrow-next {
+  right: 5px;
+}
+
+.picture-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* sits above the ascii controls at the bottom of the photo */
+.picture-subtitle {
+  position: absolute;
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  text-align: center;
+  color: #fff;
+  background: #000080;
+  border: 2px solid;
+  border-color: #fff #404040 #404040 #fff;
+  box-shadow: 1px 1px 0 #000;
+  font: 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
+  pointer-events: none;
+}
+
+.picture-subtitle span {
+  font: inherit;
+}
+
+.picture-subtitle strong {
+  font: bold 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
+}
+
+.picture-thumbnails {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.picture-thumbnails button {
+  padding: 3px;
+  flex: 0 0 auto;
+}
+
+.picture-thumbnails img {
+  display: block;
+  object-fit: cover;
+}
+
+.picture-thumbnails button[aria-pressed="true"] {
+  outline: 2px solid #000080;
+  outline-offset: -2px;
+}
+
+.pictures-app .status-bar > .picture-date {
+  display: block;
+}
+
+
+/* ---- minesweeper ----
+   squares are always 24px. the window resizes itself to fit and small screens scroll */
+
+.minesweeper-app {
+  background: #c0c0c0;
+}
+
+.mines-menubar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  padding: 1px 2px;
+}
+
+.mines-menubar > button {
+  background: none;
+  border: 0;
+  padding: 3px 7px;
+  font-size: 13px;
+}
+
+.mines-menubar > button:hover,
+.mines-menubar > button.open {
+  background: var(--navy);
+  color: #fff;
+}
+
+.mines-menu {
+  position: absolute;
+  top: 100%;
+  left: 2px;
+  z-index: 5;
+  min-width: 150px;
+  padding: 2px;
+}
+
+.mines-menu button {
+  display: flex;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 5px 16px 5px 4px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.mines-menu button:hover,
+.mines-menu button:focus-visible {
+  background: var(--navy);
+  color: #fff;
+  outline: none;
+}
+
+.mines-check {
+  width: 18px;
+  text-align: center;
+}
+
+.mines-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 6px 6px;
+}
+
+.mines-frame {
+  width: max-content;
+  margin-inline: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mines-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 7px;
+}
+
+/* red led counters */
+.mines-counter {
+  display: flex;
+  gap: 2px;
+  background: #000;
+  padding: 2px;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+}
+
+.mines-counter.right {
+  order: 2;
+}
+
+.mines-counter svg {
+  display: block;
+  width: 15px;
+  height: 27px;
+}
+
+.mines-counter polygon {
+  fill: #400;
+}
+
+.mines-counter polygon.lit {
+  fill: #f00;
+}
+
+.mines-face.raised {
+  order: 1;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.mines-face svg {
+  width: 30px;
+  height: 30px;
+  shape-rendering: crispEdges;
+}
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 24px);
+  grid-auto-rows: 24px;
+}
+
+.mine-cell {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: var(--classic-pointer);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mine-cell.raised {
+  padding: 0;
+}
+
+/* holding a cell down shouldn't make it look pressed, same as the original */
+.mine-cell.raised:active {
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+}
+
+.mine-cell.open {
+  border: 0;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  background: #c0c0c0;
+}
+
+.mine-cell.boom {
+  background: #f00;
+}
+
+.mine-cell:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -3px;
+}
+
+.mine-flag {
+  width: 16px;
+  height: 20px;
+  shape-rendering: crispEdges;
+}
+
+.mine-bomb {
+  width: 20px;
+  height: 20px;
+  shape-rendering: crispEdges;
+}
+
+.mine-number {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+}
+
+/* the classic number colors */
+.mine-cell.n1 { color: #0000ff; }
+.mine-cell.n2 { color: #008000; }
+.mine-cell.n3 { color: #f00; }
+.mine-cell.n4 { color: #000080; }
+.mine-cell.n5 { color: #800000; }
+.mine-cell.n6 { color: #008080; }
+.mine-cell.n7 { color: #000; }
+.mine-cell.n8 { color: #808080; }
+
+
+/* ---- smaller screens ---- */
+
+@media (max-width: 1100px) {
+  .first-tip {
+    width: 210px;
+    right: 15px;
+    top: auto;
+    bottom: 24px;
+  }
+
+  .desktop-signature {
+    display: none;
+  }
+}
+
+/* phones: windows go full screen, and everything tappable gets to at least 44px */
+@media (max-width: 700px) {
+  :root {
+    --taskbar-height: 52px;
+  }
+
+  /* icons flow in rows instead of columns */
+  .desktop-grid {
+    inset: 15px 12px 50px;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, 85px);
+    grid-template-rows: none;
+    grid-auto-rows: 90px;
+    justify-content: start;
+    align-content: start;
+    gap: 10px 4px;
+    overflow-y: auto;
+  }
+
+  .desktop-shortcut {
+    height: 90px;
+    width: 85px;
+    padding-top: 8px;
+  }
+
+  .desktop-shortcut span {
+    font-size: 13px;
+  }
+
+  .first-tip {
+    left: 20px;
+    right: 20px;
+    bottom: 55px;
+    width: auto;
+    max-width: 340px;
+  }
+
+  .tip-heading button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .window {
+    border-width: 1px;
+    padding: 2px;
+  }
+
+  .top-bar {
+    height: 46px;
+    gap: 3px;
+  }
+
+  .window-name {
+    font-size: 13px;
+  }
+
+  .system-button {
+    width: 36px;
+    height: 40px;
+  }
+
+  .system-button .retro-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .control {
+    width: 42px;
+    height: 40px;
+  }
+
+  .triple-button {
+    gap: 3px;
+  }
+
+  .system-menu {
+    top: 49px;
+  }
+
+  .system-menu button {
+    min-height: 44px;
+  }
+
+  .taskbar {
+    gap: 4px;
+  }
+
+  .taskbar-divider {
+    display: none;
+  }
+
+  .start-button {
+    padding: 4px;
+  }
+
+  .start-button .retro-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .show-desktop {
+    min-width: 36px;
+    padding: 2px;
+  }
+
+  .task-button {
+    min-width: 105px;
+    font-size: 11px;
+  }
+
+  .clock {
+    min-width: 66px;
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .start-menu {
+    width: 270px;
+  }
+
+  .start-entries button {
+    min-height: 44px;
+  }
+
+  .about-content {
+    padding: 16px;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .portrait-frame {
+    padding: 3px;
+  }
+
+  .about-grid .portrait-frame {
+    width: min(300px, 100%);
+  }
+
+  .portrait-frame .portrait-ascii {
+    height: auto;
+    aspect-ratio: 1525 / 1940;
+  }
+
+  .about-copy h1 {
+    font-size: 28px;
+  }
+
+  .about-copy .subtitle {
+    font-size: 11px;
+  }
+
+  .about-copy .intro {
+    font-size: 16px;
+  }
+
+  .about-copy p {
+    font-size: 14px;
+  }
+
+  .about-bottom {
+    flex-direction: column;
+    align-items: start;
+    margin-top: 18px;
+  }
+
+  .button-row {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .button-row button {
+    padding: 8px;
+    flex: 1;
+    min-height: 44px;
+  }
+
+  /* only the first status bar section fits */
+  .status-bar > span {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .status-bar > span + span {
+    display: none;
+  }
+
+  /* file list on top, preview below */
+  .project-explorer {
+    display: flex;
+    flex-direction: column-reverse;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .project-preview {
+    border-right: 0;
+    border-top: 1px solid #aaa;
+    padding: 20px;
+  }
+
+  .project-preview h2 {
+    margin: 10px 0;
+  }
+
+  .project-preview small {
+    margin: 10px 0 14px;
+  }
+
+  .project-row {
+    min-height: 48px;
+  }
+
+  .project-row small {
+    width: 90px;
+  }
+
+  .list-help {
+    margin: 0;
+    padding: 12px;
+  }
+
+  .document {
+    padding: 22px 18px;
+  }
+
+  .toolbar button,
+  .toolbar a,
+  .settings-content > button,
+  .project-preview button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .swatch {
+    height: 44px;
+  }
+
+  .swatches {
+    gap: 8px;
+  }
+
+  .cd-face {
+    grid-template-columns: 100px minmax(0, 1fr);
+    margin-top: 15px;
+  }
+
+  .cd-transport .raised {
+    width: 48px;
+    height: 36px;
+  }
+
+  .picture-thumbnails {
+    gap: 3px;
+  }
+
+  .picture-thumbnails img {
+    width: 42px;
+    height: 48px;
+  }
+}
+
+/* stop anything from moving when the os asks for less motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}

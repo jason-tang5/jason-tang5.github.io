@@ -1,0 +1,403 @@
+// end to end checks in a real browser (playwright + chromium).
+// run `npm run build` first, then `node tests/browser-check.mjs`.
+//
+// it serves dist/ under /portfolio/ to make sure the site works from a subpath,
+// clicks through every app, and saves screenshots to tmp/qa/ so you can eyeball them.
+import { chromium, expect } from '@playwright/test';
+import { createServer } from 'node:http';
+import { readFile, mkdir } from 'node:fs/promises';
+import { resolve, sep, extname } from 'node:path';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { createServer as createViteServer } from 'vite';
+
+const root = resolve('dist');
+const mime = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
+  '.pdf': 'application/pdf',
+  '.mp4': 'video/mp4',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+};
+
+// tiny static server that only answers under /portfolio/
+const server = createServer(async (req, res) => {
+  try {
+    const url = new URL(req.url, 'http://localhost');
+    if (!url.pathname.startsWith('/portfolio/')) {
+      res.writeHead(404).end();
+      return;
+    }
+
+    let path = url.pathname.slice('/portfolio/'.length);
+    if (!path || path.endsWith('/')) path += 'index.html';
+
+    const file = resolve(root, path);
+    if (!file.startsWith(root + sep)) throw Error('Invalid path');
+
+    const data = await readFile(file);
+    res.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' }).end(data);
+  } catch {
+    res.writeHead(404).end();
+  }
+});
+
+await new Promise(r => server.listen(0, '127.0.0.1', r));
+const base = `http://127.0.0.1:${server.address().port}/portfolio/`;
+const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader'] });
+let vite;
+
+try {
+  await mkdir('tmp/qa', { recursive: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+
+  // collect js errors and broken requests, checked at the end
+  const errors = [];
+  const missing = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('response', r => {
+    if (r.url().startsWith(base) && r.status() >= 400) missing.push(r.url());
+  });
+
+  // opens an app through the url hash like a shared link would
+  const open = async id => {
+    await page.evaluate(id => { location.hash = `app=${id}`; }, id);
+    const windowId = id === 'breakout' ? 'contact' : id;
+    await expect(page.locator(`[data-window="${windowId}"]`)).toBeVisible();
+  };
+
+  // ---- wallpaper and portrait ----
+
+  await page.goto(base);
+  const wallpaper = page.locator('.desktop-wallpaper .ascii-layer');
+  await expect(wallpaper.locator('canvas')).toHaveCount(1);
+  await expect(wallpaper.locator('video')).toHaveCount(1);
+  await expect.poll(() => wallpaper.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(0);
+
+  // the portrait's normal/ascii choice should survive a reload
+  const portraitButtons = page.locator('.portrait-ascii').getByRole('group', { name: 'Photo rendering' });
+  await expect(page.locator('.portrait-ascii canvas')).toHaveCount(1);
+  await portraitButtons.getByRole('button', { name: 'Normal', exact: true }).click();
+  await expect(page.locator('.portrait-ascii canvas')).toHaveCount(0);
+  await expect(wallpaper.locator('canvas')).toHaveCount(1);
+  await expect(portraitButtons.getByRole('button', { name: 'Normal', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(portraitButtons.getByRole('button', { name: 'Normal', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await portraitButtons.getByRole('button', { name: 'ASCII', exact: true }).click();
+  await expect(page.locator('.portrait-ascii canvas')).toHaveCount(1);
+
+  assert.match(await page.locator('.desktop').evaluate(el => getComputedStyle(el).cursor), /data:image\/x-icon;base64/);
+  await page.screenshot({ path: 'tmp/qa/desktop.png' });
+
+  // ---- desktop icons ----
+
+  await expect(page.locator('.desktop-shortcut', { hasText: 'My Computer' })).toHaveCount(0);
+  const blogIcon = page.locator('.desktop-shortcut', { hasText: 'Blog' });
+  const before = await blogIcon.boundingBox();
+  await page.mouse.move(before.x + 40, before.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(before.x + 240, before.y + 130, { steps: 8 });
+  await page.mouse.up();
+
+  // a 200x100 drag snaps two columns right and one row down (98x88 grid)
+  await expect.poll(async () => {
+    const b = await blogIcon.boundingBox();
+    return [Math.round(b.x - before.x), Math.round(b.y - before.y)];
+  }).toEqual([196, 88]);
+  await expect(page.locator('[data-window="blog"]')).toHaveCount(0);
+
+  await page.reload();
+  const reloaded = await blogIcon.boundingBox();
+  assert.ok(Math.abs(reloaded.x - before.x) < 2 && Math.abs(reloaded.y - before.y) < 2, 'icon positions reset on load');
+
+  // ---- settings and reduced motion ----
+
+  await open('settings');
+  await expect(page.getByRole('checkbox', { name: /Enable colored ASCII/ })).toHaveCount(0);
+  await expect(page.getByText('Saved in this browser when storage is available.')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Recycle Bin', exact: true })).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(() => wallpaper.locator('video').evaluate(v => v.paused)).toBe(true);
+  assert.equal(await wallpaper.evaluate(el => el.style.animationPlayState), 'paused');
+
+  // closing a window should tear down its canvas
+  await open('about');
+  await expect(page.locator('.portrait-ascii canvas')).toHaveCount(1);
+  await page.setViewportSize({ width: 1100, height: 750 });
+  await expect(page.locator('.desktop-wallpaper canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Close About Jason', exact: true }).click();
+  await expect(page.locator('.portrait-ascii canvas')).toHaveCount(0);
+
+  // ---- my pictures ----
+
+  await open('pictures');
+  const pictures = page.locator('[data-window="pictures"]');
+  await expect(pictures.locator('.picture-thumbnails button')).toHaveCount(9);
+  await expect(pictures.locator('.pictures-hero canvas')).toHaveCount(1);
+  await pictures.screenshot({ path: 'tmp/qa/pictures-desktop.png' });
+
+  // every photo should load in normal mode
+  const modes = pictures.getByRole('group', { name: 'Photo rendering' });
+  await modes.getByRole('button', { name: 'Normal', exact: true }).click();
+  await expect(pictures.locator('canvas')).toHaveCount(0);
+  for (let i = 0; i < 9; i++) {
+    await pictures.locator('.picture-thumbnails button').nth(i).click();
+    await expect(pictures.locator('.status-bar > span:first-child')).toHaveText(`${i + 1} / 9`);
+    await expect.poll(() => pictures.locator('.pictures-hero img').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  }
+
+  await modes.getByRole('button', { name: 'ASCII', exact: true }).click();
+  await expect(pictures.locator('canvas')).toHaveCount(1);
+  await pictures.getByRole('button', { name: 'Previous photo' }).click();
+  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText('8 / 9');
+  await page.keyboard.press('ArrowRight');
+  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText('9 / 9');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await pictures.screenshot({ path: 'tmp/qa/pictures-mobile.png' });
+  assert.equal(await pictures.evaluate(el => el.scrollWidth <= el.clientWidth), true);
+  await page.setViewportSize({ width: 1100, height: 750 });
+  await page.getByRole('button', { name: 'Close My Pictures', exact: true }).click();
+  await expect(page.locator('.pictures-hero canvas')).toHaveCount(0);
+
+  // ---- contact / breakout ----
+
+  // the old #app=breakout link should land on contact without opening a second window
+  await open('breakout');
+  await open('contact');
+  await expect(page.locator('[data-window="contact"]')).toHaveCount(1);
+  const game = page.locator('[data-window="contact"]');
+  const startButton = game.locator('#breakout-start');
+  await expect(game.locator('#breakout')).toBeVisible();
+
+  // switching to another window pauses the game
+  await startButton.click();
+  await expect(startButton).toHaveText('Pause');
+  await open('blog');
+  await expect(startButton).toHaveText('Resume');
+  await expect(page.getByText('No posts published yet.', { exact: true })).toBeVisible();
+
+  // keyboard controls
+  await open('contact');
+  await game.locator('#breakout-restart').click();
+  await expect(startButton).toHaveText('Play');
+  await game.locator('#breakout').focus();
+  await page.keyboard.press('Space');
+  await expect(startButton).toHaveText('Pause');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Space');
+  await expect(startButton).toHaveText('Resume');
+  await startButton.click();
+  await expect(startButton).toHaveText('Pause');
+  await game.locator('#breakout').focus();
+  await startButton.click();
+  await expect(startButton).toHaveText('Resume');
+  await game.screenshot({ path: 'tmp/qa/contact-desktop.png' });
+
+  await expect(game.locator('.status-bar')).toHaveText('want to get my email? beat the game :)');
+  await expect(game.locator('.status-bar a')).toHaveCount(0);
+
+  // the hidden email should stretch across most of the board
+  const [emailWidth, boardWidth] = await game.locator('.breakout-email a').evaluate(a => {
+    const range = document.createRange();
+    range.selectNodeContents(a);
+    return [range.getBoundingClientRect().width, a.closest('.breakout-board').clientWidth];
+  });
+  assert.ok(emailWidth > boardWidth * 0.85 && emailWidth <= boardWidth, `email spans the board (${emailWidth} of ${boardWidth})`);
+
+  // ---- minesweeper ----
+
+  await open('minesweeper');
+  const mines = page.locator('[data-window="minesweeper"]');
+  await expect(mines.locator('.mine-cell')).toHaveCount(81);
+  await mines.locator('.mine-cell').nth(40).click();
+  await expect(mines.locator('.mine-cell.open').first()).toBeVisible();
+  assert.ok(await mines.locator('.mine-cell.open').count() >= 9, 'first click opens a safe area');
+
+  const hidden = mines.locator('.mine-cell.raised').first();
+  await hidden.click({ button: 'right' });
+  await expect(hidden.locator('.mine-flag')).toHaveCount(1);
+  await expect(mines.locator('.status-bar, .toolbar')).toHaveCount(0);
+
+  await mines.getByRole('button', { name: 'Game', exact: true }).click();
+  await mines.getByRole('menuitemradio', { name: 'Expert', exact: true }).click();
+  await expect(mines.locator('.mine-cell')).toHaveCount(480);
+  await expect(mines.getByRole('menu')).toHaveCount(0);
+  await mines.screenshot({ path: 'tmp/qa/minesweeper.png' });
+
+  // ---- cd player ----
+
+  // fake spotify's iframe api so we can test the real component without logging in.
+  // every call gets recorded in window.__cdCalls
+  await page.route('https://open.spotify.com/embed/iframe-api/v1', route => route.fulfill({
+    contentType: 'text/javascript',
+    body: `
+      window.__cdCalls = [];
+      window.onSpotifyIframeApiReady({
+        createController(mount, options, callback) {
+          const frame = document.createElement('iframe');
+          frame.title = 'Spotify test player';
+          frame.src = 'https://open.spotify.com/embed/album/35I1NyorvFXQm14NSTQGY4';
+          mount.replaceWith(frame);
+
+          const listeners = {};
+          let uri = options.uri;
+          let position = 0;
+          const update = paused => listeners.playback_update?.({ data: { isPaused: paused, position, duration: 202000, playingURI: uri } });
+
+          callback({
+            addListener(name, fn) { listeners[name] = fn; if (name === 'ready') setTimeout(fn, 0); },
+            play() { position = 0; window.__cdCalls.push('play'); update(false); },
+            resume() { window.__cdCalls.push('resume'); update(false); },
+            pause() { window.__cdCalls.push('pause'); update(true); },
+            loadUri(value) { uri = value; window.__cdCalls.push(value); },
+            seek(value) { position = value * 1000; window.__cdCalls.push('seek:' + value); update(false); },
+            destroy() { window.__cdCalls.push('destroy'); frame.remove(); },
+          });
+        },
+      });
+    `,
+  }));
+
+  let loads = 0;
+  await page.route('https://open.spotify.com/embed/album/**', route => {
+    loads++;
+    return route.fulfill({ contentType: 'text/html', body: '<button>Spotify test player</button>' });
+  });
+
+  // spotify shouldn't load until you press play
+  await open('music');
+  const cd = page.locator('[data-window="music"]');
+  const track = cd.getByRole('combobox', { name: 'Track', exact: true });
+  await expect(cd.locator('iframe')).toHaveCount(0);
+  await cd.screenshot({ path: 'tmp/qa/cd-player.png' });
+
+  await cd.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(cd.getByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
+  await cd.getByRole('button', { name: 'Next track' }).click();
+  await expect(track).toHaveValue('1');
+  await cd.getByRole('button', { name: 'Previous track' }).click();
+  await expect(track).toHaveValue('0');
+
+  await cd.getByRole('slider').fill('30000');
+  await cd.getByRole('slider').dispatchEvent('change');
+  await expect(cd.getByLabel('Elapsed time')).toHaveText('0:30');
+
+  // pausing then playing should resume, not restart from 0:00
+  await cd.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(cd.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  await cd.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(cd.getByLabel('Elapsed time')).toHaveText('0:30');
+  assert.equal((await page.evaluate(() => window.__cdCalls)).at(-1), 'resume');
+
+  // minimizing keeps the player alive, closing destroys it
+  await page.getByRole('button', { name: 'Minimize CD Player', exact: true }).click();
+  await expect(cd.locator('iframe')).toHaveCount(1);
+  await open('music');
+  assert.equal(loads, 1);
+  await open('blog');
+  await expect(cd.locator('iframe')).toHaveCount(1);
+  await open('music');
+  await cd.getByRole('button', { name: 'Show Spotify player', exact: true }).click();
+  await expect(cd.getByRole('link', { name: 'Open in Spotify' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close CD Player', exact: true }).click();
+  assert.ok((await page.evaluate(() => window.__cdCalls)).includes('destroy'));
+  await expect(page.locator('[data-window="music"] iframe')).toHaveCount(0);
+
+  // if spotify is blocked, we should still offer the album link
+  const blocked = await browser.newPage();
+  await blocked.route('https://open.spotify.com/embed/iframe-api/v1', route => route.abort());
+  await blocked.goto(base + '#app=music');
+  await blocked.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(blocked.getByRole('link', { name: 'Open in Spotify' })).toBeVisible();
+  await blocked.close();
+
+  // ---- resume and old urls ----
+
+  // the served pdf should be byte for byte the one in assets/
+  await open('resume');
+  const pdfLink = page.getByRole('link', { name: 'Open PDF', exact: true }).first();
+  const pdfUrl = new URL(await pdfLink.getAttribute('href'), base).href;
+  const response = await page.request.get(pdfUrl);
+  assert.equal(response.status(), 200);
+  const hash = b => createHash('sha256').update(b).digest('hex');
+  assert.equal(hash(await response.body()), hash(await readFile('assets/Jason_Tang_Resume.pdf')));
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download', exact: true }).click();
+  assert.equal((await download).suggestedFilename(), 'Jason_Tang_Resume.pdf');
+
+  for (const path of ['blog/', 'contact/', 'games/breakout/']) {
+    assert.equal((await page.request.get(base + path)).status(), 200);
+  }
+
+  // ---- phone size and keyboard ----
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open('contact');
+  await page.screenshot({ path: 'tmp/qa/mobile-contact.png' });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('menuitem', { name: 'Reset Desktop' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeFocused();
+
+  assert.deepEqual(errors, []);
+  assert.deepEqual(missing, []);
+
+  // ---- no webgl ----
+
+  // pretend webgl2 doesn't exist, the wallpaper should fall back to the plain video
+  const fallback = await browser.newPage();
+  await fallback.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+      return type === 'webgl2' ? null : getContext.call(this, type, ...args);
+    };
+  });
+  await fallback.goto(base);
+  await expect(fallback.locator('.ascii-layer canvas')).toHaveCount(0);
+  assert.equal(await fallback.locator('.portrait-ascii img').evaluate(img => img.complete && img.naturalWidth > 0), true);
+  await fallback.screenshot({ path: 'tmp/qa/fallback.png' });
+
+  // ---- blog renderer ----
+
+  // no posts ship yet, so mount the real blog component with a fake post through vite
+  vite = await createViteServer({ server: { host: '127.0.0.1', port: 0 } });
+  await vite.listen();
+  const blogPage = await browser.newPage();
+  const devBase = `http://127.0.0.1:${vite.httpServer.address().port}`;
+  await blogPage.goto(devBase);
+  await blogPage.evaluate(async () => {
+    const { mountFixture } = await import('/tests/blog-fixture.js');
+    mountFixture();
+  });
+
+  await blogPage.getByRole('button', { name: 'Renderer fixture' }).click();
+  await expect(blogPage.getByRole('heading', { name: 'Renderer fixture' })).toBeVisible();
+  await blogPage.screenshot({ path: 'tmp/qa/blog-top.png' });
+  await expect(blogPage.getByRole('heading', { name: 'Example section' })).toBeVisible();
+  await expect(blogPage.locator('#blog-fixture code')).toHaveText('const safe = "<script>";');
+
+  await blogPage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await blogPage.getByRole('button', { name: 'Copy', exact: true }).click();
+  await expect(blogPage.getByText('Code copied.')).toBeVisible();
+  assert.equal(await blogPage.evaluate(() => navigator.clipboard.readText()), 'const safe = "<script>";');
+  await blogPage.screenshot({ path: 'tmp/qa/blog-fixture.png' });
+
+  await blogPage.getByRole('button', { name: 'Back to Blog' }).click();
+  await expect(blogPage.getByRole('button', { name: 'Renderer fixture' })).toBeVisible();
+
+  console.log('browser checks passed');
+} finally {
+  await browser.close();
+  await vite?.close();
+  await new Promise(r => server.close(r));
+}
