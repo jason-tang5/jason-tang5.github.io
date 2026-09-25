@@ -408,13 +408,12 @@ onBeforeUnmount(() => {
 
       <div class="desktop-signature" aria-hidden="true"><span>JASON TANG</span></div>
 
-      <aside v-if="tip" class="first-tip raised" aria-label="Desktop help">
+      <aside v-if="tip" class="first-tip raised" aria-label="Welcome">
         <div class="tip-heading">
-          <strong>Desktop controls</strong>
-          <button aria-label="Dismiss desktop tip" @click="dismissTip">×</button>
+          <strong>Welcome!</strong>
+          <button aria-label="Dismiss welcome message" @click="dismissTip">×</button>
         </div>
-        <p>Double-click a shortcut to explore. On touch, tap once. Use the taskbar to switch windows.</p>
-        <small>Keyboard: Tab to a shortcut, then Enter.</small>
+        <p>feel free to click around</p>
       </aside>
 
       <DesktopWindow
