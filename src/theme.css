@@ -1189,6 +1189,36 @@ a.raised:hover:not(.pressed):not(:active),
   margin: 10px 0;
 }
 
+/* technologies and tools (TechList.vue) */
+.tech-tag {
+  transition: color .12s;
+}
+
+.tech-tag:hover {
+  color: #000080;
+}
+
+.tech-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* small raised "buttons" that lift a little when you hover them */
+.tech-chip.raised {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: default;
+  transition: transform .12s, background-color .12s;
+}
+
+.tech-chip.raised:hover {
+  transform: translateY(-1px);
+  background: #cbcbcb;
+}
+
 .eyebrow {
   font: 11px 'Courier New', monospace;
   letter-spacing: 1px;

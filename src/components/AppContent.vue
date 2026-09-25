@@ -8,6 +8,7 @@ import Blog from './Blog.vue';
 import Music from './Music.vue';
 import Pictures from './Pictures.vue';
 import RetroIcon from './RetroIcon.vue';
+import TechList from './TechList.vue';
 import { read, save, remove } from '../storage.js';
 
 // the games only load when someone actually opens them
@@ -112,7 +113,7 @@ function clearSaved() {
         <RetroIcon :name="selected.icon"/>
         <h2>{{ selected.name }}</h2>
         <p>{{ selected.summary }}</p>
-        <small>{{ selected.tech.join(' · ') }}</small>
+        <small><TechList :items="selected.tech"/></small>
         <button class="raised" @click="emit('open', selected.id)">View project →</button>
       </aside>
       <div class="project-list">
@@ -145,7 +146,7 @@ function clearSaved() {
       <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
       <h1>{{ win.project.name }}</h1>
       <p class="intro">{{ win.project.summary }}</p>
-      <p class="tech-line">{{ win.project.tech.join(' · ') }}</p>
+      <p class="tech-line"><TechList :items="win.project.tech"/></p>
       <template v-if="win.project.contribution">
         <h2>What I built</h2>
         <p>{{ win.project.contribution }}</p>
@@ -180,7 +181,7 @@ function clearSaved() {
         <h2>University of Toronto</h2>
         <p>{{ profile.education }}</p>
         <h3>Tools I’ve worked with</h3>
-        <p>{{ profile.skills.join(' · ') }}</p>
+        <p><TechList :items="profile.skills" chips/></p>
       </section>
     </article>
     <footer class="status-bar"><span>{{ roles.length }} roles</span><span>Jason Tang</span></footer>
