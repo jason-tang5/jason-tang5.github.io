@@ -75,6 +75,12 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path stroke="#666" d="M8 12v12m7-12v12m7-12v12"/>
         <path fill="#c0c0c0" d="M5 15h6v4H5zm7 5h6v4h-6zm7-8h6v4h-6z"/>
       </g>
+      <g v-else-if="name === 'sound' || name === 'mute'">
+        <path fill="#c0c0c0" d="M4 11h6l8-7v24l-8-7H4z"/>
+        <path fill="#fff" stroke="none" d="M5 12h4v1H5z"/>
+        <path v-if="name === 'sound'" fill="none" stroke-width="2" d="M22 11c2 3 2 7 0 10M25 8c4 5 4 11 0 16"/>
+        <path v-else fill="none" stroke="#c00" stroke-width="3" d="M21 11l9 10M30 11l-9 10"/>
+      </g>
       <g v-else-if="name === 'start'">
         <path fill="#d44528" d="M3 3h11v11H3z"/>
         <path fill="#559b2e" d="M17 3h11v11H17z"/>

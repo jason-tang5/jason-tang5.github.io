@@ -149,6 +149,32 @@ a.raised:hover:not(.pressed):not(:active),
   background: rgba(255, 255, 255, .1);
 }
 
+/* win98 checkbox: a white sunken box with a chunky pixel checkmark */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  background: #fff;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  box-shadow: inset 1px 1px #000, inset -1px -1px #dfdfdf;
+}
+
+input[type="checkbox"]:checked {
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h1v3H6zM5 1h1v3H5zM4 2h1v3H4zM3 3h1v3H3zM2 4h1v3H2zM1 3h1v3H1zM0 2h1v3H0z'/%3E%3C/svg%3E") center / 7px 7px no-repeat;
+}
+
+input[type="checkbox"]:disabled {
+  background-color: #c0c0c0;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none;
+}
+
 .inset {
   border: 2px solid;
   border-color: var(--shadow) var(--light) var(--light) var(--shadow);
@@ -801,6 +827,98 @@ a.raised:hover:not(.pressed):not(:active),
   flex-shrink: 0;
 }
 
+/* flat speaker icon next to the clock, like the win95 volume icon */
+.tray-sound {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.tray-sound:hover .retro-icon {
+  filter: brightness(1.1);
+}
+
+/* volume popup above the speaker, like the win98 one. the thumb and groove are
+   both centered 16px from the left, with the tick marks to their right */
+.volume-popup {
+  position: absolute;
+  right: 40px;
+  bottom: calc(100% + 8px);
+  width: 86px;
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.volume-title {
+  align-self: flex-start;
+}
+
+.volume-slider {
+  position: relative;
+  width: 44px;
+  height: 110px;
+  cursor: var(--classic-pointer);
+  touch-action: none;
+}
+
+.volume-slider:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 2px;
+}
+
+.volume-groove {
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  box-shadow: inset 1px 1px #000;
+}
+
+.volume-ticks {
+  position: absolute;
+  left: 32px;
+  top: 5px;
+  width: 6px;
+  height: 101px;
+  background: repeating-linear-gradient(#000 0 1px, transparent 1px 10px);
+}
+
+/* --level is 0 to 100, set from VolumeControl.vue */
+.volume-thumb {
+  position: absolute;
+  left: 5px;
+  bottom: calc(var(--level) * (100% - 11px) / 100);
+  width: 22px;
+  height: 11px;
+  background: #c0c0c0;
+  border: 1px solid;
+  border-color: #fff #000 #000 #fff;
+  box-shadow: inset -1px -1px #808080;
+}
+
+.volume-mute {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* like windows, keyboard focus puts a dotted box around the label, not the checkbox */
+.volume-mute:has(input:focus-visible) span {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
 .clock {
   min-width: 83px;
   background: var(--surface);
@@ -1189,7 +1307,7 @@ a.raised:hover:not(.pressed):not(:active),
   margin: 10px 0;
 }
 
-/* technologies and tools (TechList.vue) */
+/* technologies and tools (TechList.vue), these tick when you hover them */
 .tech-tag {
   transition: color .12s;
 }

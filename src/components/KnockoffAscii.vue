@@ -8,6 +8,7 @@
 //   - glow: a brightened copy, stamped over cells near the cursor for the trail
 // every frame just copies backing, then adds the glow and flying letters on top.
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { play } from '../sound.js';
 
 const props = defineProps({
   source: String,
@@ -225,6 +226,7 @@ function knock(x, y, repaint = true) {
   }
 
   fallingLetters(broken, x, y);
+  if (broken.length) play('crumble', broken.length);
   remaining.value -= broken.length;
   // wipe the dark background too once every letter is gone
   if (!remaining.value) ctx.clearRect(0, 0, width, height);

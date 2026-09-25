@@ -312,6 +312,14 @@ try {
   await expect(cd.getByLabel('Elapsed time')).toHaveText('0:30');
   assert.equal((await page.evaluate(() => window.__cdCalls)).at(-1), 'resume');
 
+  // spotify has no volume control, so muting the site pauses the cd player instead
+  await page.getByRole('button', { name: 'Volume', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Mute' }).check();
+  await expect(cd.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  assert.equal((await page.evaluate(() => window.__cdCalls)).at(-1), 'pause');
+  await page.getByRole('checkbox', { name: 'Mute' }).uncheck();
+  await page.keyboard.press('Escape');
+
   // minimizing keeps the player alive, closing destroys it
   await page.getByRole('button', { name: 'Minimize CD Player', exact: true }).click();
   await expect(cd.locator('iframe')).toHaveCount(1);
@@ -368,6 +376,78 @@ try {
 
   assert.deepEqual(errors, []);
   assert.deepEqual(missing, []);
+
+  // ---- sound effects ----
+
+  // count every tone and noise burst web audio starts, so we can tell if sounds are playing
+  const noisy = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await noisy.addInitScript(() => {
+    window.__tones = 0;
+    for (const Node of [OscillatorNode, AudioBufferSourceNode]) {
+      const start = Node.prototype.start;
+      Node.prototype.start = function (...args) {
+        window.__tones++;
+        return start.apply(this, args);
+      };
+    }
+  });
+  await noisy.goto(base);
+  const tones = () => noisy.evaluate(() => window.__tones);
+  // how many sounds an action makes. the pause lets the throttles in sound.js reset
+  const soundsFrom = async action => {
+    const start = await tones();
+    await action();
+    await noisy.waitForTimeout(150);
+    return (await tones()) - start;
+  };
+  const speaker = noisy.getByRole('button', { name: 'Volume', exact: true });
+  await expect(speaker).toBeVisible();
+
+  // empty desktop to the right of the about window
+  assert.ok(await soundsFrom(() => noisy.mouse.click(1330, 450)) > 0, 'background click makes a sound');
+  assert.ok(await soundsFrom(() => noisy.locator('.portrait-ascii canvas').click()) > 0, 'breaking ascii letters makes a sound');
+  assert.ok(await soundsFrom(() => noisy.locator('[data-window="about"]').getByRole('button', { name: 'Experience', exact: true }).click()) > 0, 'button click makes a sound');
+
+  // hovering buttons is silent, hovering a technology ticks
+  await noisy.mouse.move(1330, 450);
+  assert.equal(await soundsFrom(() => noisy.getByRole('button', { name: 'Start', exact: true }).hover()), 0, 'button hover is silent');
+  const tool = noisy.locator('[data-window="experience"] .tech-tag').first();
+  await tool.scrollIntoViewIfNeeded();
+  assert.ok(await soundsFrom(() => tool.hover()) > 0, 'hovering a tool ticks');
+
+  assert.ok(await soundsFrom(() => noisy.getByRole('button', { name: 'Close About Jason', exact: true }).click()) > 0, 'closing makes a sound');
+
+  // play breakout until the first brick breaks, which should make a sound on its own
+  await noisy.locator('.desktop-shortcut', { hasText: 'Contact' }).dblclick();
+  const contact = noisy.locator('[data-window="contact"]');
+  await contact.locator('#breakout-start').click();
+  await noisy.waitForTimeout(150);
+  const beforeBrick = await tones();
+  await expect(contact.locator('#breakout-status')).not.toHaveText('78 bricks to go.', { timeout: 10000 });
+  assert.ok(await tones() > beforeBrick, 'breaking a brick makes a sound');
+  await contact.locator('#breakout-start').click();
+
+  // the speaker opens the volume popup. the slider works with the keyboard
+  await speaker.click();
+  const volume = noisy.getByRole('slider', { name: 'Volume' });
+  await expect(volume).toHaveAttribute('aria-valuenow', '75');
+  await volume.focus();
+  await noisy.keyboard.press('PageDown');
+  await expect(volume).toHaveAttribute('aria-valuenow', '55');
+
+  // muted: clicking around makes no sound, and it all stays after a refresh
+  await noisy.getByRole('checkbox', { name: 'Mute' }).check();
+  await expect(noisy.getByRole('button', { name: 'Volume (muted)', exact: true })).toBeVisible();
+  const tonesBefore = await tones();
+  await noisy.locator('.desktop-shortcut', { hasText: 'Projects' }).dblclick();
+  await noisy.getByRole('button', { name: 'Start', exact: true }).click();
+  assert.equal(await tones(), tonesBefore, 'no sounds while muted');
+  await noisy.reload();
+  await noisy.getByRole('button', { name: 'Volume (muted)', exact: true }).click();
+  await expect(noisy.getByRole('checkbox', { name: 'Mute' })).toBeChecked();
+  await expect(noisy.getByRole('slider', { name: 'Volume' })).toHaveAttribute('aria-valuenow', '55');
+  await noisy.locator('.volume-popup').screenshot({ path: 'tmp/qa/volume-popup.png' });
+  await noisy.close();
 
   // ---- no webgl ----
 

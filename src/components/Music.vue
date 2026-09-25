@@ -122,16 +122,23 @@ async function initialize() {
   }
 }
 
+function pause() {
+  clearTimeout(startupTimer);
+  playbackEnd.pause();
+  controller.pause();
+}
+
 function togglePlay() {
-  if (!controller) {
-    initialize();
-  } else if (paused.value) {
-    requestPlay(position.value > 0);
-  } else {
-    clearTimeout(startupTimer);
-    playbackEnd.pause();
-    controller.pause();
-  }
+  if (!controller) initialize();
+  else if (paused.value) requestPlay(position.value > 0);
+  else pause();
+}
+
+// spotify's embed has no volume control we can reach, so the closest thing is
+// pausing when the site is muted or the volume slider hits zero.
+// turning sound back on doesn't restart the music by itself
+function siteSound({ detail }) {
+  if ((!detail.enabled || !detail.level) && controller && !paused.value) pause();
 }
 
 // wraps around in both directions
@@ -257,10 +264,12 @@ onMounted(() => {
     if (showSpotify.value) fitWindow();
   });
   panelObserver.observe(panel.value);
+  window.addEventListener('site-sound', siteSound);
 });
 
 onBeforeUnmount(() => {
   disposed = true;
+  window.removeEventListener('site-sound', siteSound);
   clearTimeout(startupTimer);
   clearInterval(noteTimer);
   panelObserver?.disconnect();

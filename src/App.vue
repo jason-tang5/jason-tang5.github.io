@@ -7,6 +7,7 @@ import AsciiImage from './components/AsciiImage.vue';
 import DesktopWindow from './components/DesktopWindow.vue';
 import AppContent from './components/AppContent.vue';
 import RetroIcon from './components/RetroIcon.vue';
+import VolumeControl from './components/VolumeControl.vue';
 import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
 import {
   clampBounds,
@@ -18,6 +19,7 @@ import {
   toggleMaximize,
 } from './window-state.mjs';
 import { read, save, remove } from './storage.js';
+import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from './sound.js';
 
 const defaultWallpaper = '#008080';
 const wallpaperColors = ['#008080', '#18334f', '#576575', '#3c6255', '#62465e'];
@@ -112,6 +114,7 @@ function open(id, updateUrl = true) {
     else win = createWindow(registry[id], windows.length, area);
 
     win = reactive(win);
+    play('open');
     windows.push(win);
   }
 
@@ -145,6 +148,7 @@ function close(id) {
   const index = windows.findIndex(w => w.id === id);
   if (index < 0) return;
   windows.splice(index, 1);
+  play('close');
   if (active.value === id) focusNext();
 }
 
@@ -360,11 +364,14 @@ function menuKeys(event) {
   if (event.key === 'Tab') dismissStart(false);
 }
 
-// clicking anywhere else closes the start menu and calendar
+// clicking anywhere else closes the start menu, calendar and volume popup
 function outside(event) {
   const inMenu = startMenu.value?.contains(event.target) || start.value?.contains(event.target);
   if (startOpen.value && !inMenu) dismissStart(false);
-  if (calendar.value && !event.target.closest('.tray')) calendar.value = false;
+  if (!event.target.closest('.tray')) {
+    calendar.value = false;
+    volumeOpen.value = false;
+  }
 }
 
 function escape(event) {
@@ -374,11 +381,69 @@ function escape(event) {
     event.preventDefault();
   }
   calendar.value = false;
+  volumeOpen.value = false;
 }
 
 function toggleCalendar() {
   calendar.value = !calendar.value;
+  volumeOpen.value = false;
   startOpen.value = false;
+}
+
+// ---- sound effects ----
+
+const sound = ref(soundEnabled());
+const level = ref(soundLevel());
+const volumeOpen = ref(false);
+const audible = computed(() => sound.value && level.value > 0);
+
+function toggleVolume() {
+  volumeOpen.value = !volumeOpen.value;
+  calendar.value = false;
+  startOpen.value = false;
+}
+
+function setSound(on) {
+  sound.value = on;
+  setSoundEnabled(on);
+}
+
+function setLevel(value) {
+  level.value = value;
+  setSoundLevel(value);
+}
+
+// a few listeners for the whole page instead of wiring up every button.
+// things marked data-sound="none" play their own sound (or none at all)
+function soundTarget(el) {
+  const target = el.closest('button, a, select');
+  if (!target || target.disabled || target.closest('[data-sound="none"]')) return null;
+  return target;
+}
+
+// clicks on the empty desktop, not on icons, windows or the welcome note
+function isBackground(el) {
+  return el.closest('.desktop') && !el.closest('[data-window], .desktop-grid, .first-tip');
+}
+
+// buttons click like a real switch: a press on the way down, a lighter tick on the way up
+function pressSound(event) {
+  if (event.button !== 0) return;
+  if (soundTarget(event.target)) play('press');
+  else if (isBackground(event.target)) play('tap');
+}
+
+function clickSound(event) {
+  if (!soundTarget(event.target)) return;
+  // detail 0 means the keyboard pressed it, so there was no pointerdown press
+  play(event.detail === 0 ? 'click' : 'release');
+}
+
+// the hover tick is only for technologies and tools, it climbs in pitch as you run across a list
+function hoverSound(event) {
+  if (event.pointerType === 'touch') return;
+  const el = event.target.closest('.tech-tag');
+  if (el && !el.contains(event.relatedTarget)) play('hover');
 }
 
 // ---- layout ----
@@ -416,6 +481,9 @@ onMounted(() => {
   timer = setInterval(() => { clock.value = new Date(); }, 60000);
   document.addEventListener('pointerdown', outside);
   document.addEventListener('keydown', escape);
+  document.addEventListener('pointerdown', pressSound, true);
+  document.addEventListener('click', clickSound, true);
+  document.addEventListener('pointerover', hoverSound);
   window.addEventListener('hashchange', hashOpen);
 });
 
@@ -425,6 +493,9 @@ onBeforeUnmount(() => {
   clearTimeout(saveLayoutTimer);
   document.removeEventListener('pointerdown', outside);
   document.removeEventListener('keydown', escape);
+  document.removeEventListener('pointerdown', pressSound, true);
+  document.removeEventListener('click', clickSound, true);
+  document.removeEventListener('pointerover', hoverSound);
   window.removeEventListener('hashchange', hashOpen);
 });
 </script>
@@ -533,6 +604,22 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="tray">
+        <button
+          class="tray-sound"
+          :aria-expanded="volumeOpen"
+          :aria-label="audible ? 'Volume' : 'Volume (muted)'"
+          title="Volume"
+          @click="toggleVolume"
+        >
+          <RetroIcon :name="audible ? 'sound' : 'mute'" small/>
+        </button>
+        <VolumeControl
+          v-if="volumeOpen"
+          :level="level"
+          :enabled="sound"
+          @update:level="setLevel"
+          @update:enabled="setSound"
+        />
         <button
           class="clock inset"
           :title="dateLabel"

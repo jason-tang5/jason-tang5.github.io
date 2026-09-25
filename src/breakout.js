@@ -5,6 +5,8 @@
 // returns { setActive, destroy } so the vue component can pause it when the
 // window loses focus and clean everything up when it closes.
 
+import { play } from './sound.js';
+
 // 5x7 pixel font. only has the letters we actually need: my email, the "+ 1"
 // popup, and a few extras in case the text changes.
 const glyphs = {
@@ -215,6 +217,7 @@ export function createBreakout(root, { email }) {
       y: 40 + Math.floor(i / columns) * (56 / rows),
       w: 300 / columns,
       h: 56 / rows,
+      row: Math.floor(i / columns),
       color: brickColors[Math.floor(i / columns)],
       alive: true,
     }));
@@ -402,6 +405,7 @@ export function createBreakout(root, { email }) {
 
       brick.alive = false;
       breakText(brick);
+      play('brick', brick.row);
       updateEmailProgress();
       score += 1;
 

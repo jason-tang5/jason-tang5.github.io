@@ -218,7 +218,7 @@ onBeforeUnmount(() => {
         >
           <span :class="win.maximized ? 'restore-symbol' : 'max-symbol'"/>
         </button>
-        <button class="control close-button" :aria-label="`Close ${win.label}`" @click="emit('close', win.id)">×</button>
+        <button class="control close-button" data-sound="none" :aria-label="`Close ${win.label}`" @click="emit('close', win.id)">×</button>
       </div>
     </header>
 
@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
         {{ win.maximized ? 'Restore' : 'Maximize' }}
       </button>
       <hr>
-      <button role="menuitem" @click="emit('close', win.id)">Close</button>
+      <button role="menuitem" data-sound="none" @click="emit('close', win.id)">Close</button>
     </div>
 
     <div v-if="keyboard" class="keyboard-hint" role="status">

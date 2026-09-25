@@ -1,5 +1,6 @@
 <script setup>
-// a list of technologies or tools, each one its own element.
+// a list of technologies or tools. each one is its own element so hovering it
+// can play the little pitch-climbing tick (see sound.js).
 // by default it's a line of text separated with dots, `chips` shows each one as
 // a small raised button instead. they only look like buttons, clicking does nothing
 defineProps({ items: Array, chips: Boolean });
