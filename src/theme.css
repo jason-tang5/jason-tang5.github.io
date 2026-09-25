@@ -127,6 +127,28 @@ hr {
   box-shadow: inset 1px 1px var(--shadow);
 }
 
+/* very light hover so buttons feel clickable without breaking the win95 look */
+button.raised,
+a.raised,
+.control,
+.project-row {
+  transition: background-color .12s;
+}
+
+button.raised:hover:not(:disabled):not(.pressed):not(:active),
+a.raised:hover:not(.pressed):not(:active),
+.control:hover:not(:disabled):not(:active) {
+  background: #cbcbcb;
+}
+
+.project-row:hover:not(.selected) {
+  background: #f0f0f7;
+}
+
+.desktop-shortcut:hover:not(.selected):not(:focus-visible) span {
+  background: rgba(255, 255, 255, .1);
+}
+
 .inset {
   border: 2px solid;
   border-color: var(--shadow) var(--light) var(--light) var(--shadow);
