@@ -155,6 +155,24 @@ export function createBreakout(root, { email }) {
     }
   });
 
+  // the email uses the same pixel font as the desktop signature. it isn't
+  // monospace, so measure where each letter really sits (in ems) and tell the
+  // css the total width, which it uses to stretch the email across the board
+  const emailFont = '"Pixel MS Sans Serif", Tahoma, sans-serif';
+  let emailMetrics;
+
+  function measureEmail() {
+    const pen = document.createElement('canvas').getContext('2d');
+    pen.font = `bold 100px ${emailFont}`;
+    const width = text => pen.measureText(text).width / 100;
+    emailMetrics = {
+      total: width(email),
+      offsets: [...email].map((_, i) => width(email.slice(0, i))),
+      widths: [...email].map(width),
+    };
+    board.style.setProperty('--email-em', emailMetrics.total);
+  }
+
   // works out which letters of the email are fully uncovered by checking each
   // lit pixel of the glyph against the bricks still standing
   function updateEmailProgress() {
@@ -162,14 +180,18 @@ export function createBreakout(root, { email }) {
 
     // matches the revealed link, which spans 96% of the board
     const emailWidth = 300 * 0.96;
-    const scale = emailWidth / (email.length * 6 - 1);
     const emailLeft = (300 - emailWidth) / 2;
-    const top = 68 - (7 * scale) / 2;
+    const em = emailWidth / emailMetrics.total;
 
     [...email].forEach((letter, index) => {
+      // the 5x7 glyph (plus a pixel of spacing) stretched over the letter's real width
+      const scale = emailMetrics.widths[index] * em / 6;
+      const start = emailLeft + emailMetrics.offsets[index] * em;
+      const top = 68 - (7 * scale) / 2;
+
       const stillCovered = glyphs[letter].some((row, y) => [...row].some((pixel, x) => {
         if (pixel !== '1') return false;
-        const left = emailLeft + (index * 6 + x) * scale;
+        const left = start + x * scale;
         const upper = top + y * scale;
         return bricks.some(brick => brick.alive &&
           left < brick.x + brick.w && left + scale > brick.x &&
@@ -511,7 +533,14 @@ export function createBreakout(root, { email }) {
     reset();
   });
 
+  // measure with whatever font is ready now, then again once the pixel font has loaded
+  measureEmail();
   reset();
+  document.fonts?.load(`bold 100px ${emailFont}`).then(() => {
+    if (events.signal.aborted) return;
+    measureEmail();
+    updateEmailProgress();
+  });
 
   // the letter positions depend on the board size, so recheck when it resizes
   const observer = new ResizeObserver(updateEmailProgress);

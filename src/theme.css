@@ -1616,12 +1616,15 @@ fieldset {
   justify-content: center;
 }
 
-/* courier new is 0.6em wide per character, so this makes the address span 96% of the board */
+/* same pixel font as the JASON TANG signature on the desktop. breakout.js measures
+   how many ems wide the address is (--email-em) so it spans 96% of the board */
 .contact-game .breakout-email a {
   width: 96%;
   max-width: none;
   color: #000080;
-  font: bold calc(96cqw / (var(--email-chars) * .6)) "Courier New", monospace;
+  font: bold calc(96cqw / var(--email-em, calc(var(--email-chars) * .6))) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
   text-align: center;
   white-space: nowrap;
 }
