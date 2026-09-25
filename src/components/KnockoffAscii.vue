@@ -64,7 +64,13 @@ function draw() {
   if (!canvas.value) return;
   const ctx = canvas.value.getContext('2d');
   ctx.clearRect(0, 0, width, height);
-  if (!backing) return;
+  // still loading, so cover the real photo underneath with the ascii background
+  // instead of letting it flash through before the letters are ready
+  if (!backing) {
+    ctx.fillStyle = '#15151e';
+    ctx.fillRect(0, 0, canvas.value.width, canvas.value.height);
+    return;
+  }
 
   ctx.drawImage(backing, 0, 0, width, height);
 

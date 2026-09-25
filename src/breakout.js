@@ -1,4 +1,4 @@
-// breakout for the contact window. my email is hidden behind the bricks and
+// breakout for the contact window.  email is hidden behind the bricks and
 // shows up as you clear them. everything is drawn on a 300x300 canvas and
 // scaled up with css, so all the numbers below are in those canvas units.
 //
