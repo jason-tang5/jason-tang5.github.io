@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clampBounds, resizeBounds, createWindow, toggleMaximize, nextVisible, bounds } from '../src/window-state.mjs';
+import {
+  clampBounds,
+  resizeBounds,
+  createWindow,
+  placeBeside,
+  toggleMaximize,
+  nextVisible,
+  bounds,
+} from '../src/window-state.mjs';
 
 const area = { width: 1440, height: 860 };
 const app = { id: 'test', width: 690, height: 520, minWidth: 400, minHeight: 260 };
@@ -32,6 +40,19 @@ test('all eight resize handles respect minimum size and screen boundaries', () =
       assert.ok(inside(w, area));
     }
   }
+});
+
+test('windows opened beside another one sit to its right and stay on screen', () => {
+  const anchor = createWindow({ ...app, width: 900, height: 740 }, 0, area);
+  for (let i = 1; i < 8; i++) {
+    const w = placeBeside(app, anchor, i, area);
+    assert.ok(w.x >= anchor.x + 80, 'starts well to the right of the anchor');
+    assert.ok(inside(w, area));
+  }
+
+  // on a tiny screen it still has to fit, even if that means overlapping more
+  const small = { width: 800, height: 500 };
+  assert.ok(inside(placeBeside(app, createWindow(app, 0, small), 1, small), small));
 });
 
 test('maximize and restore preserve bounds and re-clamp after screen resize', () => {

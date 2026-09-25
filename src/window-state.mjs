@@ -62,6 +62,21 @@ export function createWindow(app, index, area) {
   };
 }
 
+// opens a window off to the right of one that's already on screen, so it doesn't
+// land right on top of it. it hugs the right edge of the desktop, but always starts
+// at least 80px right of the anchor so the anchor's left side stays visible.
+// more windows opened this way stagger down and to the left.
+export function placeBeside(app, anchor, index, area) {
+  const stagger = (index % 4) * 28;
+  const position = clampBounds({
+    ...app,
+    x: Math.max(anchor.x + 80, area.width - app.width - 24 - stagger),
+    y: anchor.y + 40 + stagger,
+  }, area);
+
+  return { ...createWindow(app, index, area), ...position };
+}
+
 export function toggleMaximize(w, area) {
   if (w.maximized) {
     // the screen might have shrunk while maximized, so re-clamp on the way back

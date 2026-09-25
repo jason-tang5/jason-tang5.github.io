@@ -8,7 +8,13 @@ import DesktopWindow from './components/DesktopWindow.vue';
 import AppContent from './components/AppContent.vue';
 import RetroIcon from './components/RetroIcon.vue';
 import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
-import { clampBounds, createWindow, nextVisible, toggleMaximize } from './window-state.mjs';
+import {
+  clampBounds,
+  createWindow,
+  nextVisible,
+  placeBeside,
+  toggleMaximize,
+} from './window-state.mjs';
 import { read, save, remove } from './storage.js';
 
 const defaultWallpaper = '#008080';
@@ -89,7 +95,12 @@ function open(id, updateUrl = true) {
   keyboardReturn = document.activeElement;
   let win = get(id);
   if (!win) {
-    win = reactive(createWindow(registry[id], windows.length, area));
+    // if something is already on screen, open off to the side of it instead of on top
+    const anchor = active.value && get(active.value);
+    const beside = anchor && visible(anchor) && !anchor.maximized && !compact.value;
+    win = reactive(beside
+      ? placeBeside(registry[id], anchor, windows.length, area)
+      : createWindow(registry[id], windows.length, area));
     windows.push(win);
   }
 
