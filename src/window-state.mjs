@@ -77,6 +77,26 @@ export function placeBeside(app, anchor, index, area) {
   return { ...createWindow(app, index, area), ...position };
 }
 
+// reopens a window where it was last time (saved in localstorage), clamped so it
+// still fits if the screen got smaller since. windows that size themselves to
+// their content (fixedSize) only get their position back.
+export function restoreWindow(app, saved, index, area) {
+  const size = app.fixedSize ? {} : { width: saved.width, height: saved.height };
+  const win = createWindow({ ...app, ...size }, index, area);
+  Object.assign(win, clampBounds({ ...win, x: saved.x, y: saved.y }, area));
+
+  if (saved.maximized && !app.fixedSize) {
+    win.maximized = true;
+    win.restoreBounds = bounds(win);
+  }
+  return win;
+}
+
+// checks saved window data before trusting it, since localstorage can hold anything
+export function isSavedBounds(saved) {
+  return Boolean(saved) && ['x', 'y', 'width', 'height'].every(key => Number.isFinite(saved[key]));
+}
+
 export function toggleMaximize(w, area) {
   if (w.maximized) {
     // the screen might have shrunk while maximized, so re-clamp on the way back

@@ -2,7 +2,7 @@
 // the desktop shell: icons, windows, taskbar and start menu.
 // started from don chia's App.vue, AppGrid and windows navbar (mit, see
 // licenses/vuejs-os-template-MIT.txt), then moved to vue 3 and extended a lot.
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import AsciiImage from './components/AsciiImage.vue';
 import DesktopWindow from './components/DesktopWindow.vue';
 import AppContent from './components/AppContent.vue';
@@ -11,8 +11,10 @@ import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
 import {
   clampBounds,
   createWindow,
+  isSavedBounds,
   nextVisible,
   placeBeside,
+  restoreWindow,
   toggleMaximize,
 } from './window-state.mjs';
 import { read, save, remove } from './storage.js';
@@ -43,6 +45,10 @@ const savedColor = read('wallpaper', defaultWallpaper);
 const wallpaper = ref(wallpaperColors.includes(savedColor) ? savedColor : defaultWallpaper);
 const wallpaperUrl = new URL('../assets/vaporwave-sunset.mp4', import.meta.url).href;
 const wallpaperPoster = new URL('../assets/vaporwave-sunset-poster.png', import.meta.url).href;
+
+// where every window was last time, by app id, so a refresh puts them back
+let savedLayout = loadLayout();
+let saveLayoutTimer;
 
 let z = 1;
 let resizeObserver;
@@ -95,12 +101,17 @@ function open(id, updateUrl = true) {
   keyboardReturn = document.activeElement;
   let win = get(id);
   if (!win) {
-    // if something is already on screen, open off to the side of it instead of on top
+    // put it back where it was last time, or else open off to the side of
+    // whatever is already on screen instead of right on top of it
+    const saved = savedLayout[id];
     const anchor = active.value && get(active.value);
     const beside = anchor && visible(anchor) && !anchor.maximized && !compact.value;
-    win = reactive(beside
-      ? placeBeside(registry[id], anchor, windows.length, area)
-      : createWindow(registry[id], windows.length, area));
+
+    if (isSavedBounds(saved)) win = restoreWindow(registry[id], saved, windows.length, area);
+    else if (beside) win = placeBeside(registry[id], anchor, windows.length, area);
+    else win = createWindow(registry[id], windows.length, area);
+
+    win = reactive(win);
     windows.push(win);
   }
 
@@ -153,6 +164,38 @@ function taskClick(id) {
   if (active.value === id && !get(id).minimized) minimize(id);
   else open(id);
 }
+
+// ---- remembering window positions ----
+
+function loadLayout() {
+  try {
+    const layout = JSON.parse(read('windows', '{}'));
+    return layout && typeof layout === 'object' ? layout : {};
+  } catch {
+    return {};
+  }
+}
+
+// small delay so dragging a window doesn't write to storage on every pixel
+function saveLayout() {
+  clearTimeout(saveLayoutTimer);
+  saveLayoutTimer = setTimeout(() => {
+    for (const w of windows) {
+      savedLayout[w.id] = { x: w.x, y: w.y, width: w.width, height: w.height, maximized: w.maximized };
+    }
+    save('windows', JSON.stringify(savedLayout));
+  }, 300);
+}
+
+// on phones every window is full screen, so there's nothing worth remembering.
+// closed windows keep their last saved spot for next time
+watch(
+  () => windows.map(w => [w.x, w.y, w.width, w.height, w.maximized]),
+  () => {
+    if (!compact.value) saveLayout();
+  },
+  { deep: true },
+);
 
 // ---- desktop icon dragging ----
 // icon positions only last for this page load, refreshing puts them back on the grid
@@ -277,6 +320,8 @@ function reset() {
   selected.value = null;
   wallpaper.value = defaultWallpaper;
   remove('wallpaper');
+  savedLayout = {};
+  remove('windows');
   startOpen.value = false;
   open('about');
   announcement.value = 'Desktop reset. Saved notes were kept.';
@@ -377,6 +422,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   clearInterval(timer);
+  clearTimeout(saveLayoutTimer);
   document.removeEventListener('pointerdown', outside);
   document.removeEventListener('keydown', escape);
   window.removeEventListener('hashchange', hashOpen);

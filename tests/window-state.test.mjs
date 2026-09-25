@@ -5,6 +5,8 @@ import {
   resizeBounds,
   createWindow,
   placeBeside,
+  restoreWindow,
+  isSavedBounds,
   toggleMaximize,
   nextVisible,
   bounds,
@@ -53,6 +55,30 @@ test('windows opened beside another one sit to its right and stay on screen', ()
   // on a tiny screen it still has to fit, even if that means overlapping more
   const small = { width: 800, height: 500 };
   assert.ok(inside(placeBeside(app, createWindow(app, 0, small), 1, small), small));
+});
+
+test('restored windows come back where they were, clamped to the current screen', () => {
+  const saved = { x: 200, y: 120, width: 700, height: 500, maximized: false };
+  const w = restoreWindow(app, saved, 0, area);
+  assert.deepEqual(bounds(w), { x: 200, y: 120, width: 700, height: 500 });
+
+  // saved on a big monitor, reopened on a small laptop
+  const small = { width: 800, height: 500 };
+  assert.ok(inside(restoreWindow(app, { ...saved, x: 1200, y: 700 }, 0, small), small));
+
+  // fixed size windows only get their position back
+  const fixed = restoreWindow({ ...app, fixedSize: true }, saved, 0, area);
+  assert.equal(fixed.width, app.width);
+  assert.equal(fixed.x, 200);
+
+  // maximized comes back maximized, and restoring goes to the saved bounds
+  const max = restoreWindow(app, { ...saved, maximized: true }, 0, area);
+  assert.equal(max.maximized, true);
+  assert.deepEqual(max.restoreBounds, bounds(w));
+
+  assert.equal(isSavedBounds(saved), true);
+  assert.equal(isSavedBounds({ x: 'nope', y: 1, width: 1, height: 1 }), false);
+  assert.equal(isSavedBounds(null), false);
 });
 
 test('maximize and restore preserve bounds and re-clamp after screen resize', () => {

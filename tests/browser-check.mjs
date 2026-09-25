@@ -114,6 +114,23 @@ try {
   const reloaded = await blogIcon.boundingBox();
   assert.ok(Math.abs(reloaded.x - before.x) < 2 && Math.abs(reloaded.y - before.y) < 2, 'icon positions reset on load');
 
+  // ---- windows remember where they were ----
+
+  const about = page.locator('[data-window="about"]');
+  const start = await about.boundingBox();
+  await page.mouse.move(start.x + 200, start.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 100, start.y - 28, { steps: 6 });
+  await page.mouse.up();
+  const moved = await about.boundingBox();
+  assert.ok(Math.abs(moved.x - (start.x - 100)) < 2 && Math.abs(moved.y - (start.y - 40)) < 2, 'about window dragged');
+  await page.waitForTimeout(500); // positions save after a short delay
+  await page.reload();
+  await expect.poll(async () => {
+    const b = await about.boundingBox();
+    return [Math.round(b.x), Math.round(b.y)];
+  }).toEqual([Math.round(moved.x), Math.round(moved.y)]);
+
   // ---- settings and reduced motion ----
 
   await open('settings');
