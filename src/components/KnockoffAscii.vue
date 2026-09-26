@@ -100,6 +100,26 @@ function draw() {
   const gone = removed();
   while (trail.length && now - trail[0].time >= 1000) trail.shift();
 
+  // with tiny letters (high detail) there are thousands under the cursor, so instead of
+  // lighting them one by one, show the bright copy through circles. glow has the same
+  // holes knocked out as backing, so empty cells stay empty
+  const cellsUnderCursor = (hitRadius() * 2 / cellWidth) * (hitRadius() * 2 / cellHeight);
+  if (cellsUnderCursor > 2000) {
+    ctx.save();
+    ctx.beginPath();
+    for (const point of trail) {
+      const radius = hitRadius() * Math.max(0, 1 - (now - point.time) / 1000) ** 6;
+      if (radius < 0.5) continue;
+      ctx.moveTo(point.x + radius, point.y);
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+    }
+    ctx.clip();
+    ctx.drawImage(glow, 0, 0, width, height);
+    ctx.restore();
+    drawParticles(ctx);
+    return;
+  }
+
   const lit = new Set();
   for (const point of trail) {
     const radius = hitRadius() * Math.max(0, 1 - (now - point.time) / 1000) ** 6;
@@ -116,7 +136,10 @@ function draw() {
     }
   }
   for (const id of lit) stamp(ctx, glow, cells[id], cells[id].x, cells[id].y);
+  drawParticles(ctx);
+}
 
+function drawParticles(ctx) {
   for (const particle of particles) {
     const cosine = Math.cos(particle.angle);
     const sine = Math.sin(particle.angle);
@@ -164,15 +187,22 @@ function animate(now) {
   frame = particles.length || trail.length ? requestAnimationFrame(animate) : 0;
 }
 
-function fallingLetters(broken, x, y) {
-  if (props.reducedMotion || !broken.length) return;
+// each hit makes at most this many flying sprites, with this many in the air at once.
+// at max detail one big hit can break thousands of letters, and a new canvas per
+// letter (or per 4x3 block) froze the page for half a second at a time
+const spritesPerHit = 60;
+const maxSprites = 300;
 
-  // small hits get one sprite per letter. big hits (or lots already flying)
-  // group neighbouring letters into one sprite so we're not drawing thousands of things
-  let groupCols = 1;
-  if (particles.length > 400) groupCols = 4;
-  else if (broken.length > 120 || particles.length > 120) groupCols = 3;
-  const groupRows = groupCols === 4 ? 3 : groupCols === 3 ? 2 : 1;
+function fallingLetters(broken, x, y) {
+  const budget = Math.min(spritesPerHit, maxSprites - particles.length);
+  if (props.reducedMotion || !broken.length || budget <= 0) return;
+
+  // group neighbouring letters into roughly square chunks, never smaller than about
+  // 8px so tiny letters still fly as something visible, and big enough that this hit fits the budget
+  const rowsFor = groupCols => Math.max(1, Math.round(groupCols * cellWidth / cellHeight));
+  let groupCols = Math.max(1, Math.ceil(8 / cellWidth));
+  while (broken.length / (groupCols * rowsFor(groupCols)) > budget) groupCols++;
+  const groupRows = rowsFor(groupCols);
 
   const groups = new Map();
   for (const cell of broken) {
@@ -183,7 +213,8 @@ function fallingLetters(broken, x, y) {
     groups.get(key).cells.push(cell);
   }
 
-  for (const group of groups.values()) {
+  // chunks at the edge of the hit are partly empty, so the count can run a little over
+  for (const group of [...groups.values()].slice(0, budget)) {
     const left = group.col * cellWidth;
     const top = group.row * cellHeight;
     const sprite = document.createElement('canvas');
@@ -218,6 +249,7 @@ function knock(x, y, repaint = true) {
   const coreRadius = Math.max(Math.hypot(cellWidth, cellHeight), radius * 0.82);
   const phase = Math.random() * Math.PI * 2;
   const ctx = backing.getContext('2d');
+  const bright = glow.getContext('2d');
   const broken = [];
 
   const reach = Math.max(coreRadius, radius * 1.165);
@@ -231,15 +263,18 @@ function knock(x, y, repaint = true) {
       const cell = cells[row * cols + col];
       if (gone.has(cell.id)) continue;
 
-      // solid in the middle, with a wobbly random edge so it doesn't look like a perfect circle
+      // solid in the middle, with a wobbly random edge so it doesn't look like a perfect circle.
+      // only letters outside the solid core need the (slower) wobble maths
       const distance = Math.hypot(cell.x - x, cell.y - y);
-      const angle = Math.atan2(cell.y - y, cell.x - x);
-      const edge = radius * (1 + 0.11 * Math.sin(angle * 3 + phase) + 0.055 * Math.cos(angle * 7 - phase));
-      const edgeChance = Math.max(0, (edge - distance) / (edge - coreRadius));
-      if (distance > coreRadius && Math.random() >= edgeChance) continue;
+      if (distance > coreRadius) {
+        const angle = Math.atan2(cell.y - y, cell.x - x);
+        const edge = radius * (1 + 0.11 * Math.sin(angle * 3 + phase) + 0.055 * Math.cos(angle * 7 - phase));
+        if (Math.random() >= (edge - distance) / (edge - coreRadius)) continue;
+      }
 
       gone.add(cell.id);
       ctx.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
+      bright.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
       broken.push(cell);
     }
   }
@@ -248,7 +283,10 @@ function knock(x, y, repaint = true) {
   if (broken.length) play('crumble', broken.length);
   remaining.value -= broken.length;
   // wipe the dark background too once every letter is gone
-  if (!remaining.value) ctx.clearRect(0, 0, width, height);
+  if (!remaining.value) {
+    ctx.clearRect(0, 0, width, height);
+    bright.clearRect(0, 0, width, height);
+  }
 
   if (repaint) {
     draw();
@@ -415,6 +453,7 @@ function layout() {
   for (const id of removed()) {
     const cell = cells[id];
     base.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
+    bright.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
   }
 
 
