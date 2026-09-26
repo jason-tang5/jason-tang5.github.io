@@ -1,23 +1,51 @@
 <script setup>
-// the contact window. it's just breakout, and beating it shows my email.
+// the contact window. it's just breakout, and beating it shows my email and
+// unlocks the mail window so you can actually send me something.
+// a win is remembered in the browser, so the board stays beaten (with a button
+// straight to mail) until someone presses restart.
 // the game itself is plain js in breakout.js, this only mounts it.
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { contact } from '../content.mjs';
 import { createBreakout } from '../breakout.js';
+import { beatContact, contactBeaten, forgetContact } from '../unlocks.js';
 
 const props = defineProps({ active: Boolean });
+const emit = defineEmits(['unlock']);
 const root = ref(null);
+const beaten = ref(contactBeaten());
 let game;
+let mailTimer;
+
+function openMail() {
+  emit('unlock', 'mail');
+}
 
 onMounted(() => {
-  game = createBreakout(root.value, { email: contact.email });
+  game = createBreakout(root.value, {
+    email: contact.email,
+    won: beaten.value,
+    onWin: () => {
+      beatContact();
+      beaten.value = true;
+      // give the revealed email a moment on screen before the mail window pops up
+      mailTimer = setTimeout(openMail, 1200);
+    },
+    onRestart: () => {
+      clearTimeout(mailTimer);
+      forgetContact();
+      beaten.value = false;
+    },
+  });
   game.setActive(props.active);
 });
 
 // pause when the window isn't in front
 watch(() => props.active, active => game?.setActive(active));
 
-onBeforeUnmount(() => game?.destroy());
+onBeforeUnmount(() => {
+  clearTimeout(mailTimer);
+  game?.destroy();
+});
 </script>
 
 <template>
@@ -26,6 +54,7 @@ onBeforeUnmount(() => game?.destroy());
     <div class="toolbar">
       <button id="breakout-start" class="raised">Play</button>
       <button id="breakout-restart" class="raised">Restart</button>
+      <button v-if="beaten" class="raised go-to-mail" @click="openMail">Go to Mail</button>
     </div>
 
     <div class="content-scroll game-content">

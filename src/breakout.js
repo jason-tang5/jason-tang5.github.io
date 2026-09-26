@@ -2,8 +2,10 @@
 // shows up as you clear them. everything is drawn on a 300x300 canvas and
 // scaled up with css, so all the numbers below are in those canvas units.
 //
-// returns { setActive, destroy } so the vue component can pause it when the
-// window loses focus and clean everything up when it closes.
+// start with won: true to show the board already cleared. onWin runs when the
+// board is cleared, onRestart when the restart button is pressed. returns
+// { setActive, destroy } so the vue component can pause it when the window
+// loses focus and clean up when it closes.
 
 import { play } from './sound.js';
 
@@ -49,7 +51,7 @@ const brickFontSize = 9;
 const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
 
-export function createBreakout(root, { email }) {
+export function createBreakout(root, { email, won = false, onWin, onRestart }) {
   // one abort controller so destroy() can drop every listener at once
   const events = new AbortController();
   const on = (target, type, listener) => target?.addEventListener(type, listener, { signal: events.signal });
@@ -312,7 +314,8 @@ export function createBreakout(root, { email }) {
 
   }
 
-  function finish() {
+  // celebrate is false when the board opens already beaten from an earlier visit
+  function finish(celebrate = true) {
     running = false;
     complete = true;
     startButton.textContent = 'Play again';
@@ -323,6 +326,7 @@ export function createBreakout(root, { email }) {
     emailBox.removeAttribute('aria-hidden');
     link.tabIndex = 0;
     status.textContent = 'Email revealed. Say hello!';
+    if (celebrate) onWin?.();
     draw();
   }
 
@@ -495,11 +499,13 @@ export function createBreakout(root, { email }) {
     started = false;
     message = 'paused';
     reset();
+    onRestart?.();
   });
 
   // measure with whatever font is ready now, then again once the pixel font has loaded
   measureEmail();
   reset();
+  if (won) finish(false);
   document.fonts?.load(`bold 100px ${emailFont}`).then(() => {
     if (events.signal.aborted) return;
     measureEmail();

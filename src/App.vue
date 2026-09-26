@@ -20,6 +20,7 @@ import {
 } from './window-state.mjs';
 import { read, save, remove } from './storage.js';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from './sound.js';
+import { isUnlocked } from './unlocks.js';
 
 const defaultWallpaper = '#008080';
 const wallpaperColors = ['#008080', '#18334f', '#576575', '#3c6255', '#62465e'];
@@ -87,8 +88,21 @@ async function focusRegion(id) {
   document.querySelector(`[data-window="${id}"]`)?.focus({ preventScroll: true });
 }
 
-// keep the url in sync so links like #app=projects open the right window
+// locked apps (just mail) stay closed until they're earned, see unlocks.js
+const canOpen = id => Boolean(registry[id]) && (!registry[id].locked || isUnlocked(id));
+
+// contact asks for this after a win, or from its go to mail button
+function unlock(id) {
+  open(id);
+}
+
+// keep the url in sync so links like #app=projects open the right window.
+// locked apps never go in the url, so there's no link that skips the game
 function route(id) {
+  if (registry[id]?.locked) {
+    history.replaceState(null, '', location.pathname + location.search);
+    return;
+  }
   if (location.hash !== `#app=${id}`) history.replaceState(null, '', `#app=${id}`);
 }
 
@@ -98,7 +112,7 @@ function hashApp() {
 
 function open(id, updateUrl = true) {
   id = canonicalApp(id);
-  if (!registry[id]) return;
+  if (!canOpen(id)) return;
 
   keyboardReturn = document.activeElement;
   let win = get(id);
@@ -459,7 +473,7 @@ function measure() {
 
 function hashOpen() {
   const id = hashApp();
-  if (registry[id]) open(id, false);
+  if (canOpen(id)) open(id, false);
 }
 
 function showDesktop() {
@@ -476,7 +490,7 @@ onMounted(() => {
 
   // open whatever the url asks for, or the about window on a fresh visit
   const id = hashApp();
-  open(registry[id] ? id : 'about', false);
+  open(canOpen(id) ? id : 'about', false);
 
   timer = setInterval(() => { clock.value = new Date(); }, 60000);
   document.addEventListener('pointerdown', outside);
@@ -563,6 +577,7 @@ onBeforeUnmount(() => {
           :wallpaper="wallpaper"
           :visible="visible(win)"
           @open="open"
+          @unlock="unlock"
           @wallpaper="setWallpaper"
         />
       </DesktopWindow>

@@ -490,6 +490,50 @@ try {
   await noisy.locator('.volume-popup').screenshot({ path: 'tmp/qa/volume-popup.png' });
   await noisy.close();
 
+  // ---- mail window ----
+
+  // mail is locked until you beat breakout: no icon, no start menu entry,
+  // and a #app=mail link just opens the normal desktop
+  const mailPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await mailPage.goto(base + '#app=mail');
+  await expect(mailPage.locator('[data-window="about"]')).toBeVisible();
+  await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0);
+  await expect(mailPage.locator('.desktop-shortcut', { hasText: 'Mail' })).toHaveCount(0);
+  await mailPage.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(mailPage.getByRole('menuitem', { name: 'Mail', exact: true })).toHaveCount(0);
+  await mailPage.keyboard.press('Escape');
+  await mailPage.evaluate(() => { location.hash = 'app=mail'; });
+  await mailPage.waitForTimeout(300);
+  await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0);
+
+  // once breakout is beaten it stays beaten, with a button straight to mail.
+  // (actually clearing 10 bricks takes too long here, so fake the saved win)
+  await mailPage.evaluate(() => localStorage.setItem('jt-desktop:contact-beaten', 'yes'));
+  await mailPage.goto(base + '#app=contact');
+  const beaten = mailPage.locator('[data-window="contact"]');
+  const goToMail = beaten.getByRole('button', { name: 'Go to Mail', exact: true });
+  await expect(goToMail).toBeVisible();
+  await expect(beaten.locator('.breakout-board')).toHaveClass(/is-revealed/);
+  await expect(beaten.locator('#breakout-start')).toHaveText('Play again');
+  await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0); // no pop-up on a plain reopen
+
+  await goToMail.click();
+  await expect(mailPage.locator('[data-window="mail"]')).toBeVisible();
+  assert.ok(!mailPage.url().includes('app=mail'), 'mail never goes in the url');
+  await mailPage.getByRole('button', { name: 'Close Mail', exact: true }).click();
+
+  // play again starts a new round but you keep the win. only restart takes it away
+  await beaten.locator('#breakout-start').click();
+  await expect(goToMail).toBeVisible();
+  await beaten.locator('#breakout-restart').click();
+  await expect(goToMail).toHaveCount(0);
+  await mailPage.evaluate(() => { location.hash = 'app=mail'; });
+  await mailPage.waitForTimeout(300);
+  await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0);
+  await mailPage.goto(base + '#app=contact');
+  await expect(mailPage.locator('[data-window="contact"] #breakout-start')).toHaveText('Play');
+  await mailPage.close();
+
   // ---- no webgl ----
 
   // pretend webgl2 doesn't exist, the wallpaper should fall back to the plain video
@@ -532,6 +576,42 @@ try {
 
   await blogPage.getByRole('button', { name: 'Back to Blog' }).click();
   await expect(blogPage.getByRole('button', { name: 'Renderer fixture' })).toBeVisible();
+
+  // ---- sending mail ----
+
+  // the real endpoint is the cloudflare worker, so fake it here and check what gets sent
+  const mailFixture = await browser.newPage();
+  const sent = [];
+  let reply = { status: 200, body: { ok: true } };
+  await mailFixture.route('**/api/contact', route => {
+    sent.push(route.request().postDataJSON());
+    return route.fulfill({ status: reply.status, contentType: 'application/json', body: JSON.stringify(reply.body) });
+  });
+  await mailFixture.goto(devBase);
+  await mailFixture.evaluate(async () => {
+    const { mountMail } = await import('/tests/mail-fixture.js');
+    mountMail();
+  });
+
+  const mail = mailFixture.locator('#mail-fixture');
+  await expect(mail.getByRole('textbox', { name: 'To', exact: true })).toHaveValue('jasontcanada@gmail.com');
+  await mail.getByRole('textbox', { name: 'Name', exact: true }).fill('Ada');
+  await mail.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@example.com');
+  await mail.getByRole('textbox', { name: 'Message', exact: true }).fill('hello!');
+  await mail.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(mail.locator('.status-bar')).toHaveText('Sent! I’ll get back to you soon.');
+  await expect(mail.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue('');
+  assert.deepEqual(
+    { ...sent[0], elapsed: typeof sent[0].elapsed },
+    { name: 'Ada', email: 'ada@example.com', message: 'hello!', website: '', elapsed: 'number' },
+  );
+
+  // errors from the worker show up with the email as a fallback
+  reply = { status: 400, body: { error: 'The message is empty.' } };
+  await mail.getByRole('textbox', { name: 'Message', exact: true }).fill('again');
+  await mail.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(mail.locator('.status-bar')).toHaveText('The message is empty. You can also email jasontcanada@gmail.com.');
+  await mailFixture.close();
 
   console.log('browser checks passed');
 } finally {

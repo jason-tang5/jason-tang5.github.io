@@ -23,7 +23,9 @@ it serves the build under `/portfolio/` to make sure nothing breaks on a subpath
 
 ## deploying
 
-`npm run deploy` builds and runs `wrangler deploy`. the config is in `wrangler.jsonc`. log in once first with `npx wrangler login`.
+`npm run deploy` builds and runs `wrangler deploy`. the config is in `wrangler.jsonc`. log in once first with `npx wrangler login`. pushing to `main` also deploys automatically.
+
+the site is static except `/api/contact`, a small worker in `worker/` that emails me whatever gets sent from the mail window (it opens after you beat breakout). it uses cloudflare email routing, which has to be turned on for jasontang.dev with my gmail verified as a destination. `npx wrangler dev` runs it locally and saves sent emails as `.eml` files in `.wrangler/tmp/email/` instead of sending them.
 
 ## where things live
 

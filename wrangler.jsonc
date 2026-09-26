@@ -1,19 +1,35 @@
 // cloudflare workers config for jasontang.dev.
-// right now it only serves the built site in dist/ as static files.
+// the built site in dist/ is served as static files. only /api/* runs the
+// worker in worker/index.js, which sends the mail window's messages
 {
-  "name": "jasontang-dev",
-  "compatibility_date": "2026-09-25",
-  "observability": {
-    "logs": {
-      "enabled": true,
-      "invocation_logs": true,
-      "persist": true
-    }
-  },
-  "assets": {
-    "directory": "./dist"
-  },
-  "routes": [
-    { "pattern": "jasontang.dev", "custom_domain": true }
-  ]
+	"name": "jasontang-dev",
+	"main": "worker/index.js",
+	"compatibility_date": "2026-09-25",
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
+	},
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+		"run_worker_first": [
+			"/api/*"
+		]
+	},
+	// needs email routing turned on for jasontang.dev, with this address verified
+	"send_email": [
+		{
+			"name": "SEND_EMAIL",
+			"destination_address": "jasontcanada@gmail.com"
+		}
+	],
+	"routes": [
+		{
+			"pattern": "jasontang.dev",
+			"custom_domain": true
+		}
+	]
 }

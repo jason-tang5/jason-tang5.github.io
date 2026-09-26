@@ -1853,8 +1853,76 @@ fieldset {
   outline-offset: -3px;
 }
 
+/* shows up once the game is beaten, pushed to the right end of the toolbar */
+.contact-game .go-to-mail {
+  margin-left: auto;
+}
+
 .contact-game .status-bar {
   font-family: "Courier New", monospace;
+}
+
+
+/* ---- mail (opens after beating breakout) ---- */
+
+.mail-app {
+  padding: 4px;
+  gap: 4px;
+}
+
+/* button-looking labels on the left, fields stretching to the right */
+.mail-fields {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 5px 8px;
+  align-items: center;
+}
+
+.mail-label.raised {
+  padding: 3px 0;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+label.mail-label {
+  cursor: default;
+}
+
+.mail-fields input {
+  min-width: 0;
+  height: 26px;
+  padding: 3px 6px;
+  background: #fff;
+  border-radius: 0;
+}
+
+.mail-fields input[readonly] {
+  background: #d8d8d8;
+  color: #6b6b6b;
+}
+
+.mail-message {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  padding: 6px;
+  background: #fff;
+  border-radius: 0;
+  font-size: 13px;
+}
+
+.mail-message::placeholder {
+  font-style: italic;
+  color: #8a8a8a;
+}
+
+.mail-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
 }
 
 

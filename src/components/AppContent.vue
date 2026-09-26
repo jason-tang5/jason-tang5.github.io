@@ -6,6 +6,7 @@ import { profile, projects, roles } from '../content.mjs';
 import AsciiImage from './AsciiImage.vue';
 import Blog from './Blog.vue';
 import Music from './Music.vue';
+import Mail from './Mail.vue';
 import Pictures from './Pictures.vue';
 import RetroIcon from './RetroIcon.vue';
 import TechList from './TechList.vue';
@@ -22,7 +23,7 @@ defineProps({
   wallpaper: String,
   visible: Boolean,
 });
-const emit = defineEmits(['open', 'wallpaper']);
+const emit = defineEmits(['open', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
 const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
@@ -203,7 +204,8 @@ function clearSaved() {
     </object>
   </div>
 
-  <Game v-else-if="win.type === 'contact'" :active="active"/>
+  <Game v-else-if="win.type === 'contact'" :active="active" @unlock="id => emit('unlock', id)"/>
+  <Mail v-else-if="win.type === 'mail'"/>
   <Music v-else-if="win.type === 'music'" :win="win"/>
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>
   <Blog v-else-if="win.type === 'blog'"/>

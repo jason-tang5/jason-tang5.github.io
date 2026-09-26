@@ -26,12 +26,15 @@ export const apps = [
   app('games', 'Games', 'folder', 440, 350, 300, 270),
   app('snake', 'Snake', 'snake', 520, 590, 340, 420),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
+  // locked until you beat the breakout game in contact, see unlock() in App.vue
+  app('mail', 'Mail', 'mail', 500, 450, 360, 330),
 ];
 
 for (const a of apps) {
-  a.desktop = !['settings', 'notepad', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
-  a.menu = !['settings', 'minesweeper', 'snake'].includes(a.id); // shows up in the start menu
+  a.desktop = !['settings', 'notepad', 'mail', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
+  a.menu = !['settings', 'mail', 'minesweeper', 'snake'].includes(a.id); // shows up in the start menu
   a.fixedSize = ['minesweeper', 'music'].includes(a.id);
+  a.locked = a.id === 'mail'; // can't be opened until something unlocks it
 }
 
 // old links used #app=breakout, the game lives in contact now

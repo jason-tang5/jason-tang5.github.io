@@ -1,0 +1,50 @@
+// cloudflare worker for jasontang.dev. everything is the static site in dist/,
+// except /api/contact, which emails the mail window's messages to me through
+// cloudflare email routing (the SEND_EMAIL binding in wrangler.jsonc)
+import { EmailMessage } from 'cloudflare:email';
+import { buildEmail, validate } from './contact.mjs';
+
+const to = 'jasontcanada@gmail.com';
+const from = 'contact@jasontang.dev';
+
+const json = (data, status = 200) => new Response(JSON.stringify(data), {
+  status,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+async function contact(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+
+  // only accept messages sent from the site itself
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== new URL(request.url).origin) return json({ error: 'Forbidden.' }, 403);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'Invalid request.' }, 400);
+  }
+
+  const result = validate(body);
+  if (!result.ok) return json({ error: result.error }, 400);
+  if (result.spam) return json({ ok: true });
+
+  try {
+    const raw = buildEmail(result.data, { from, to, id: crypto.randomUUID() });
+    await env.SEND_EMAIL.send(new EmailMessage(from, to, raw));
+  } catch (error) {
+    console.error('sending failed', error);
+    return json({ error: 'Couldn’t send right now. Try emailing me directly.' }, 502);
+  }
+
+  return json({ ok: true });
+}
+
+export default {
+  async fetch(request, env) {
+    const { pathname } = new URL(request.url);
+    if (pathname === '/api/contact') return contact(request, env);
+    return env.ASSETS.fetch(request);
+  },
+};

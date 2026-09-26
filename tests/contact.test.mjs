@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { buildEmail, validate } from '../worker/contact.mjs';
+
+const good = { name: 'Ada', email: 'ada@example.com', message: 'hi there', website: '', elapsed: 8000 };
+
+test('accepts a normal message', () => {
+  assert.deepEqual(validate(good), { ok: true, data: { name: 'Ada', email: 'ada@example.com', message: 'hi there' } });
+});
+
+test('rejects missing or bad fields with a readable error', () => {
+  assert.equal(validate({ ...good, name: '  ' }).ok, false);
+  assert.equal(validate({ ...good, email: 'not an email' }).ok, false);
+  assert.equal(validate({ ...good, message: '' }).ok, false);
+  assert.equal(validate({ ...good, message: 'x'.repeat(5001) }).ok, false);
+  assert.equal(validate(null).ok, false);
+});
+
+test('bots get a quiet fake success', () => {
+  assert.deepEqual(validate({ ...good, website: 'http://spam.example' }), { ok: true, spam: true });
+  assert.deepEqual(validate({ ...good, elapsed: 400 }), { ok: true, spam: true });
+  assert.deepEqual(validate({ ...good, elapsed: undefined }), { ok: true, spam: true });
+});
+
+test('line breaks in the name or email cannot add email headers', () => {
+  const result = validate({ ...good, name: 'Ada\r\nBcc: victim@example.com' });
+  assert.equal(result.ok, true);
+  assert.ok(!/[\r\n]/.test(result.data.name));
+
+  const raw = buildEmail(result.data, { from: 'contact@jasontang.dev', to: 'me@example.com', id: 'x' });
+  const headers = raw.split('\r\n\r\n')[0].split('\r\n');
+  assert.ok(!headers.some(h => h.startsWith('Bcc:')));
+
+  assert.equal(validate({ ...good, email: 'ada@example.com\r\nBcc: victim@example.com' }).ok, false);
+});
+
+test('builds a plain text email with the visitor as reply-to', () => {
+  const raw = buildEmail(
+    { name: 'Zoë', email: 'zoe@example.com', message: 'héllo\nsecond line' },
+    { from: 'contact@jasontang.dev', to: 'me@example.com', id: 'abc', now: new Date('2026-09-25T12:00:00Z') },
+  );
+  const [head, body] = raw.split('\r\n\r\n');
+
+  assert.match(head, /^From: =\?UTF-8\?B\?[^?]+\?= <contact@jasontang\.dev>$/m);
+  assert.match(head, /^To: <me@example\.com>$/m);
+  assert.match(head, /^Reply-To: =\?UTF-8\?B\?[^?]+\?= <zoe@example\.com>$/m);
+  assert.match(head, /^Message-ID: <abc@jasontang\.dev>$/m);
+
+  const text = new TextDecoder().decode(Uint8Array.from(atob(body.replace(/\s/g, '')), c => c.charCodeAt(0)));
+  assert.match(text, /^héllo\nsecond line\n\n— Zoë <zoe@example\.com>/);
+});
