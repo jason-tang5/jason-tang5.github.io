@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "content": "node scripts/legacy-routes.mjs",
-    "build": "npm run content && vite build && node scripts/copy-static.mjs",
+    "build": "vite build && node scripts/copy-static.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "deploy": "npm run build && npx wrangler deploy",
     "test": "node --test tests/*.test.mjs"

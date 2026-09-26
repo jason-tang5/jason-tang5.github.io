@@ -2,7 +2,7 @@
 // this is an allowlist on purpose so random files in the repo never get deployed.
 import { cp } from 'node:fs/promises';
 
-const folders = ['assets', 'about', 'experiences', 'projects', 'contact', 'blog', 'licenses', 'games'];
+const folders = ['assets', 'licenses'];
 
 for (const folder of folders) {
   await cp(folder, `dist/${folder}`, { recursive: true });

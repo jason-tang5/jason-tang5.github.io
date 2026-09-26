@@ -1,0 +1,38 @@
+<!doctype html>
+<!--
+  the old address, jason-tang5.github.io, only redirects now. this page is published
+  there as both index.html and 404.html (by .github/workflows/pages-redirect.yml), so
+  every old link lands here and gets sent to the matching window on jasontang.dev:
+  /about/ -> #app=about, /projects/ -> #app=projects and so on. links that already
+  have #app= keep it, and anything else goes to the desktop
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jason Tang has moved to jasontang.dev</title>
+  <link rel="canonical" href="https://jasontang.dev/">
+  <meta name="robots" content="noindex">
+  <script>
+    (function () {
+      var windows = {
+        about: 'about',
+        experiences: 'experience',
+        experience: 'experience',
+        projects: 'projects',
+        contact: 'contact',
+        blog: 'blog',
+        games: 'contact',
+      };
+      var section = location.pathname.split('/').filter(Boolean)[0] || '';
+      var app = windows[section.toLowerCase()];
+      var hash = /^#app=[\w-]+$/.test(location.hash) ? location.hash : app ? '#app=' + app : '';
+      location.replace('https://jasontang.dev/' + hash);
+    })();
+  </script>
+  <noscript><meta http-equiv="refresh" content="0;url=https://jasontang.dev/"></noscript>
+</head>
+<body>
+  <p>This site has moved to <a href="https://jasontang.dev/">jasontang.dev</a>.</p>
+</body>
+</html>

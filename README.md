@@ -53,7 +53,7 @@ the editor format: blank lines split paragraphs, `## ` starts a heading, `![alt]
 - `src/blog.mjs`: blog posts kept in the repo (empty for now). the supported block types are listed at the top of the file
 - `worker/blog.mjs` + `src/blog-markup.mjs`: posts written from the site itself (see below)
 
-the old site had pages like `/about/` and `/projects/`. `npm run content` (part of the build) regenerates small redirect pages there so old links open the right window.
+the old address, jason-tang5.github.io, is now just a redirect: `github-pages/index.html` is published there by `.github/workflows/pages-redirect.yml` and sends old links like `/about/` to the matching window on jasontang.dev.
 
 ## credits
 

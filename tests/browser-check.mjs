@@ -403,10 +403,6 @@ try {
   await page.getByRole('link', { name: 'Download', exact: true }).click();
   assert.equal((await download).suggestedFilename(), 'Jason_Tang_Resume.pdf');
 
-  for (const path of ['blog/', 'contact/', 'games/breakout/']) {
-    assert.equal((await page.request.get(base + path)).status(), 200);
-  }
-
   // ---- phone size and keyboard ----
 
   await page.setViewportSize({ width: 390, height: 844 });
