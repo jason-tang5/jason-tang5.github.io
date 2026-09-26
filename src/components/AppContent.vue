@@ -40,7 +40,7 @@ const colors = [
 ];
 
 const note = ref(read('note'));
-const noteStatus = ref('Notes stay in this browser. Save is optional.');
+const noteStatus = ref('');
 
 function setPortraitAscii(value) {
   portraitHint.value = false;
