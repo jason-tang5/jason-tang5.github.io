@@ -61,3 +61,10 @@ the old site had pages like `/about/` and `/projects/`. `npm run content` (part 
 - some win98 control styling borrowed from [98.css](https://github.com/jdan/98.css) (mit, `licenses/98css-MIT.txt`)
 - windows 95/98 cursors by darix555, public domain (`licenses/win98-cursors-public-domain.txt`)
 - the wallpaper is a vaporwave sunset gif from tenor, rendered as ascii with [react-video-ascii](https://www.npmjs.com/package/react-video-ascii). source link in `assets/wallpaper-source.txt`
+
+## inspiration
+
+- [sharyap.com](https://sharyap.com)
+- don chia's [win95](https://github.com/DonChiaQE/win95)
+- [lucasjin.ca](https://lucasjin.ca), thank you for video-to-ascii
+- [expensive.toys](https://expensive.toys/)
