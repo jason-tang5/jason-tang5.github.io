@@ -111,7 +111,7 @@ function hashApp() {
   return canonicalApp(new URLSearchParams(location.hash.slice(1)).get('app'));
 }
 
-function open(id, updateUrl = true) {
+function open(id, updateUrl = true, sound = true) {
   id = canonicalApp(id);
   if (!canOpen(id)) return;
 
@@ -131,7 +131,7 @@ function open(id, updateUrl = true) {
     else win = createWindow(registry[id], windows.length, area);
 
     win = reactive(win);
-    play('open');
+    if (sound) play('open');
     windows.push(win);
   }
 
@@ -206,6 +206,33 @@ function saveLayout() {
     }
     save('windows', JSON.stringify(savedLayout));
   }, 300);
+}
+
+// which windows are open, bottom to top, so a refresh brings them all back
+// (not just the one in the url)
+function loadOpen() {
+  try {
+    const list = JSON.parse(read('open-windows', '[]'));
+    return Array.isArray(list) ? list.filter(entry => typeof entry?.id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+watch(
+  () => windows.map(w => [w.id, w.minimized, w.z]),
+  () => save('open-windows', JSON.stringify(
+    [...windows].sort((a, b) => a.z - b.z).map(w => ({ id: w.id, minimized: w.minimized })),
+  )),
+  { deep: true },
+);
+
+function restoreOpen() {
+  for (const { id, minimized } of loadOpen()) {
+    if (!canOpen(id)) continue;
+    open(id, false, false);
+    if (minimized) get(id).minimized = true;
+  }
 }
 
 // on phones every window is full screen, so there's nothing worth remembering.
@@ -491,9 +518,19 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(measure);
   resizeObserver.observe(desktop.value);
 
-  // open whatever the url asks for, or the about window on a fresh visit
+  // bring back the windows from last time, then put whatever the url asks for on
+  // top. a fresh visit (or one where everything was closed) gets the about window
+  restoreOpen();
   const id = hashApp();
-  open(canOpen(id) ? id : 'about', false);
+  if (canOpen(id)) open(id, false, false);
+  else if (!windows.length) open('about', false, false);
+  else {
+    active.value = nextVisible(windows);
+    if (active.value) {
+      route(active.value);
+      focusRegion(active.value);
+    }
+  }
 
   timer = setInterval(() => { clock.value = new Date(); }, 60000);
   document.addEventListener('pointerdown', outside);
