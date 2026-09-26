@@ -23,12 +23,14 @@ export const apps = [
   app('notepad', 'Notepad', 'notepad', 520, 420),
   app('music', 'CD Player', 'music', 306, 160, 306, 160),
   app('blog', 'Blog', 'document', 720, 580),
+  app('games', 'Games', 'folder', 440, 350, 300, 270),
+  app('snake', 'Snake', 'snake', 520, 590, 340, 420),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
 ];
 
 for (const a of apps) {
-  a.desktop = !['settings', 'notepad'].includes(a.id); // gets a desktop icon
-  a.menu = a.id !== 'settings'; // shows up in the start menu
+  a.desktop = !['settings', 'notepad', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
+  a.menu = !['settings', 'minesweeper', 'snake'].includes(a.id); // shows up in the start menu
   a.fixedSize = ['minesweeper', 'music'].includes(a.id);
 }
 

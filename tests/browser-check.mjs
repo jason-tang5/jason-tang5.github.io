@@ -241,6 +241,31 @@ try {
   });
   assert.ok(emailWidth > boardWidth * 0.85 && emailWidth <= boardWidth, `email spans the board (${emailWidth} of ${boardWidth})`);
 
+  // ---- games folder and ASCII snake ----
+  await open('games');
+  const gamesFolder = page.locator('[data-window="games"]');
+  await expect(page.locator('.desktop-shortcut', { hasText: 'Games' })).toHaveCount(1);
+  await expect(page.locator('.desktop-shortcut', { hasText: 'Minesweeper' })).toHaveCount(0);
+  await gamesFolder.getByRole('button', { name: /Snake/ }).click();
+  const snake = page.locator('[data-window="snake"]');
+  await expect(snake.locator('pre')).toContainText('>');
+  const initialSnake = await snake.locator('pre').textContent();
+  await snake.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect.poll(() => snake.locator('pre').textContent()).not.toBe(initialSnake);
+  await snake.locator('.snake-board').press('Space');
+  await expect(snake.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+  const pausedSnake = await snake.locator('pre').textContent();
+  await page.waitForTimeout(220);
+  assert.equal(await snake.locator('pre').textContent(), pausedSnake);
+  await snake.getByRole('button', { name: 'Move down', exact: true }).click();
+  await expect(snake.locator('pre')).toContainText('v');
+  await open('games');
+  await expect(snake.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+  await gamesFolder.getByRole('button', { name: /Minesweeper/ }).click();
+  await expect(page.locator('[data-window="minesweeper"]')).toBeVisible();
+  await open('snake');
+  await snake.screenshot({ path: 'tmp/qa/snake.png' });
+
   // ---- minesweeper ----
 
   await open('minesweeper');

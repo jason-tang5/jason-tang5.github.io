@@ -13,6 +13,7 @@ import { read, save, remove } from '../storage.js';
 
 // the games only load when someone actually opens them
 const Game = defineAsyncComponent(() => import('./Game.vue'));
+const Snake = defineAsyncComponent(() => import('./Snake.vue'));
 const Minesweeper = defineAsyncComponent(() => import('./Minesweeper.vue'));
 
 defineProps({
@@ -206,6 +207,19 @@ function clearSaved() {
   <Music v-else-if="win.type === 'music'" :win="win"/>
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>
   <Blog v-else-if="win.type === 'blog'"/>
+  <div v-else-if="win.type === 'games'" class="app-layout">
+    <div class="address-bar"><span>Address</span><div class="inset">Portfolio:\Games</div></div>
+    <div class="content-scroll games-folder inset">
+      <button class="game-shortcut" @click="emit('open', 'minesweeper')">
+        <RetroIcon name="mine"/><span>Minesweeper</span>
+      </button>
+      <button class="game-shortcut" @click="emit('open', 'snake')">
+        <RetroIcon name="snake"/><span>Snake</span>
+      </button>
+    </div>
+    <footer class="status-bar"><span>2 games</span></footer>
+  </div>
+  <Snake v-else-if="win.type === 'snake'" :active="active"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>
 
   <!-- desktop settings -->

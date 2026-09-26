@@ -61,6 +61,13 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#fff" d="M19 19h3v3h-3z"/>
         <path fill="#5de5ee" d="M9 25h12v2H9z"/>
       </g>
+      <g v-else-if="name === 'snake'">
+        <path fill="#173825" d="M2 2h28v28H2z"/>
+        <path fill="none" stroke="#8cdf84" stroke-width="4" d="M8 23h14v-7H10V9h10"/>
+        <path fill="#b2f29d" d="M19 6h7v6h-7z"/>
+        <path stroke="none" fill="#111" d="M23 7h2v2h-2z"/>
+        <path fill="#ef9e68" d="M6 5h4v4H6z"/>
+      </g>
       <g v-else-if="name === 'mine'">
         <path fill="#808080" d="M3 3h27v27H3z"/>
         <path fill="#c0c0c0" d="M2 2h27v27H2z"/>
