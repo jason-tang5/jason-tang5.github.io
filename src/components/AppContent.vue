@@ -50,7 +50,7 @@ function setPortraitAscii(value) {
 
 function saveNote() {
   noteStatus.value = save('note', note.value)
-    ? 'Saved in this browser only.'
+    ? 'saved!'
     : 'Storage is unavailable. Your note is still here until this window closes.';
 }
 

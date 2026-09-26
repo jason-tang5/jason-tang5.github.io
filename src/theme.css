@@ -1450,8 +1450,9 @@ input[type="checkbox"]:focus-visible {
 
 /* ---- blog ---- */
 
+/* same warm off-white as the about window */
 .blog-reading {
-  background: #fff;
+  background: #f5f4ed;
   padding: clamp(16px, 4vw, 36px);
   font: 14px/1.6 Tahoma, 'MS Sans Serif', Arial, sans-serif;
 }
@@ -1624,8 +1625,9 @@ input[type="checkbox"]:focus-visible {
   flex-direction: column;
   align-items: start;
   padding: 22px 0 24px;
-  border-bottom: 1px solid #a0a0a0;
-  box-shadow: 0 1px 0 #e4e4e4;
+  /* the etched windows divider, a grey line over a white one, same as <hr> */
+  border-bottom: 1px solid #808080;
+  box-shadow: 0 1px 0 #fff;
 }
 
 .blog-list button {
