@@ -2087,8 +2087,88 @@ button.raised.tinted:hover:not(:disabled):not(:active) {
 /* ---- mail (opens after beating breakout) ---- */
 
 .mail-app {
+  position: relative;
   padding: 4px;
   gap: 4px;
+}
+
+/* how the last send went, a green tick or a red cross in the status bar */
+.mail-result span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mail-result.sent span {
+  color: #145a24;
+}
+
+.mail-result.failed span {
+  color: #8a1010;
+}
+
+/* the windows 95 error box over the mail window */
+.mail-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, .08);
+}
+
+.mail-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100% - 24px));
+  padding: 3px;
+}
+
+.mail-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 3px 0 6px;
+  background: #000080;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.mail-dialog-title span {
+  flex: 1;
+}
+
+.mail-dialog-title .control {
+  width: 18px;
+  height: 16px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.mail-dialog-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 14px 8px;
+  font-size: 12px;
+}
+
+.mail-dialog-body svg {
+  flex-shrink: 0;
+}
+
+.mail-dialog-body p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.mail-dialog-ok {
+  align-self: center;
+  min-width: 78px;
+  margin: 6px 0 12px;
+  padding: 4px 12px;
 }
 
 /* button-looking labels on the left, fields stretching to the right */
@@ -2965,9 +3045,15 @@ label.mail-label {
   height: 54px;
 }
 
-/* pressing drops the cap onto its rim, like a real arcade button */
-.snake-pad-button:active .snake-pad-cap {
+/* pressing drops the cap onto its rim, like a real arcade button. .held is set from
+   the pointer events so it shows reliably on phones, where :active often doesn't */
+.snake-pad-button:active .snake-pad-cap,
+.snake-pad-button.held .snake-pad-cap {
   transform: translateY(2px);
+}
+
+.snake-pad-button.held svg {
+  filter: brightness(.9);
 }
 
 .snake-pad-button:focus-visible {

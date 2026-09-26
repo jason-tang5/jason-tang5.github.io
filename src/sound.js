@@ -177,6 +177,18 @@ const sounds = {
     if (step % 4 === 0) blip(ac, { type: 'sine', from: pitch / 4, length: 0.45, volume: 0.03 });
   },
 
+  // snake eating: a quick upward chirp, the same pitch every time
+  eat: ac => {
+    blip(ac, { from: 520, to: 780, length: 0.07, volume: 0.05 });
+    blip(ac, { type: 'triangle', from: 1040, start: 0.05, length: 0.06, volume: 0.03 });
+  },
+
+  // the mail window's error box: a short, low two note "nope", like the windows chord
+  error: ac => {
+    blip(ac, { type: 'triangle', from: 440, length: 0.12, volume: 0.07 });
+    blip(ac, { type: 'triangle', from: 330, start: 0.1, length: 0.18, volume: 0.07 });
+  },
+
   // lower and a touch longer than a normal click
   close: ac => {
     blip(ac, { from: 900, to: 500, length: 0.05, volume: 0.06 });

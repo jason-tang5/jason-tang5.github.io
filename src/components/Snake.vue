@@ -2,6 +2,8 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { columns, rows, directions, newSnake, stepSnake } from '../snake.mjs';
 import { read, save } from '../storage.js';
+import { play } from '../sound.js';
+import { buzz } from '../haptics.js';
 
 const props = defineProps({ active: Boolean });
 const board = ref(null);
@@ -86,12 +88,21 @@ function pause() {
 }
 function tick() {
   if (!running.value) return;
+  const before = game.value.score;
   game.value = stepSnake(game.value, turns.shift() || game.value.direction);
+  if (game.value.score > before) {
+    play('eat');
+    buzz(25);
+  }
   if (game.value.score > best.value) {
     best.value = game.value.score;
     save('snake-best', String(best.value));
   }
-  if (game.value.over) pause();
+  if (game.value.over) {
+    play(game.value.won ? 'chime' : 'error');
+    buzz([60, 50, 90]);
+    pause();
+  }
   else timer = setTimeout(tick, Math.max(85, 170 - game.value.score * 4));
 }
 function reset() {
@@ -125,6 +136,30 @@ function key(event) {
   if (direction) turn(direction);
   else if (event.code === 'Space') toggle();
 }
+// the pad reacts the moment a finger lands instead of waiting for a click (which
+// only fires when the finger lifts), stays visibly pressed while held, and buzzes.
+// the site already plays the button press sound (App.vue). keyboard presses still
+// come through as clicks
+const held = ref(null);
+function padDown(event, direction) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  held.value = direction;
+  buzz(12);
+  turn(direction);
+}
+function padUp() {
+  held.value = null;
+}
+function padClick(event, direction) {
+  if (event.detail === 0) turn(direction);
+}
+// the start and select pills get the same feel
+function pill(action) {
+  buzz(12);
+  action();
+}
+
 // tapping the screen starts a game, resumes one, or starts over after a game over
 function screenTap() {
   if (!running.value) toggle();
@@ -171,9 +206,13 @@ onBeforeUnmount(() => {
           <button
             v-for="b in pad"
             :key="b.direction"
-            :class="['snake-pad-button', `snake-pad-${b.direction}`]"
+            :class="['snake-pad-button', `snake-pad-${b.direction}`, { held: held === b.direction }]"
             :aria-label="b.label"
-            @click="turn(b.direction)"
+            @pointerdown="padDown($event, b.direction)"
+            @pointerup="padUp"
+            @pointercancel="padUp"
+            @pointerleave="padUp"
+            @click="padClick($event, b.direction)"
           >
             <svg viewBox="0 0 16 18" shape-rendering="crispEdges" aria-hidden="true">
               <path :d="padShape.outline" fill="#111"/>
@@ -190,11 +229,11 @@ onBeforeUnmount(() => {
         <!-- select restarts, start plays and pauses, like the pills on a game boy -->
         <div class="snake-pills">
           <div class="snake-pill-wrap">
-            <button class="snake-pill" aria-label="Restart" @click="reset"/>
+            <button class="snake-pill" aria-label="Restart" @click="pill(reset)"/>
             <span aria-hidden="true">SELECT</span>
           </div>
           <div class="snake-pill-wrap">
-            <button class="snake-pill" :aria-label="startLabel" @click="toggle"/>
+            <button class="snake-pill" :aria-label="startLabel" @click="pill(toggle)"/>
             <span aria-hidden="true">START</span>
           </div>
         </div>
