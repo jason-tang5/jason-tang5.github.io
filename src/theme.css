@@ -1415,9 +1415,9 @@ input[type="checkbox"]:focus-visible {
 /* ---- blog ---- */
 
 .blog-reading {
-  background: #f9f8f3;
-  padding: clamp(20px, 5vw, 48px);
-  font: 16px/1.75 Georgia, serif;
+  background: #fff;
+  padding: clamp(16px, 4vw, 36px);
+  font: 14px/1.6 Tahoma, 'MS Sans Serif', Arial, sans-serif;
 }
 
 .blog-reading article {
@@ -1426,13 +1426,17 @@ input[type="checkbox"]:focus-visible {
 }
 
 .blog-reading h1 {
-  font: bold clamp(28px, 4vw, 40px)/1.15 Georgia, serif;
+  font: bold 22px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
   margin: 12px 0;
 }
 
 .blog-reading h2 {
+  font: bold 16px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
   margin-top: 1.7em;
-  line-height: 1.3;
 }
 
 .blog-reading time {
@@ -1516,7 +1520,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .blog-source {
-  font: 14px/1.6 Consolas, 'Courier New', monospace;
+  font: 13px/1.5 'Courier New', monospace;
 }
 
 
