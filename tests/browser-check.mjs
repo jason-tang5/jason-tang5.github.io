@@ -476,10 +476,10 @@ try {
   // the speaker opens the volume popup. the slider works with the keyboard
   await speaker.click();
   const volume = noisy.getByRole('slider', { name: 'Volume' });
-  await expect(volume).toHaveAttribute('aria-valuenow', '75');
+  await expect(volume).toHaveAttribute('aria-valuenow', '70');
   await volume.focus();
   await noisy.keyboard.press('PageDown');
-  await expect(volume).toHaveAttribute('aria-valuenow', '55');
+  await expect(volume).toHaveAttribute('aria-valuenow', '50');
 
   // muted: clicking around makes no sound, and it all stays after a refresh
   await noisy.getByRole('checkbox', { name: 'Mute' }).check();
@@ -491,7 +491,7 @@ try {
   await noisy.reload();
   await noisy.getByRole('button', { name: 'Volume (muted)', exact: true }).click();
   await expect(noisy.getByRole('checkbox', { name: 'Mute' })).toBeChecked();
-  await expect(noisy.getByRole('slider', { name: 'Volume' })).toHaveAttribute('aria-valuenow', '55');
+  await expect(noisy.getByRole('slider', { name: 'Volume' })).toHaveAttribute('aria-valuenow', '50');
   await noisy.locator('.volume-popup').screenshot({ path: 'tmp/qa/volume-popup.png' });
   await noisy.close();
 

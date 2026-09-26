@@ -10,8 +10,10 @@ let enabled = read('sound', 'on') !== 'off';
 const lastPlayed = {};
 
 // volume slider level, 0 to 100. 75 is how loud the sounds were designed to be,
-// so the top of the slider is a bit louder than that
-const defaultLevel = 75;
+// so the top of the slider is a bit louder than that. new visitors start at 70,
+// a little quieter than that (loudness follows the square of the slider)
+const designedLevel = 75;
+const defaultLevel = 70;
 let level = Number(read('volume', defaultLevel));
 if (!Number.isFinite(level) || level < 0 || level > 100) level = defaultLevel;
 
@@ -26,7 +28,7 @@ export const soundEnabled = () => enabled;
 export const soundLevel = () => level;
 
 // loudness follows the square of the slider, which feels more even to the ear than a straight line
-const gainFor = value => (value / defaultLevel) ** 2;
+const gainFor = value => (value / designedLevel) ** 2;
 
 // other parts of the site (the cd player) listen for this to pause when sound goes off
 function announce() {
