@@ -13,7 +13,7 @@
 import { parse, safeSrc } from '../src/blog-markup.mjs';
 import { verifyAccess } from './access.mjs';
 
-export const limits = { title: 200, source: 50000, src: 500, image: 10 * 1024 * 1024 };
+export const limits = { title: 200, subtitle: 200, source: 50000, src: 500, image: 10 * 1024 * 1024 };
 
 // no svg, it can carry scripts
 const imageTypes = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
@@ -37,6 +37,7 @@ export function validatePost(body, slug) {
   if (!body || typeof body !== 'object') return { ok: false, error: 'Invalid request.' };
 
   const title = clean(body.title);
+  const subtitle = clean(body.subtitle);
   const date = clean(body.date);
   const leadImage = clean(body.leadImage);
   const source = String(body.source ?? '').replace(/\r\n?/g, '\n').trim();
@@ -44,6 +45,7 @@ export function validatePost(body, slug) {
   if (!validSlug(slug)) return { ok: false, error: 'The slug can only use lowercase letters, numbers and dashes.' };
   if (!title) return { ok: false, error: 'Give the post a title.' };
   if (title.length > limits.title) return { ok: false, error: 'That title is a bit long.' };
+  if (subtitle.length > limits.subtitle) return { ok: false, error: 'Keep the subtitle to one line.' };
   if (!validDate(date)) return { ok: false, error: 'The date should look like 2026-09-26.' };
   if (leadImage && (!safeSrc(leadImage) || leadImage.length > limits.src)) return { ok: false, error: 'The lead image needs an https:// or site-relative address.' };
   if (!source) return { ok: false, error: 'The post is empty.' };
@@ -54,6 +56,7 @@ export function validatePost(body, slug) {
     data: {
       slug,
       title,
+      subtitle,
       date,
       leadImage,
       lead: leadImage ? { type: 'image', src: leadImage, alt: title } : null,

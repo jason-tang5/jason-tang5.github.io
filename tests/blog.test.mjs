@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, slugify } from '../src/blog-markup.mjs';
+import { parse, inline, slugify } from '../src/blog-markup.mjs';
 import { blog, validatePost } from '../worker/blog.mjs';
 import { verifyAccess } from '../worker/access.mjs';
 
@@ -20,7 +20,7 @@ test('parses paragraphs, headings, images and code', () => {
 
   assert.deepEqual(blocks, [
     { type: 'paragraph', text: 'First line same paragraph.' },
-    { type: 'heading', text: 'A heading' },
+    { type: 'heading', level: 2, text: 'A heading' },
     { type: 'image', src: '/assets/photos/dog-12.webp', alt: 'A dog', caption: 'good dog' },
     { type: 'code', language: 'js', code: 'const x = "<script>";\n' },
     { type: 'paragraph', text: 'After.' },
@@ -37,6 +37,56 @@ test('code blocks close however the fence is typed', () => {
   assert.deepEqual(parse('```js\nlet a = 1\n```  after'), code());
   assert.deepEqual(parse('```let a = 1```\nafter'), code(''));
   assert.deepEqual(parse('```js\nlet a = 1'), [{ type: 'code', language: 'js', code: 'let a = 1' }]);
+});
+
+test('# ## and ### make big, medium and small headings, #hashtag stays text', () => {
+  assert.deepEqual(parse('# Big\n## Mid\n### Small\n##Tight').map(b => b.level), [1, 2, 3, 2]);
+  assert.deepEqual(parse('#hashtag')[0].type, 'paragraph');
+  assert.deepEqual(parse('#### four')[0].type, 'paragraph');
+});
+
+test('discord style bold, italic, underline, strike and code', () => {
+  const styled = text => inline(text).map(({ text: t, ...style }) => [Object.keys(style).sort().join('+'), t]);
+  assert.deepEqual(styled('plain'), [['', 'plain']]);
+  assert.deepEqual(styled('**b** *i* _i_ __u__ ~~s~~ `c`'), [
+    ['bold', 'b'], ['', ' '], ['italic', 'i'], ['', ' '], ['italic', 'i'], ['', ' '],
+    ['underline', 'u'], ['', ' '], ['strike', 's'], ['', ' '], ['code', 'c'],
+  ]);
+  assert.deepEqual(styled('***both***'), [['bold+italic', 'both']]);
+  assert.deepEqual(styled('___both___'), [['italic+underline', 'both']]);
+  assert.deepEqual(styled('*a **b** c*'), [['italic', 'a '], ['bold+italic', 'b'], ['italic', ' c']]);
+  // code is literal, and these all stay plain text
+  assert.deepEqual(styled('`**x**`'), [['code', '**x**']]);
+  assert.deepEqual(styled('snake_case_name'), [['', 'snake_case_name']]);
+  assert.deepEqual(styled('2 * 3 * 4'), [['', '2 * 3 * 4']]);
+  assert.deepEqual(styled('**unclosed'), [['', '**unclosed']]);
+  assert.deepEqual(styled('\\*not italic\\*'), [['', '*not italic*']]);
+});
+
+test('| rows | make tables, with an optional header and alignment', () => {
+  const [before, table, after] = parse([
+    'Before.',
+    '| Field | Purpose | Size |',
+    '|:------|:-------:|-----:|',
+    '| `name` | Visitor\'s name | 20 |',
+    '| website | a \\| pipe',
+    'After.',
+  ].join('\n'));
+
+  assert.deepEqual(before, { type: 'paragraph', text: 'Before.' });
+  assert.deepEqual(table, {
+    type: 'table',
+    header: ['Field', 'Purpose', 'Size'],
+    align: ['left', 'center', 'right'],
+    // short rows are filled out, \| is a plain pipe
+    rows: [['`name`', 'Visitor\'s name', '20'], ['website', 'a | pipe', '']],
+  });
+  assert.deepEqual(after, { type: 'paragraph', text: 'After.' });
+
+  // no divider line means no header
+  assert.deepEqual(parse('| a | b |\n| c | d |')[0], {
+    type: 'table', header: null, align: ['left', 'left'], rows: [['a', 'b'], ['c', 'd']],
+  });
 });
 
 test('images with unsafe addresses stay as plain text', () => {
@@ -62,6 +112,9 @@ test('validates posts', () => {
   assert.equal(validatePost({ ...good, date: '2026-02-30' }, 'hi').ok, false);
   assert.equal(validatePost({ ...good, source: '' }, 'hi').ok, false);
   assert.equal(validatePost({ ...good, leadImage: 'javascript:alert(1)' }, 'hi').ok, false);
+  assert.equal(result.data.subtitle, '');
+  assert.equal(validatePost({ ...good, subtitle: '  walking through\nthe lifecycle ' }, 'hi').data.subtitle, 'walking through the lifecycle');
+  assert.equal(validatePost({ ...good, subtitle: 'x'.repeat(201) }, 'hi').ok, false);
   assert.equal(validatePost({ ...good, leadImage: 'https://example.com/a.png' }, 'hi').data.lead.src, 'https://example.com/a.png');
 });
 

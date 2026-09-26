@@ -1432,11 +1432,101 @@ input[type="checkbox"]:focus-visible {
   margin: 12px 0;
 }
 
-.blog-reading h2 {
-  font: bold 16px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+/* one line under a post's title */
+.blog-reading .blog-subtitle {
+  margin: -6px 0 8px;
+  color: #3c3c46;
+  font-size: 16px;
+}
+
+/* the small, medium and large A buttons */
+.text-sizes {
+  display: flex;
+  gap: 3px;
+}
+
+.toolbar .text-sizes .raised {
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  line-height: 1;
+  font-weight: bold;
+}
+
+/* #, ## and ### in a post */
+.blog-reading :is(h2, h3, h4) {
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  font-weight: bold;
+  line-height: 1.3;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
-  margin-top: 1.7em;
+  margin: 1.7em 0 0.4em;
+}
+
+.blog-reading h2 {
+  font-size: 20px;
+  border-bottom: 1px solid #c0c0c0;
+  padding-bottom: 4px;
+}
+
+.blog-reading h3 {
+  font-size: 17px;
+}
+
+.blog-reading h4 {
+  font-size: 15px;
+}
+
+/* | a | b | tables, a grey header row over a plain grid like a windows list view */
+.blog-table {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+.blog-table table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.blog-table th,
+.blog-table td {
+  border: 1px solid #a0a0a0;
+  padding: 5px 10px;
+  vertical-align: top;
+}
+
+.blog-table th {
+  background: #c0c0c0;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* **bold** and friends */
+.blog-reading .bold {
+  font-weight: bold;
+}
+
+.blog-reading .italic {
+  font-style: italic;
+}
+
+.blog-reading .underline {
+  text-decoration-line: underline;
+}
+
+.blog-reading .strike {
+  text-decoration-line: line-through;
+}
+
+.blog-reading .underline.strike {
+  text-decoration-line: underline line-through;
+}
+
+.blog-reading .inline-code {
+  background: #eeeef3;
+  border: 1px solid #d6d6de;
+  padding: 0 3px;
+  font: 13px Consolas, 'Courier New', monospace;
 }
 
 .blog-reading time {

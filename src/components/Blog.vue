@@ -6,6 +6,8 @@
 import { computed, ref, watch, nextTick, onMounted } from 'vue';
 import { posts as localPosts } from '../blog.mjs';
 import { parse, slugify } from '../blog-markup.mjs';
+import { pastedTable } from '../blog-paste.mjs';
+import InlineText from './InlineText.vue';
 import { read, save, remove } from '../storage.js';
 
 const props = defineProps({
@@ -36,6 +38,18 @@ const draftPost = computed(() => draft.value && {
 });
 
 const post = computed(() => previewing.value ? draftPost.value : allPosts.value.find(p => p.slug === slug.value));
+
+// posts written on the site keep their source, so parse that again rather than use
+// the saved blocks. older posts then pick up anything the markup learns later
+const blocks = computed(() => post.value && [post.value.lead, ...(post.value.source ? parse(post.value.source) : post.value.blocks)].filter(Boolean));
+
+// # is the biggest heading. the post title is the h1, so # starts at h2
+const headingTag = block => `h${Math.min(Math.max(block.level ?? 2, 1), 3) + 1}`;
+
+// the three A buttons while reading. the choice sticks in this browser
+const sizes = [['Small', 1], ['Medium', 1.15], ['Large', 1.3]];
+const textSize = ref(Math.min(Math.max(Number(read('blog-text-size', '0')) || 0, 0), sizes.length - 1));
+watch(textSize, value => save('blog-text-size', String(value)));
 
 // jump back to the top whenever you switch posts
 watch([slug, previewing], async () => {
@@ -96,13 +110,14 @@ async function copy(code) {
 }
 
 function newPost() {
-  draft.value = { title: '', slug: '', date: today(), leadImage: '', source: '', previousSlug: '', slugEdited: false };
+  draft.value = { title: '', subtitle: '', slug: '', date: today(), leadImage: '', source: '', previousSlug: '', slugEdited: false };
   previewing.value = false;
 }
 
 function edit(entry) {
   draft.value = {
     title: entry.title,
+    subtitle: entry.subtitle ?? '',
     slug: entry.slug,
     date: entry.date,
     leadImage: entry.leadImage ?? '',
@@ -137,6 +152,18 @@ async function request(method, path, body) {
 
 let uploads = 0;
 
+// images upload (below). a copied table comes in as | a | b | rows, since the plain
+// text version of it would lose the grid. anything else pastes as normal
+function paste(event) {
+  const { files } = event.clipboardData;
+  if ([...files].some(file => file.type.startsWith('image/'))) return addImages(event, files);
+  const text = pastedTable(event.clipboardData.getData('text/html'));
+  if (!text) return;
+  event.preventDefault();
+  insertLines(event.target, text);
+  status.value = 'Table pasted. The first row is its header.';
+}
+
 // pasting or dropping an image into the post uploads it and puts an image line
 // where the cursor was. a placeholder line holds its spot while it uploads
 async function addImages(event, files) {
@@ -146,7 +173,7 @@ async function addImages(event, files) {
 
   for (const file of images) {
     const placeholder = `![Uploading image ${++uploads}…]()`;
-    insertLine(event.target, placeholder);
+    insertLines(event.target, placeholder);
     try {
       const response = await fetch('api/admin/images', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': file.type }, body: file });
       const result = await response.json().catch(() => ({}));
@@ -164,13 +191,13 @@ async function addImages(event, files) {
   }
 }
 
-// images only render on a line of their own
-function insertLine(textarea, line) {
+// images and tables only render on lines of their own
+function insertLines(textarea, lines) {
   const { source } = draft.value;
   const at = textarea.selectionStart ?? source.length;
   const before = source.slice(0, at);
   const after = source.slice(textarea.selectionEnd ?? at);
-  const text = `${before && !before.endsWith('\n') ? '\n' : ''}${line}\n`;
+  const text = `${before && !before.endsWith('\n') ? '\n' : ''}${lines}\n`;
   draft.value.source = before + text + after;
   nextTick(() => textarea.setSelectionRange(at + text.length, at + text.length));
 }
@@ -181,8 +208,8 @@ async function publish() {
   status.value = 'Saving…';
 
   try {
-    const { title, date, leadImage, source, previousSlug } = draft.value;
-    const saved = (await request('PUT', draft.value.slug, { title, date, leadImage, source, previousSlug })).post;
+    const { title, subtitle, date, leadImage, source, previousSlug } = draft.value;
+    const saved = (await request('PUT', draft.value.slug, { title, subtitle, date, leadImage, source, previousSlug })).post;
     written.value = [saved, ...written.value.filter(p => p.slug !== saved.slug && p.slug !== previousSlug)];
     draft.value = null;
     previewing.value = false;
@@ -226,6 +253,19 @@ async function destroy() {
       <template v-else-if="post">
         <button class="raised" @click="slug = null">Back to Blog</button>
         <button v-if="admin && post.source" class="raised" @click="edit(post)">Edit</button>
+        <div class="text-sizes toolbar-link" role="group" aria-label="Text size">
+          <button
+            v-for="([name], i) in sizes"
+            :key="name"
+            class="raised"
+            :class="{ pressed: textSize === i }"
+            :style="{ fontSize: `${11 + i * 3}px` }"
+            :title="`${name} text`"
+            :aria-label="`${name} text`"
+            :aria-pressed="textSize === i"
+            @click="textSize = i"
+          >A</button>
+        </div>
       </template>
       <template v-else>
         <span>Blog</span>
@@ -239,6 +279,9 @@ async function destroy() {
       <div class="mail-fields">
         <label class="raised mail-label" for="blog-title">Title</label>
         <input id="blog-title" v-model="draft.title" class="inset" maxlength="200" required @input="retitle">
+
+        <label class="raised mail-label" for="blog-subtitle">Subtitle</label>
+        <input id="blog-subtitle" v-model="draft.subtitle" class="inset" maxlength="200" placeholder="optional, one line under the title">
 
         <label class="raised mail-label" for="blog-slug">Slug</label>
         <input id="blog-slug" v-model="draft.slug" class="inset" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" required @input="draft.slugEdited = true">
@@ -255,8 +298,8 @@ async function destroy() {
         class="mail-message inset blog-source"
         aria-label="Post"
         maxlength="50000"
-        placeholder="Write here. Blank lines split paragraphs, ## starts a heading, ![alt](url &quot;caption&quot;) adds an image (or paste one in), ``` fences code."
-        @paste="addImages($event, $event.clipboardData.files)"
+        placeholder="Write here. Blank lines split paragraphs, # ## ### start headings, **bold** *italic* __underline__ ~~strike~~ `code`, ![alt](url &quot;caption&quot;) adds an image (or paste one in), ``` fences code."
+        @paste="paste"
         @drop="addImages($event, $event.dataTransfer.files)"
       />
     </form>
@@ -273,12 +316,29 @@ async function destroy() {
         </ul>
       </template>
 
-      <article v-else>
+      <article v-else :style="{ zoom: sizes[textSize][1] }">
         <h1>{{ post.title || 'Untitled' }}</h1>
+        <p v-if="post.subtitle" class="blog-subtitle">{{ post.subtitle }}</p>
         <time :datetime="post.date">{{ date(post.date) }}</time>
-        <template v-for="(block, i) in [post.lead, ...post.blocks].filter(Boolean)" :key="i">
-          <p v-if="block.type === 'paragraph'">{{ block.text }}</p>
-          <h2 v-else-if="block.type === 'heading'">{{ block.text }}</h2>
+        <template v-for="(block, i) in blocks" :key="i">
+          <component :is="block.type === 'paragraph' ? 'p' : headingTag(block)" v-if="block.type === 'paragraph' || block.type === 'heading'">
+            <InlineText :text="block.text" />
+          </component>
+          <!-- wide tables scroll sideways on their own instead of stretching the post -->
+          <div v-else-if="block.type === 'table'" class="blog-table">
+            <table>
+              <thead v-if="block.header">
+                <tr>
+                  <th v-for="(cell, j) in block.header" :key="j" :style="{ textAlign: block.align[j] }"><InlineText :text="cell" /></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, r) in block.rows" :key="r">
+                  <td v-for="(cell, j) in row" :key="j" :style="{ textAlign: block.align[j] }"><InlineText :text="cell" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <figure v-else-if="block.type === 'image'">
             <img :src="block.src" :alt="block.alt">
             <figcaption v-if="block.caption">{{ block.caption }}</figcaption>
