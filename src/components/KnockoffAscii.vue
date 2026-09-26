@@ -475,7 +475,7 @@ onBeforeUnmount(() => {
 
   <!-- hammer size slider. stops events so dragging it doesn't smash letters or move the window -->
   <div v-show="visible" class="ascii-hammer" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
-    <span>small</span>
+    <span class="hammer-size-dot hammer-size-dot-small" aria-hidden="true"/>
     <div class="ascii-hammer-track">
       <input
         v-model.number="hammerSize"
@@ -488,6 +488,6 @@ onBeforeUnmount(() => {
         :title="`Hammer size: ${hammerSize}`"
       >
     </div>
-    <span>big</span>
+    <span class="hammer-size-dot hammer-size-dot-large" aria-hidden="true"/>
   </div>
 </template>
