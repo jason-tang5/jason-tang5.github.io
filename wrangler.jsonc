@@ -1,7 +1,7 @@
 // cloudflare workers config for jasontang.dev.
-// the built site in dist/ is served as static files. only /api/* runs the
-// worker in worker/index.js, which sends the mail window's messages and
-// saves blog posts
+// the built site in dist/ is served as static files. only /api/* and videos run
+// the worker in worker/index.js, which sends the mail window's messages, saves
+// blog posts, and answers the range requests safari needs to play video
 {
 	"name": "jasontang-dev",
 	"main": "worker/index.js",
@@ -17,7 +17,8 @@
 		"directory": "./dist",
 		"binding": "ASSETS",
 		"run_worker_first": [
-			"/api/*"
+			"/api/*",
+			"/*.mp4"
 		]
 	},
 	// needs email routing turned on for jasontang.dev, with this address verified
