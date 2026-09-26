@@ -9,7 +9,7 @@ const list = [
   { id: 9, date: '2025-03-10', file: 'volleyball-3', width: 1279, height: 852, description: 'A St. George player lifting the trophy as teammates cheer', caption: 'he cant stop winning' },
   { id: 10, date: '2023-09-06', file: 'photo-2023-09-06', width: 1600, height: 1075, description: 'The Toronto ultimate team posing together on a grass field with a flying disc', caption: 'first year of UofT ultimate' },
   { id: 11, date: '2023-10-07', file: 'photo-2023-10-07', width: 1600, height: 955, description: 'Toronto and Waterloo ultimate players posing together on a grass field', caption: 'vs waterloo 😠' },
-  { id: 13, file: 'badminton-highlight', mediaType: 'video', width: 640, height: 360, description: 'Badminton highlight video', caption: 'badminton highlight' },
+  { id: 13, file: 'badminton-highlight', mediaType: 'video', width: 1120, height: 720, description: 'Badminton highlight video', caption: '🏸' },
   { id: 1, date: '2026-01-28', width: 1091, height: 1200, description: 'Pocky resting in a car with his tongue peeking out', caption: 'his name is', name: 'Pocky' },
   { id: 12, width: 900, height: 1200, description: 'Pocky lying sleepily on the floor with his paws tucked up', caption: 'sleepy zzz' },
   { id: 3, date: '2026-04-07', width: 900, height: 1200, description: 'Two dogs facing each other in a living room', caption: 'and he has a friend called', name: 'pringle' },
