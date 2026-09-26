@@ -2567,17 +2567,18 @@ label.mail-label {
     --taskbar-height: 52px;
   }
 
-  /* icons flow in rows instead of columns */
+  /* icons go down the left side like on a desktop, starting another column only
+     when the first one runs out of room */
   .desktop-grid {
     inset: 15px 12px 50px;
-    grid-auto-flow: row;
-    grid-template-columns: repeat(auto-fit, 85px);
-    grid-template-rows: none;
-    grid-auto-rows: 90px;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-template-rows: repeat(auto-fill, 90px);
+    grid-auto-columns: 85px;
     justify-content: start;
     align-content: start;
     gap: 10px 4px;
-    overflow-y: auto;
+    overflow: auto;
   }
 
   .desktop-shortcut {
@@ -3069,8 +3070,9 @@ label.mail-label {
 
 /* ---- ascii controls on phones ----
    on a small screen the buttons and sliders covered most of the photo, so they move
-   off it into two rows underneath: ascii / normal and the detail slider, with the
-   reset button on the right, then the hammer slider. the sliders lie flat, small
+   off it into two rows underneath: ascii / normal and the detail slider, then the
+   hammer slider with the reset button on the right (on row one it got covered on
+   narrow portrait photos). the sliders lie flat, small
    end on the left. the frame around each photo makes room for them */
 @media (max-width: 700px) {
   .ascii-image {
@@ -3095,7 +3097,7 @@ label.mail-label {
   }
 
   .ascii-reset.raised {
-    top: calc(100% + 8px);
+    top: calc(100% + 50px);
     left: auto;
     right: 0;
   }
@@ -3113,7 +3115,7 @@ label.mail-label {
   /* the flat version of the upright slider */
   .ascii-density .density-slider,
   .ascii-hammer .density-slider {
-    width: 96px;
+    width: 84px;
     height: 18px;
   }
 
