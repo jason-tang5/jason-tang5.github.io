@@ -19,6 +19,7 @@ export const profile = {
 // the breakout game in the contact window spells this out
 export const contact = { email: 'jasontcanada@gmail.com' };
 
+// **text** in a bullet is bold, the same spots the resume pdf bolds
 export const roles = [
   {
     company: 'AMD',
@@ -26,12 +27,12 @@ export const roles = [
     location: 'Toronto, ON',
     dates: 'May 2025 – August 2026',
     bullets: [
-      'Developed and scaled an internal regression-management platform used by 2,000+ engineers, supporting 3.1M tests per month across Vue, TypeScript, Node.js/Express, Ruby, and PostgreSQL.',
-      'Built IBM LSF lifecycle services to improve reliability and recovery for 239K jobs per month, reconciling scheduler and application state across timeouts, failures, and abnormal terminations.',
-      'Developed an authenticated TypeScript MCP integration, enabling 100+ engineers to execute 10K+ monthly AI-assisted operations for failure investigation, coverage analysis, and controlled regression workflows.',
-      'Built an AI debugging agent that correlated logs, scheduler events, and regression metadata, reducing initial failure triage from 15–30 minutes to approximately 30 seconds.',
-      'Automated deployment workflows with Python, Ruby, and Jenkins, saving 20+ engineering hours per week and shortening release cycles by 30%.',
-      'Architected version-control abstractions and validation workflows for a 113-repository Perforce-to-Git migration, preserving traceability for 1.4M+ historical regression runs.',
+      'Developed and scaled an internal regression-management platform used by **2,000+ engineers**, supporting **3.1M tests** per month across Vue, TypeScript, Node.js/Express, Ruby, and PostgreSQL.',
+      'Built IBM LSF lifecycle services to improve reliability and recovery for **239K jobs per month**, reconciling scheduler and application state across timeouts, failures, and abnormal terminations.',
+      'Developed an authenticated **TypeScript MCP** integration, enabling **100+ engineers** to execute **10K+ monthly** AI-assisted operations for failure investigation, coverage analysis, and controlled regression workflows.',
+      'Built an AI debugging agent that correlated logs, scheduler events, and regression metadata, reducing initial failure triage from **15–30 minutes to approximately 30 seconds**.',
+      'Automated deployment workflows with Python, Ruby, and Jenkins, saving **20+ engineering hours per week** and shortening release cycles by **30%**.',
+      'Architected version-control abstractions and validation workflows for a **113-repository** Perforce-to-Git migration, preserving traceability for **1.4M+** historical regression runs.',
     ],
   },
   {
@@ -40,8 +41,8 @@ export const roles = [
     location: 'Ottawa, ON',
     dates: 'June – September 2023',
     bullets: [
-      'Designed and launched two responsive WordPress websites serving 100+ customers, with reusable layouts and streamlined content-management workflows.',
-      'Improved page-load performance by 30% and increased organic traffic by over 50% through performance optimization, technical SEO, and analytics-driven content updates.',
+      'Designed and launched two responsive WordPress websites serving **100+ customers**, with reusable layouts and streamlined content-management workflows.',
+      'Improved page-load performance by **30%** and increased organic traffic by **over 50%** through performance optimization, technical SEO, and analytics-driven content updates.',
     ],
   },
   {
@@ -50,8 +51,8 @@ export const roles = [
     location: 'Ottawa, ON',
     dates: 'June – September 2020',
     bullets: [
-      'Developed an event-planning application prototype with event creation, scheduling, attendee registration, and account management using HTML, CSS, JavaScript, and MySQL.',
-      'Designed the MySQL database structure and implemented form validation, filtering, and error handling for reliable CRUD operations.',
+      'Developed an event-planning application prototype with event creation, scheduling, attendee registration, and account management using **HTML, CSS, JavaScript, and MySQL**.',
+      'Designed the **MySQL** database structure and implemented form validation, filtering, and error handling for reliable CRUD operations.',
     ],
   },
 ];

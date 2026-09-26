@@ -9,6 +9,7 @@ import Music from './Music.vue';
 import Mail from './Mail.vue';
 import Pictures from './Pictures.vue';
 import RetroIcon from './RetroIcon.vue';
+import InlineText from './InlineText.vue';
 import TechList from './TechList.vue';
 import { read, save, remove } from '../storage.js';
 import { noteGlyphs, noteColors } from '../notes.mjs';
@@ -239,7 +240,7 @@ function clearSaved() {
       <button class="raised" @click="emit('open', 'projects')">All projects</button>
       <a v-if="win.project.demo" class="raised link-button" :href="win.project.demo" target="_blank" rel="noopener">Open demo ↗ <span class="sr-only">(new tab)</span></a>
     </div>
-    <article class="content-scroll document">
+    <article class="content-scroll document project-document">
       <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
       <h1>{{ win.project.name }}</h1>
       <p class="intro">{{ win.project.summary }}</p>
@@ -271,7 +272,7 @@ function clearSaved() {
         <h2>{{ role.company }}</h2>
         <strong>{{ role.role }}</strong>
         <ul>
-          <li v-for="bullet in role.bullets" :key="bullet">{{ bullet }}</li>
+          <li v-for="bullet in role.bullets" :key="bullet"><InlineText :text="bullet" /></li>
         </ul>
       </section>
       <section class="role">

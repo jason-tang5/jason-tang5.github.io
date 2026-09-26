@@ -1306,6 +1306,29 @@ input[type="checkbox"]:focus-visible {
   font-size: 16px;
 }
 
+/* project windows use the blog's headings: the pixel font, the name like a post
+   title and each section like a # heading with a rule under it */
+.project-document :is(h1, h2) {
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  font-weight: bold;
+  letter-spacing: normal;
+  line-height: 1.3;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.project-document h1 {
+  font-size: 22px;
+  margin: 8px 0 12px;
+}
+
+.project-document h2 {
+  font-size: 20px;
+  margin: 1.7em 0 .4em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #c0c0c0;
+}
+
 .document p {
   margin: 10px 0 18px;
 }
@@ -1491,24 +1514,24 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
-/* **bold** and friends */
-.blog-reading .bold {
+/* **bold** and friends, from InlineText.vue. used by the blog and the experience bullets */
+.bold {
   font-weight: bold;
 }
 
-.blog-reading .italic {
+.italic {
   font-style: italic;
 }
 
-.blog-reading .underline {
+.underline {
   text-decoration-line: underline;
 }
 
-.blog-reading .strike {
+.strike {
   text-decoration-line: line-through;
 }
 
-.blog-reading .underline.strike {
+.underline.strike {
   text-decoration-line: underline line-through;
 }
 
