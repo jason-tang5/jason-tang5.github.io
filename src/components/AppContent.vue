@@ -26,6 +26,7 @@ const emit = defineEmits(['open', 'wallpaper']);
 const selected = ref(projects[0]);
 const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
+const portraitHint = ref(true);
 const portraitAscii = ref(read('portrait-ascii', 'on') !== 'off');
 
 const colors = [
@@ -40,6 +41,7 @@ const note = ref(read('note'));
 const noteStatus = ref('Notes stay in this browser. Save is optional.');
 
 function setPortraitAscii(value) {
+  portraitHint.value = false;
   portraitAscii.value = value;
   save('portrait-ascii', value ? 'on' : 'off');
 }
@@ -61,7 +63,8 @@ function clearSaved() {
   <div v-if="win.type === 'about'" class="app-layout about-app">
     <div class="content-scroll about-content">
       <div class="about-grid">
-        <div class="portrait-frame inset">
+        <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
+          <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
           <AsciiImage
             class="portrait-ascii"
             :source="portraitUrl"
