@@ -63,6 +63,27 @@ test('discord style bold, italic, underline, strike and code', () => {
   assert.deepEqual(styled('\\*not italic\\*'), [['', '*not italic*']]);
 });
 
+test('[text](url) makes links, only to safe places', () => {
+  assert.deepEqual(inline('I was inspired by [vert.nyc](https://www.vert.nyc/).'), [
+    { text: 'I was inspired by ' },
+    { href: 'https://www.vert.nyc/', text: 'vert.nyc' },
+    { text: '.' },
+  ]);
+  assert.deepEqual(inline('[**bold** link](/blog/)'), [{ href: '/blog/', bold: true, text: 'bold' }, { href: '/blog/', text: ' link' }]);
+  assert.equal(inline('[mail me](mailto:a@b.dev)')[0].href, 'mailto:a@b.dev');
+  assert.equal(inline('[a window](#app=blog)')[0].href, '#app=blog');
+  // underscores in a url don't turn into italics
+  assert.equal(inline('[x](https://e.com/a_b_c)')[0].href, 'https://e.com/a_b_c');
+
+  // unsafe links stay as the text you typed
+  for (const text of ['[x](javascript:alert(1))', '[x](data:text/html,hi)', '[x](//evil.example)']) {
+    assert.ok(inline(text).every(span => !span.href), text);
+  }
+  assert.equal(inline('[x](javascript:alert)').map(s => s.text).join(''), '[x](javascript:alert)');
+  // an image line isn't a link
+  assert.equal(parse('![alt](/a.png)')[0].type, 'image');
+});
+
 test('| rows | make tables, with an optional header and alignment', () => {
   const [before, table, after] = parse([
     'Before.',

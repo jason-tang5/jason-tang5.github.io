@@ -11,6 +11,7 @@
 //
 // inside paragraphs, headings and table cells, like discord (see inline() below):
 //   **bold**  *italic* or _italic_  __underline__  ~~strike~~  `code`  \* for a plain *
+//   [text](https://…) a link. https, http, mailto or a path on this site, anything else stays text
 //
 // anything else is plain text. nothing is ever rendered as html.
 
@@ -20,6 +21,9 @@ const image = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)$/;
 
 // images and demos only load from this site or over https, never javascript: and friends
 export const safeSrc = src => /^https:\/\//i.test(src) || /^(?:\/(?!\/)|\.{1,2}\/|assets\/)/.test(src);
+
+// links can also go to plain http, an email address, or a #app= window on this site
+export const safeHref = href => /^(?:https?:\/\/|mailto:)/i.test(href) || /^(?:\/(?!\/)|#)/.test(href);
 
 export function parse(source) {
   const lines = String(source ?? '').replace(/\r\n?/g, '\n').split('\n');
@@ -116,10 +120,12 @@ function table(lines) {
 }
 
 // discord style inline formatting. turns a line of text into spans like
-// { text, bold, italic, underline, strike, code } for Blog.vue to style.
-// markers can nest (***bold italic***, __*underlined italic*__)
+// { text, bold, italic, underline, strike, code, href } for Blog.vue to style.
+// markers can nest (***bold italic***, __*underlined italic*__, [**bold link**](…))
 const styles = [
   ['code', /`([^`]+)`/],
+  // not ![alt](src), that's an image
+  ['link', /(?<!!)\[([^\]]+)\]\(\s*([^\s()]+)\s*\)/],
   ['bold', /\*\*([\s\S]+?)\*\*(?!\*)/],
   ['underline', /__([\s\S]+?)__(?!_)/],
   ['strike', /~~([\s\S]+?)~~/],
@@ -150,7 +156,9 @@ export function inline(text) {
       const { name, match } = found;
       if (match.index) spans.push({ ...style, text: unhide(rest.slice(0, match.index)) });
       if (name === 'code') spans.push({ ...style, code: true, text: unhide(match[1]) });
-      else walk(match[1], { ...style, [name]: true });
+      else if (name !== 'link') walk(match[1], { ...style, [name]: true });
+      else if (safeHref(unhide(match[2]))) walk(match[1], { ...style, href: unhide(match[2]) });
+      else spans.push({ ...style, text: unhide(match[0]) });
       rest = rest.slice(match.index + match[0].length);
     }
   };
