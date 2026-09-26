@@ -22,9 +22,9 @@ onBeforeUnmount(() => game?.destroy());
 
 <template>
   <div ref="root" class="app-layout contact-game">
+    <p class="contact-invitation">Want to get my email? Beat the game :)</p>
     <div class="toolbar">
       <button id="breakout-start" class="raised">Play</button>
-      <button id="breakout-add-ball" class="raised">Add ball</button>
       <button id="breakout-restart" class="raised">Restart</button>
     </div>
 
@@ -43,10 +43,10 @@ onBeforeUnmount(() => game?.destroy());
       </div>
     </div>
 
-    <p id="breakout-help" class="sr-only">Move with the mouse, touch, or arrow keys. Space starts or pauses. Click or B adds a ball. Clear the bricks to reveal my email.</p>
+    <p id="breakout-help" class="sr-only">Move with the mouse, touch, or arrow keys. Space starts or pauses. Clear the bricks to reveal my email.</p>
     <div id="breakout-progress" class="sr-only" aria-label="Email reveal progress"/>
     <span id="breakout-status" class="sr-only" role="status"/>
 
-    <footer class="status-bar"><span>want to get my email? beat the game :)</span></footer>
+    <footer class="status-bar"><span>Move with your mouse, touch, or arrow keys.</span></footer>
   </div>
 </template>

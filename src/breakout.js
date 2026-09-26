@@ -7,8 +7,7 @@
 
 import { play } from './sound.js';
 
-// 5x7 pixel font. only has the letters we actually need: my email, the "+ 1"
-// popup, and a few extras in case the text changes.
+// 5x7 pixel font for tracking which email letters are uncovered.
 const glyphs = {
   a: ['00000', '00000', '01110', '00001', '01111', '10001', '01111'],
   b: ['10000', '10000', '11110', '10001', '10001', '10001', '11110'],
@@ -45,6 +44,9 @@ const brickColors = ['#000080', '#244f9c', '#3972ac', '#538eaf', '#008080', '#37
 const ballSpeedScale = 0.5;
 const ballSpeed = 380 * ballSpeedScale;
 const paddleY = 268;
+const brickArt = ['+--------+', '|        |', '+--------+'];
+const brickFontSize = 9;
+const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
 
 export function createBreakout(root, { email }) {
@@ -54,10 +56,11 @@ export function createBreakout(root, { email }) {
 
   const canvas = root.querySelector('#breakout');
   const ctx = canvas.getContext('2d');
+  ctx.font = font(brickFontSize);
+  const brickCellWidth = ctx.measureText('M').width;
   const board = root.querySelector('.breakout-board');
   const emailBox = root.querySelector('.breakout-email');
   const startButton = root.querySelector('#breakout-start');
-  const addBallButton = root.querySelector('#breakout-add-ball');
   const status = root.querySelector('#breakout-status');
   const emailProgress = root.querySelector('#breakout-progress');
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
@@ -82,6 +85,7 @@ export function createBreakout(root, { email }) {
   let balls;
   let paddle;
   let score = 0;
+  let elapsed = 0;
   let running = false;
   let started = false;
   let complete = false;
@@ -89,8 +93,6 @@ export function createBreakout(root, { email }) {
   let hostActive = true;
   let previous = 0;
   let animationFrame = 0;
-  let buttonFeedbackTimer;
-  let ballFeedback = []; // floating "+ 1" popups
   let fallingText = []; // bits of broken bricks
   const keys = new Set();
   const letterSprites = new Map();
@@ -103,21 +105,21 @@ export function createBreakout(root, { email }) {
     ctx.fillText(text, 150, y);
   }
 
-  // when a brick breaks, its "[###]" label falls apart into spinning letters
+  // Break the same outline characters into small falling pieces.
   function breakText(brick) {
     if (motionQuery.matches) return;
-    const text = '[###]';
-    const spacing = 4.2;
+    const left = brick.x + (brick.w - brickArt[0].length * brickCellWidth) / 2;
+    const top = brick.y + (brick.h - brickArt.length * brickLineHeight) / 2;
 
-    [...text].forEach((letter, index) => {
-      // pre-render each letter once per color, drawing text every frame is slow
+    brickArt.forEach((row, line) => [...row].forEach((letter, column) => {
+      if (letter === ' ') return;
       const key = `${brick.color}:${letter}`;
       if (!letterSprites.has(key)) {
         const sprite = document.createElement('canvas');
         sprite.width = 10;
         sprite.height = 12;
         const pen = sprite.getContext('2d');
-        pen.font = font(7);
+        pen.font = font(brickFontSize);
         pen.textAlign = 'center';
         pen.textBaseline = 'middle';
         pen.fillStyle = brick.color;
@@ -127,14 +129,14 @@ export function createBreakout(root, { email }) {
 
       fallingText.push({
         sprite: letterSprites.get(key),
-        x: brick.x + brick.w / 2 + (index - 2) * spacing,
-        y: brick.y + brick.h / 2,
-        vx: (index - 2) * 15 + (Math.random() - 0.5) * 35,
+        x: left + (column + 0.5) * brickCellWidth,
+        y: top + line * brickLineHeight + brickLineHeight / 2,
+        vx: (column - 4.5) * 8 + (Math.random() - 0.5) * 35,
         vy: -45 - Math.random() * 65,
         angle: 0,
         spin: (Math.random() - 0.5) * 7,
       });
-    });
+    }));
 
     // cap it so a big combo doesn't pile up hundreds of sprites
     if (fallingText.length > 120) fallingText = fallingText.slice(-120);
@@ -210,8 +212,8 @@ export function createBreakout(root, { email }) {
   }
 
   function reset() {
-    const columns = 13;
-    const rows = 6;
+    const columns = 5;
+    const rows = 2;
     bricks = Array.from({ length: columns * rows }, (_, i) => ({
       x: (i % columns) * (300 / columns),
       y: 40 + Math.floor(i / columns) * (56 / rows),
@@ -223,13 +225,12 @@ export function createBreakout(root, { email }) {
     }));
 
     score = 0;
+    elapsed = 0;
     paddle = 120;
     balls = [newBall(150)];
     complete = false;
-    ballFeedback = [];
     fallingText = [];
     startButton.textContent = 'Play';
-    addBallButton.disabled = false;
 
     board.classList.remove('is-revealed');
     emailBox.setAttribute('aria-hidden', 'true');
@@ -260,10 +261,14 @@ export function createBreakout(root, { email }) {
       ctx.fillStyle = '#eeeee7';
       ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
       ctx.fillStyle = brick.color;
-      ctx.font = font(7);
+      // Use a real monospace grid; never stretch glyphs to fill the brick.
+      ctx.font = font(brickFontSize);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('[###]', brick.x + brick.w / 2, brick.y + brick.h / 2);
+      const top = brick.y + (brick.h - brickArt.length * brickLineHeight) / 2;
+      brickArt.forEach((line, row) => {
+        ctx.fillText(line, brick.x + brick.w / 2, top + (row + 0.5) * brickLineHeight);
+      });
     }
 
     // paddle and the little side walls
@@ -305,41 +310,11 @@ export function createBreakout(root, { email }) {
       ctx.restore();
     }
 
-    drawBallFeedback();
-  }
-
-  // "+ 1" that floats up and fades out when you add a ball
-  function drawBallFeedback() {
-    const now = performance.now();
-    const duration = 1600;
-    const text = '+ 1';
-    const size = 2;
-    const textWidth = (text.length * 6 - 1) * size;
-
-    ballFeedback = ballFeedback.filter(feedback => now - feedback.time < duration);
-
-    for (const feedback of ballFeedback) {
-      const progress = Math.min(1, (now - feedback.time) / duration);
-      const y = feedback.y - progress * 38;
-      const left = Math.max(0, Math.min(300 - textWidth, feedback.x - textWidth / 2));
-
-      ctx.save();
-      ctx.globalAlpha = 1 - progress;
-      ctx.fillStyle = '#000080';
-      [...text].forEach((letter, index) => {
-        if (letter === ' ') return;
-        glyphs[letter].forEach((row, py) => [...row].forEach((pixel, px) => {
-          if (pixel === '1') ctx.fillRect(left + (index * 6 + px) * size, y + py * size, size, size);
-        }));
-      });
-      ctx.restore();
-    }
   }
 
   function finish() {
     running = false;
     complete = true;
-    addBallButton.disabled = true;
     startButton.textContent = 'Play again';
 
     bricks.forEach(brick => { brick.alive = false; });
@@ -363,6 +338,7 @@ export function createBreakout(root, { email }) {
   }
 
   function update(dt) {
+    elapsed += dt;
     const direction = (keys.has('ArrowRight') ? 1 : 0) - (keys.has('ArrowLeft') ? 1 : 0);
     paddle = Math.max(0, Math.min(240, paddle + direction * 240 * dt));
 
@@ -378,7 +354,7 @@ export function createBreakout(root, { email }) {
       running = false;
       message = 'try again';
       startButton.textContent = 'Try again';
-      status.textContent = 'All balls lost! Your cleared bricks stay cleared.';
+      status.textContent = 'Ball lost! Your cleared bricks stay cleared.';
     }
   }
 
@@ -425,6 +401,19 @@ export function createBreakout(root, { email }) {
       const angle = (ball.x - paddle - 30) / 34;
       ball.vx = angle * 330 * ballSpeedScale;
       ball.vy = -Math.sqrt(ballSpeed ** 2 - ball.vx * ball.vx);
+      // After the opening rallies, guide successful paddle returns toward
+      // a remaining brick so the email reveal does not become a long cleanup.
+      if (elapsed >= 15) {
+        const target = bricks.filter(brick => brick.alive).sort((a, b) =>
+          Math.abs(a.x + a.w / 2 - ball.x) - Math.abs(b.x + b.w / 2 - ball.x))[0];
+        if (target) {
+          const dx = target.x + target.w / 2 - ball.x;
+          const dy = target.y + target.h - 264;
+          const distance = Math.hypot(dx, dy);
+          ball.vx = dx / distance * ballSpeed;
+          ball.vy = dy / distance * ballSpeed;
+        }
+      }
       ball.y = 264;
     }
   }
@@ -442,13 +431,13 @@ export function createBreakout(root, { email }) {
       const steps = Math.ceil(dt / 0.005);
       for (let i = 0; i < steps && running; i++) update(dt / steps);
       draw();
-    } else if (ballFeedback.length || hadFallingText) {
+    } else if (hadFallingText) {
       draw();
     }
 
     // keep the loop going only while something is moving
     animationFrame = 0;
-    if (running || ballFeedback.length || fallingText.length) {
+    if (running || fallingText.length) {
       animationFrame = requestAnimationFrame(frame);
     }
   }
@@ -459,36 +448,10 @@ export function createBreakout(root, { email }) {
     animationFrame = requestAnimationFrame(frame);
   }
 
-  function launchBall() {
-    if (complete || !hostActive) return;
-
-    const vx = (Math.random() * 2 - 1) * 280 * ballSpeedScale;
-    const ball = { x: paddle + 30, y: 247, vx, vy: -Math.sqrt(ballSpeed ** 2 - vx * vx) };
-    balls.push(ball);
-    ballFeedback.push({ x: ball.x, y: ball.y - 12, time: performance.now() });
-
-    // the css shows "+ 1" over the button label for a moment, the label stays so the width doesn't jump
-    clearTimeout(buttonFeedbackTimer);
-    addBallButton.classList.add('ball-added');
-    buttonFeedbackTimer = setTimeout(() => addBallButton.classList.remove('ball-added'), 350);
-
-    schedule();
-    status.textContent = `${balls.length} balls in play. ${bricks.filter(brick => brick.alive).length} bricks to go.`;
-
-    if (!running) {
-      started = true;
-      running = true;
-      message = 'paused';
-      startButton.textContent = 'Pause';
-    }
-    draw();
-  }
-
   function pause() {
     keys.clear();
     cancelAnimationFrame(animationFrame);
     animationFrame = 0;
-    ballFeedback = [];
     fallingText = [];
     if (running) {
       running = false;
@@ -510,15 +473,13 @@ export function createBreakout(root, { email }) {
     if (complete && event.offsetY / canvas.getBoundingClientRect().height < 0.46) return;
     canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(event.pointerId);
-    if (running) launchBall();
-    else toggle();
+    if (!running) toggle();
   });
 
   on(canvas, 'keydown', event => {
     if (!hostActive) return;
     if (['ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
     if (event.code === 'Space' && !event.repeat) toggle();
-    if (event.code === 'KeyB' && !event.repeat && running) launchBall();
     keys.add(event.code);
   });
 
@@ -529,7 +490,6 @@ export function createBreakout(root, { email }) {
   });
 
   on(startButton, 'click', toggle);
-  on(addBallButton, 'click', launchBall);
   on(root.querySelector('#breakout-restart'), 'click', () => {
     pause();
     started = false;
@@ -559,7 +519,6 @@ export function createBreakout(root, { email }) {
       pause();
       events.abort();
       observer.disconnect();
-      clearTimeout(buttonFeedbackTimer);
     },
   };
 }

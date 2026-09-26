@@ -231,7 +231,8 @@ try {
   await expect(startButton).toHaveText('Resume');
   await game.screenshot({ path: 'tmp/qa/contact-desktop.png' });
 
-  await expect(game.locator('.status-bar')).toHaveText('want to get my email? beat the game :)');
+  await expect(game.locator('.contact-invitation')).toHaveText('Want to get my email? Beat the game :)');
+  await expect(game.locator('#breakout-add-ball')).toHaveCount(0);
   await expect(game.locator('.status-bar a')).toHaveCount(0);
 
   // the hidden email should stretch across most of the board
@@ -463,7 +464,7 @@ try {
   await contact.locator('#breakout-start').click();
   await noisy.waitForTimeout(150);
   const beforeBrick = await tones();
-  await expect(contact.locator('#breakout-status')).not.toHaveText('78 bricks to go.', { timeout: 10000 });
+  await expect(contact.locator('#breakout-status')).not.toHaveText('10 bricks to go.', { timeout: 10000 });
   assert.ok(await tones() > beforeBrick, 'breaking a brick makes a sound');
   await contact.locator('#breakout-start').click();
 
