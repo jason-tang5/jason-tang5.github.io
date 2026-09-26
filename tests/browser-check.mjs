@@ -368,7 +368,7 @@ try {
   await open('blog');
   await expect(cd.locator('iframe')).toHaveCount(1);
   await open('music');
-  await cd.getByRole('button', { name: 'Show Spotify player', exact: true }).click();
+  await expect(cd.getByRole('button', { name: 'Hide Spotify player', exact: true })).toBeVisible();
   await expect(cd.getByRole('link', { name: 'Open in Spotify' })).toBeVisible();
   await page.getByRole('button', { name: 'Close CD Player', exact: true }).click();
   assert.ok((await page.evaluate(() => window.__cdCalls)).includes('destroy'));

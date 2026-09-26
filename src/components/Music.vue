@@ -15,7 +15,7 @@ const duration = ref(0);
 const paused = ref(true);
 const loading = ref(false);
 const ready = ref(false);
-const showSpotify = ref(false);
+const showSpotify = ref(true);
 const message = ref('');
 const notes = ref([]);
 
@@ -344,7 +344,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- the real spotify embed lives here, hidden until you ask for it or autoplay gets blocked -->
+    <!-- the Spotify panel is open by default; playback still starts on request -->
     <div id="cd-spotify" ref="panel" class="cd-spotify" :class="{ expanded: showSpotify }" :inert="!showSpotify">
       <p v-if="message" role="status">{{ message }}</p>
       <div ref="embedHost" class="cd-embed"/>
