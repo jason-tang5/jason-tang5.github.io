@@ -47,14 +47,33 @@ let glow;
 let drag = null;
 const trail = [];
 
-// cleared cells survive switching photos and back. cell ids depend on the
-// column count though, so they're keyed by photo and grid width.
+// Keep only cleared cell IDs and the grid they belong to. Density changes
+// sample the old grid at each new cell's center, snapping holes to whole cells.
 const cleared = new Map();
 
+function revealState() {
+  if (!cleared.has(props.source)) cleared.set(props.source, { cols, rows, gone: new Set() });
+  return cleared.get(props.source);
+}
+
 function removed() {
-  const key = `${props.source}|${cols}`;
-  if (!cleared.has(key)) cleared.set(key, new Set());
-  return cleared.get(key);
+  return revealState().gone;
+}
+
+function remapClearedCells() {
+  const state = revealState();
+  if (state.cols === cols && state.rows === rows) return;
+  const gone = new Set();
+  if (state.gone.size && state.cols && state.rows) {
+    for (let row = 0; row < rows; row++) {
+      const oldRow = Math.min(state.rows - 1, Math.floor((row + 0.5) * state.rows / rows));
+      for (let col = 0; col < cols; col++) {
+        const oldCol = Math.min(state.cols - 1, Math.floor((col + 0.5) * state.cols / cols));
+        if (state.gone.has(oldRow * state.cols + oldCol)) gone.add(row * cols + col);
+      }
+    }
+  }
+  Object.assign(state, { cols, rows, gone });
 }
 
 function hitRadius() {
@@ -333,7 +352,7 @@ function layout() {
 
   // a fixed cell size keeps letters the same size on every photo no matter its shape.
   // the 1.65 is roughly how much taller a monospace letter is than it is wide
-  cols = props.cellSize ? Math.max(20, Math.round(width / props.cellSize)) : props.columns || 70;
+  cols = props.columns || (props.cellSize ? Math.max(20, Math.round(width / props.cellSize)) : 70);
   rows = Math.max(1, Math.round(cols * height / width / 1.65));
   cellWidth = width / cols;
   cellHeight = height / rows;
@@ -363,7 +382,8 @@ function layout() {
       color: `rgb(${boost(r)},${boost(g)},${boost(b)})`,
     };
   });
-  remaining.value = cells.filter(cell => !removed().has(cell.id)).length;
+  remapClearedCells();
+  remaining.value = cells.length - removed().size;
 
   backing = document.createElement('canvas');
   glyphs = document.createElement('canvas');
@@ -391,10 +411,12 @@ function layout() {
   bright.filter = 'brightness(2.4)';
   bright.drawImage(backing, 0, 0);
 
-  // punch out whatever was already cleared before this layout
-  for (const cell of cells) {
-    if (removed().has(cell.id)) base.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
+  // Bake the snapped holes into the cached background once, not every frame.
+  for (const id of removed()) {
+    const cell = cells[id];
+    base.clearRect(cell.x - cellWidth / 2, cell.y - cellHeight / 2, cellWidth, cellHeight);
   }
+
 
   draw();
 }
@@ -425,12 +447,11 @@ function visibility() {
 }
 
 watch(() => props.source, load);
+watch(() => [props.columns, props.cellSize], layout);
 
 // the ascii button was pressed again, bring every letter back for this photo
 watch(() => props.resetVersion, () => {
-  for (const key of cleared.keys()) {
-    if (key.startsWith(`${props.source}|`)) cleared.delete(key);
-  }
+  cleared.delete(props.source);
   layout();
 });
 
