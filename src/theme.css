@@ -2793,27 +2793,182 @@ label.mail-label {
   background: #e4e8f5;
   border: 1px dotted #000080;
 }
-.snake-score { margin-left: auto; font-size: 12px; }
-.snake-content { padding: 14px; text-align: center; }
+/* ---- snake, as a vertical handheld ----
+   a light grey body with a big rounded bottom right corner, a dark bezel around the
+   green screen, the arcade pad, and select / start pills tilted like a game boy's */
+.snake-content {
+  padding: 14px 12px;
+  background: #b9b9b9;
+}
+
+.snake-handheld {
+  position: relative;
+  width: min(100%, 330px);
+  margin: 0 auto;
+  padding: 16px 16px 26px;
+  background: #d6d3c9;
+  border-radius: 10px 10px 46px 10px;
+  box-shadow: inset -3px -3px 0 #aaa69a, inset 3px 3px 0 #efece4, 3px 3px 0 #555;
+}
+
+.snake-bezel {
+  padding: 8px 14px 14px;
+  background: #5c5d6b;
+  border-radius: 8px 8px 28px 8px;
+}
+
+.snake-screen-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: #c9cad8;
+  font: 10px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+}
+
+.snake-screen-top .snake-score:last-child {
+  margin-left: auto;
+}
+
+/* the power light, lit while a game is running */
+.snake-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5b1f1f;
+}
+
+.snake-led.on {
+  background: #ff4040;
+  box-shadow: 0 0 4px #ff4040;
+}
+
 .snake-board {
+  padding: 8px 4px;
   background: #101d17;
   color: #b2edaa;
-  padding: 12px 6px;
   container-type: inline-size;
+  cursor: var(--classic-pointer);
 }
-.snake-board:focus-visible { outline: 2px solid #000080; outline-offset: 2px; }
+
+.snake-board:focus-visible {
+  outline: 2px solid #b2edaa;
+  outline-offset: 2px;
+}
+
+/* the screen is 38 characters wide, sized to fill the board */
 .snake-board pre {
   margin: 0;
-  font: bold min(3cqw, 15px)/1.15 'Courier New', monospace;
+  font: bold min(4.3cqw, 14px)/1.1 'Courier New', monospace;
   white-space: pre;
+  text-align: center;
 }
+
+.snake-brand {
+  margin: 8px 0 0 4px;
+  color: #26307f;
+  font: bold 14px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  letter-spacing: 1px;
+  -webkit-font-smoothing: none;
+}
+
+.snake-brand em {
+  font-style: italic;
+  font-weight: normal;
+}
+
+.snake-pills {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.snake-pill-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transform: rotate(-25deg);
+}
+
+.snake-pill-wrap span {
+  color: #26307f;
+  font: bold 9px Tahoma, sans-serif;
+  letter-spacing: 1px;
+}
+
+.snake-pill {
+  width: 42px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #8d8b95;
+  box-shadow: inset 0 -2px 0 #5f5d66;
+  cursor: var(--classic-pointer);
+  touch-action: manipulation;
+}
+
+.snake-pill:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.snake-pill:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 2px;
+}
+
+/* speaker slots in the bottom right corner */
+.snake-speaker {
+  position: absolute;
+  right: 22px;
+  bottom: 20px;
+  width: 46px;
+  height: 30px;
+  background: repeating-linear-gradient(90deg, #a29e92 0 3px, transparent 3px 8px);
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+/* the direction pad: four arcade buttons in a diamond */
 .snake-controls {
-  margin-top: 16px;
+  margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(3, 38px);
-  gap: 4px;
+  grid-template-columns: repeat(3, 48px);
+  /* rows overlap the 54px buttons a little so the diamond sits tight, the last row fits the whole button */
+  grid-template-rows: 44px 44px 54px;
   justify-content: center;
 }
-.snake-controls button { min-height: 34px; }
-.snake-up { grid-column: 2; }
-.snake-controls button:nth-child(2) { grid-column: 1; }
+
+.snake-pad-button {
+  width: 48px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: var(--classic-pointer);
+  touch-action: manipulation;
+}
+
+.snake-pad-button svg {
+  display: block;
+  width: 48px;
+  height: 54px;
+}
+
+/* pressing drops the cap onto its rim, like a real arcade button */
+.snake-pad-button:active .snake-pad-cap {
+  transform: translateY(2px);
+}
+
+.snake-pad-button:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
+.snake-pad-up { grid-area: 1 / 2; }
+.snake-pad-left { grid-area: 2 / 1; }
+.snake-pad-right { grid-area: 2 / 3; }
+.snake-pad-down { grid-area: 3 / 2; }

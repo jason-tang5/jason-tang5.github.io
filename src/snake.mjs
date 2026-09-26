@@ -1,5 +1,6 @@
-export const columns = 24;
-export const rows = 18;
+// a small board so it fits the handheld's screen
+export const columns = 18;
+export const rows = 14;
 export const directions = {
   up: { x: 0, y: -1 }, down: { x: 0, y: 1 },
   left: { x: -1, y: 0 }, right: { x: 1, y: 0 },

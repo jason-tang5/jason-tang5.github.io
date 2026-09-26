@@ -24,7 +24,7 @@ export const apps = [
   app('music', 'CD Player', 'music', 306, 160, 306, 160),
   app('blog', 'Blog', 'document', 720, 580),
   app('games', 'Games', 'folder', 440, 350, 300, 270),
-  app('snake', 'Snake', 'snake', 520, 590, 340, 420),
+  app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
   // locked until you beat the breakout game in contact, see unlock() in App.vue
   app('mail', 'Mail', 'mail', 500, 450, 360, 330),
