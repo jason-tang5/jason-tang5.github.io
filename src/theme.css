@@ -2055,6 +2055,23 @@ fieldset {
   margin-left: auto;
 }
 
+/* the "press me" button: the same win95 bevel as the others, tinted periwinkle.
+   used for go to mail and mail's send button */
+.raised.tinted {
+  --tint: #a9b6de;
+  background: var(--tint);
+  box-shadow: inset -1px -1px #5d6b99, inset 1px 1px #dfe5f7;
+}
+
+button.raised.tinted:hover:not(:disabled):not(:active) {
+  background: #b8c3e6;
+}
+
+.raised.tinted:active:not(:disabled) {
+  background: var(--tint);
+  box-shadow: inset 1px 1px #5d6b99;
+}
+
 .contact-game .status-bar {
   font-family: "Courier New", monospace;
 }

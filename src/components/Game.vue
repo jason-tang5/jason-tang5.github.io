@@ -67,7 +67,7 @@ onBeforeUnmount(() => {
     <div class="toolbar">
       <button id="breakout-start" class="raised">Play</button>
       <button id="breakout-restart" class="raised">Restart</button>
-      <button v-if="beaten" class="raised go-to-mail" @click="openMail">Go to Mail</button>
+      <button v-if="beaten" class="raised go-to-mail tinted" @click="openMail">Go to Mail</button>
     </div>
 
     <div class="content-scroll game-content">

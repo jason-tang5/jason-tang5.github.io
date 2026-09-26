@@ -12,13 +12,14 @@ const message = ref('');
 // hidden from people, bots tend to fill it in
 const website = ref('');
 const sending = ref(false);
-const status = ref('');
 const openedAt = Date.now();
+
+// success or failure shows up as the yellow note on the desktop (App.vue)
+const notify = (title, message) => window.dispatchEvent(new CustomEvent('site-notice', { detail: { title, message } }));
 
 async function send() {
   if (sending.value) return;
   sending.value = true;
-  status.value = 'Sending…';
 
   try {
     const response = await fetch('/api/contact', {
@@ -36,10 +37,11 @@ async function send() {
     if (!response.ok || result.ok !== true) throw new Error(result.error || 'Couldn’t send right now.');
 
     message.value = '';
-    status.value = 'Sent! I’ll get back to you soon.';
+    notify('Message sent', 'Thanks! I’ll get back to you soon.');
     play('chime');
   } catch (error) {
-    status.value = `${error.message} You can also email ${contact.email}.`;
+    // the message stays in the box so it can be sent again
+    notify('Couldn’t send', `${error.message} You can also email ${contact.email}.`);
   } finally {
     sending.value = false;
   }
@@ -49,7 +51,7 @@ async function send() {
 <template>
   <form class="app-layout mail-app" @submit.prevent="send">
     <div class="mail-fields">
-      <button class="raised mail-label" type="submit" :disabled="sending">Send</button>
+      <button class="raised mail-label tinted" type="submit" :disabled="sending">{{ sending ? 'Sending…' : 'Send' }}</button>
       <input class="inset" :value="contact.email" aria-label="To" readonly>
 
       <label class="raised mail-label" for="mail-name">Name</label>
@@ -63,7 +65,7 @@ async function send() {
       v-model="message"
       class="mail-message inset"
       aria-label="Message"
-      placeholder="Enter your message here..."
+      placeholder="Enter your message here... then click Send"
       maxlength="5000"
       required
     />
@@ -71,6 +73,5 @@ async function send() {
     <!-- honeypot, see worker/contact.mjs -->
     <input v-model="website" class="mail-trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-    <footer class="status-bar" role="status"><span>{{ status || 'Fill it in and hit Send.' }}</span></footer>
   </form>
 </template>

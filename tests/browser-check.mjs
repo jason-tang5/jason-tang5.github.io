@@ -603,8 +603,14 @@ try {
   await mail.getByRole('textbox', { name: 'Name', exact: true }).fill('Ada');
   await mail.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@example.com');
   await mail.getByRole('textbox', { name: 'Message', exact: true }).fill('hello!');
+  // mail reports how it went with a 'site-notice' event, which the desktop shows as a note
+  await mailFixture.evaluate(() => {
+    window.notices = [];
+    window.addEventListener('site-notice', event => window.notices.push(event.detail));
+  });
+  const lastNotice = () => mailFixture.evaluate(() => window.notices.at(-1));
   await mail.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(mail.locator('.status-bar')).toHaveText('Sent! I’ll get back to you soon.');
+  await expect.poll(lastNotice).toEqual({ title: 'Message sent', message: 'Thanks! I’ll get back to you soon.' });
   await expect(mail.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue('');
   assert.deepEqual(
     { ...sent[0], elapsed: typeof sent[0].elapsed },
@@ -615,7 +621,7 @@ try {
   reply = { status: 400, body: { error: 'The message is empty.' } };
   await mail.getByRole('textbox', { name: 'Message', exact: true }).fill('again');
   await mail.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(mail.locator('.status-bar')).toHaveText('The message is empty. You can also email jasontcanada@gmail.com.');
+  await expect.poll(lastNotice).toEqual({ title: 'Couldn’t send', message: 'The message is empty. You can also email jasontcanada@gmail.com.' });
   await mailFixture.close();
 
   console.log('browser checks passed');

@@ -32,7 +32,8 @@ const selected = ref(null);
 const startOpen = ref(false);
 const calendar = ref(false);
 const announcement = ref('');
-// a yellow note in the top right, like the welcome tip but on top of the windows
+// a yellow note in the top right, like the welcome tip but on top of the windows.
+// { title, message }. any window can ask for one with a 'site-notice' event
 const notice = ref(null);
 let noticeTimer;
 
@@ -99,13 +100,18 @@ const canOpen = id => Boolean(registry[id]) && (!registry[id].locked || isUnlock
 // message when it gives mail away after three losses in a row
 function unlock(id, message) {
   open(id);
-  if (message) showNotice(message);
+  if (message) showNotice('Mail unlocked', message);
 }
 
-function showNotice(message) {
-  notice.value = message;
+function showNotice(title, message) {
+  notice.value = { title, message };
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => { notice.value = null; }, 8000);
+}
+
+// mail uses this to say whether a message went through
+function noticeEvent(event) {
+  showNotice(event.detail.title, event.detail.message);
 }
 
 // keep the url in sync so links like #app=projects open the right window.
@@ -550,6 +556,7 @@ onMounted(() => {
   document.addEventListener('click', clickSound, true);
   document.addEventListener('pointerover', hoverSound);
   window.addEventListener('hashchange', hashOpen);
+  window.addEventListener('site-notice', noticeEvent);
 });
 
 onBeforeUnmount(() => {
@@ -563,6 +570,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', clickSound, true);
   document.removeEventListener('pointerover', hoverSound);
   window.removeEventListener('hashchange', hashOpen);
+  window.removeEventListener('site-notice', noticeEvent);
 });
 </script>
 
@@ -612,10 +620,10 @@ onBeforeUnmount(() => {
 
       <aside v-if="notice" class="first-tip desktop-notice raised" role="status" aria-label="Notification">
         <div class="tip-heading">
-          <strong>Mail unlocked</strong>
+          <strong>{{ notice.title }}</strong>
           <button aria-label="Dismiss notification" @click="notice = null">×</button>
         </div>
-        <p>{{ notice }}</p>
+        <p>{{ notice.message }}</p>
       </aside>
 
       <DesktopWindow
