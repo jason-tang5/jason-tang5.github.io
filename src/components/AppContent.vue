@@ -172,7 +172,7 @@ function clearSaved() {
             <!-- the lifts box stretches to exactly the width of the button row above it -->
             <div class="about-links">
               <div class="button-row">
-                <button class="raised" @click="emit('open', 'projects')">Projects <span aria-hidden="true">→</span></button>
+                <button class="raised" @click="emit('open', 'projects')">Projects</button>
                 <button class="raised" @click="emit('open', 'experience')">Experience</button>
                 <button class="raised" @click="emit('open', 'resume')">Resume</button>
                 <button class="raised" @click="emit('open', 'blog')">Blog</button>
