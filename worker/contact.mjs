@@ -15,7 +15,10 @@ export function validate(body) {
 
   // "website" is a hidden field people never see, so anything in it means a bot.
   // those get a fake success so they don't retry
-  if (clean(body.website) || !(Number(body.elapsed) >= minimumFillTime)) return { ok: true, spam: true };
+  if (clean(body.website)) return { ok: true, spam: true };
+  if (!(Number(body.elapsed) >= minimumFillTime)) {
+    return { ok: false, error: 'Please wait a few seconds and try sending again.' };
+  }
 
   const name = clean(body.name);
   const email = clean(body.email);

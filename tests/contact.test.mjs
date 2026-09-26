@@ -18,8 +18,15 @@ test('rejects missing or bad fields with a readable error', () => {
 
 test('bots get a quiet fake success', () => {
   assert.deepEqual(validate({ ...good, website: 'http://spam.example' }), { ok: true, spam: true });
-  assert.deepEqual(validate({ ...good, elapsed: 400 }), { ok: true, spam: true });
-  assert.deepEqual(validate({ ...good, elapsed: undefined }), { ok: true, spam: true });
+});
+
+test('fast submissions get a retry error instead of a false success', () => {
+  for (const elapsed of [400, undefined, -1]) {
+    assert.deepEqual(validate({ ...good, elapsed }), {
+      ok: false, error: 'Please wait a few seconds and try sending again.',
+    });
+  }
+  assert.equal(validate({ ...good, elapsed: 3000 }).ok, true);
 });
 
 test('line breaks in the name or email cannot add email headers', () => {

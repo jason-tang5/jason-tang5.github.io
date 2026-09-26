@@ -21,7 +21,7 @@ async function send() {
   status.value = 'Sending…';
 
   try {
-    const response = await fetch('api/contact', {
+    const response = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -33,7 +33,7 @@ async function send() {
       }),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Couldn’t send right now.');
+    if (!response.ok || result.ok !== true) throw new Error(result.error || 'Couldn’t send right now.');
 
     message.value = '';
     status.value = 'Sent! I’ll get back to you soon.';
