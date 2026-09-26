@@ -13,8 +13,8 @@ const list = [
   { id: 13, file: 'badminton-highlight', mediaType: 'video', width: 1120, height: 720, description: 'Badminton highlight video', caption: '🏸' },
   { id: 15, file: 'clean', mediaType: 'video', width: 720, height: 1280, description: 'Jason doing a power clean in a university gym', caption: 'clean' },
   { id: 1, date: '2026-01-28', width: 1091, height: 1200, description: 'Pocky resting in a car with his tongue peeking out', caption: 'his name is', name: 'Pocky' },
-  { id: 12, width: 900, height: 1200, description: 'Pocky lying sleepily on the floor with his paws tucked up', caption: 'sleepy zzz' },
   { id: 3, date: '2026-04-07', width: 900, height: 1200, description: 'Two dogs facing each other in a living room', caption: 'and he has a friend called', name: 'pringle' },
+  { id: 12, width: 900, height: 1200, description: 'Pocky lying sleepily on the floor with his paws tucked up', caption: 'sleepy zzz' },
   { id: 5, date: '2026-04-07', width: 900, height: 1200, description: 'A close-up of a dog wearing a collar', caption: 'side eye...' },
 ];
 
