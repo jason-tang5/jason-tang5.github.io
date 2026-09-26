@@ -21,7 +21,7 @@ export const apps = [
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 420),
   app('notepad', 'Notepad', 'notepad', 520, 420),
-  app('music', 'CD Player', 'music', 306, 160, 306, 160),
+  app('music', 'CD Player', 'music', 306, 264, 306, 264),
   app('blog', 'Blog', 'document', 720, 580),
   app('games', 'Games', 'folder', 440, 350, 300, 270),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),

@@ -7,6 +7,8 @@ import { albumUrl, tracks } from '../music.mjs';
 import { loadSpotifyApi } from '../spotify.js';
 import { createPlaybackEndTracker } from '../playback-end.mjs';
 import { noteGlyphs, noteColors } from '../notes.mjs';
+import MusicVisualizer from './MusicVisualizer.vue';
+import { registry } from '../registry.js';
 
 const props = defineProps({ win: Object });
 
@@ -204,14 +206,16 @@ watch(paused, isPaused => {
 });
 
 // ---- window size ----
-// the window is fixed size, so it grows to fit the spotify panel and shrinks back when it's hidden
+// the window is fixed size, so it grows to fit the spotify panel and shrinks back when it's hidden.
+// the base is the registry size (player plus visualizer), not a size saved from before
+// the visualizer existed, which would cut it off
 
 async function fitWindow() {
   await nextTick();
   const win = props.win;
   if (!win || !panel.value || innerWidth <= 700) return;
 
-  baseHeight ??= win.height;
+  baseHeight ??= registry.music.height;
   const height = showSpotify.value ? baseHeight + Math.ceil(panel.value.offsetHeight) : baseHeight;
   if (height === win.height) return;
   Object.assign(win, { height, minHeight: height });
@@ -227,6 +231,7 @@ onMounted(() => {
     if (showSpotify.value) fitWindow();
   });
   panelObserver.observe(panel.value);
+  fitWindow();
   window.addEventListener('site-sound', siteSound);
 });
 
@@ -313,6 +318,9 @@ onBeforeUnmount(() => {
       <div ref="embedHost" class="cd-embed"/>
       <a :href="albumUrl" target="_blank" rel="noopener">Open in Spotify</a>
     </div>
+
+    <!-- a strip under the player on desktop, the rest of the screen on phones -->
+    <MusicVisualizer :playing="!paused"/>
 
     <span class="sr-only" role="status">{{ message }} {{ current.title }}. {{ paused ? 'Paused' : 'Playing' }}. </span>
   </div>
