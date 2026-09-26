@@ -50,9 +50,13 @@ function setColumns(value) {
   asciiColumns.value = Math.max(40, Math.min(220, Math.round(value / 10) * 10));
 }
 
+// the slider stands up on big screens and lies flat under the photo on phones
 function densityAt(event) {
   const rect = densitySlider.value.getBoundingClientRect();
-  setColumns(40 + (rect.bottom - event.clientY - 5.5) / (rect.height - 11) * 180);
+  const along = rect.width > rect.height
+    ? (event.clientX - rect.left - 5.5) / (rect.width - 11)
+    : (rect.bottom - event.clientY - 5.5) / (rect.height - 11);
+  setColumns(40 + along * 180);
 }
 
 function densityDown(event) {
@@ -126,9 +130,14 @@ function render() {
 
   // the gpu loop keeps running so the mouse trail and ripples can fade out.
   // with reduced motion it's paused but still draws the frame.
+  // a fixed column count (the wallpaper asks for 350) is capped so letters stay at
+  // least 4px wide. on a phone 350 columns made them about 1px, which just looked
+  // like a blurry video instead of ascii
   const columns = props.showControls
     ? Math.max(20, Math.round(host.value.clientWidth / imageCellSize.value))
-    : (props.columns || Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7))));
+    : props.columns
+      ? Math.max(40, Math.min(props.columns, Math.round(host.value.clientWidth / 4)))
+      : Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7)));
   root.render(createElement(Boundary, null, createElement(VideoAscii, {
     src: props.source,
     mediaType: props.mediaType,
@@ -137,12 +146,27 @@ function render() {
     mouseEffect: running.value && props.enabled ? mouseTrail : false,
     clickEffect: running.value && props.enabled ? ripple : false,
     revealEffect: false,
-    maxDpr: props.showControls ? 2 : 1,
+    // the library shrinks its canvas by maxDpr / devicePixelRatio, so a fixed 1 left
+    // phones (3x screens) drawing at a third of the resolution, too blurry to read
+    // as letters. follow the screen instead, up to 3x
+    maxDpr: Math.min(3, Math.max(props.showControls ? 2 : 1, window.devicePixelRatio || 1)),
     numColsRaw: columns,
     brightnessRaw: 1.15,
     saturationRaw: 1.2,
     bgOpacityRaw: 0.35,
   })));
+}
+
+// the library's hidden <video> gets muted and playsinline as react props, which don't
+// always become real attributes. iphones only autoplay a video with both attributes,
+// so set them directly and give it a nudge
+function keepVideoPlaying() {
+  const video = host.value?.querySelector('video');
+  if (!video || !running.value) return;
+  video.muted = true;
+  video.setAttribute('muted', '');
+  video.setAttribute('playsinline', '');
+  if (video.paused) video.play().catch(() => {});
 }
 
 function lost(event) {
@@ -183,6 +207,7 @@ watch(
     render();
     await nextTick();
     syncFallback();
+    keepVideoPlaying();
   },
 );
 
@@ -196,6 +221,8 @@ onMounted(() => {
   observer.observe(host.value);
   render();
   syncFallback();
+  // react mounts the library's video a moment later
+  setTimeout(keepVideoPlaying, 300);
 });
 
 onBeforeUnmount(() => {

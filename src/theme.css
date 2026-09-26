@@ -2972,3 +2972,90 @@ label.mail-label {
 .snake-pad-left { grid-area: 2 / 1; }
 .snake-pad-right { grid-area: 2 / 3; }
 .snake-pad-down { grid-area: 3 / 2; }
+
+
+/* ---- ascii controls on phones ----
+   on a small screen the buttons and sliders covered most of the photo, so they move
+   off it into two rows underneath: ascii / normal and the detail slider, with the
+   reset button on the right, then the hammer slider. the sliders lie flat, small
+   end on the left. the frame around each photo makes room for them */
+@media (max-width: 700px) {
+  .ascii-image {
+    overflow: visible;
+  }
+
+  .ascii-mode-controls {
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: 0;
+    max-width: none;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .ascii-density {
+    position: static;
+    flex-direction: row-reverse;
+    width: auto;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .ascii-reset.raised {
+    top: calc(100% + 8px);
+    left: auto;
+    right: 0;
+  }
+
+  .ascii-hammer {
+    top: calc(100% + 50px);
+    left: 0;
+    flex-direction: row-reverse;
+    width: auto;
+    height: 30px;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  /* the flat version of the upright slider */
+  .ascii-density .density-slider,
+  .ascii-hammer .density-slider {
+    width: 96px;
+    height: 18px;
+  }
+
+  .ascii-density .volume-groove,
+  .ascii-hammer .volume-groove {
+    left: 0;
+    right: 0;
+    top: 7px;
+    bottom: auto;
+    width: auto;
+    height: 4px;
+  }
+
+  .ascii-density .volume-thumb,
+  .ascii-hammer .volume-thumb {
+    top: 0;
+    bottom: auto;
+    left: calc(var(--level) * (100% - 11px) / 100);
+    width: 11px;
+    height: 18px;
+  }
+
+  /* room under each photo for the two rows of controls */
+  .portrait-frame {
+    padding-bottom: 92px;
+  }
+
+  .pictures-hero {
+    margin-bottom: 88px;
+    width: min(calc(100cqw - 80px), calc((100cqh - 88px) * var(--photo-ratio)));
+  }
+
+  /* nothing covers the bottom of the photo now, so the caption always fits */
+  .picture-subtitle {
+    display: block !important;
+    max-width: calc(100% - 20px);
+  }
+}

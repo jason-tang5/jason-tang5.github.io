@@ -35,9 +35,13 @@ function setHammer(value) {
   hammerSize.value = Math.max(1, Math.min(7, Math.round(value * 4) / 4));
 }
 
+// upright on big screens, flat under the photo on phones
 function hammerAt(event) {
   const rect = hammerSlider.value.getBoundingClientRect();
-  setHammer(1 + (rect.bottom - event.clientY - 5.5) / (rect.height - 11) * 6);
+  const along = rect.width > rect.height
+    ? (event.clientX - rect.left - 5.5) / (rect.width - 11)
+    : (rect.bottom - event.clientY - 5.5) / (rect.height - 11);
+  setHammer(1 + along * 6);
 }
 
 function hammerDown(event) {
