@@ -469,7 +469,7 @@ try {
   await contact.locator('#breakout-start').click();
   await noisy.waitForTimeout(150);
   const beforeBrick = await tones();
-  await expect(contact.locator('#breakout-status')).not.toHaveText('10 bricks to go.', { timeout: 10000 });
+  await expect(contact.locator('#breakout-status')).not.toHaveText('15 bricks to go.', { timeout: 10000 });
   assert.ok(await tones() > beforeBrick, 'breaking a brick makes a sound');
   await contact.locator('#breakout-start').click();
 
@@ -512,7 +512,7 @@ try {
   await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0);
 
   // once breakout is beaten it stays beaten, with a button straight to mail.
-  // (actually clearing 10 bricks takes too long here, so fake the saved win)
+  // (actually clearing 15 bricks takes too long here, so fake the saved win)
   await mailPage.evaluate(() => localStorage.setItem('jt-desktop:contact-beaten', 'yes'));
   await mailPage.goto(base + '#app=contact');
   const beaten = mailPage.locator('[data-window="contact"]');

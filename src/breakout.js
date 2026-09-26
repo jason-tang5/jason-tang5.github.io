@@ -3,7 +3,7 @@
 // scaled up with css, so all the numbers below are in those canvas units.
 //
 // start with won: true to show the board already cleared. onWin runs when the
-// board is cleared, onRestart when a round is reset. returns
+// board is cleared, onRestart when a round is reset, onLose when the ball is lost. returns
 // { setActive, destroy } so the vue component can pause it when the window
 // loses focus and clean up when it closes.
 
@@ -43,15 +43,25 @@ const glyphs = {
 };
 
 const brickColors = ['#000080', '#244f9c', '#3972ac', '#538eaf', '#008080', '#379b95', '#7170a0', '#9693b7'];
-const ballSpeedScale = 0.5;
+const ballSpeedScale = 0.65;
 const ballSpeed = 380 * ballSpeedScale;
-const paddleY = 268;
+// the ball speeds up the longer a round goes: about 1% a second, up to 1.6x
+const speedUp = elapsed => Math.min(1.6, 1 + elapsed * 0.01);
+// the paddle's top edge. everything else about the paddle is measured from here
+const paddleY = 238;
+// three rows of bricks, 28 tall, from y 40 down to 124. the email hides behind the middle row
+const brickRows = 3;
+const brickHeight = 28;
+const brickTop = 40;
+const emailMiddle = brickTop + brickRows * brickHeight / 2;
+// how much of the board's width the email spans, the css uses the same number
+const emailSpan = 0.8;
 const brickArt = ['+--------+', '|########|', '+--------+'];
 const brickFontSize = 9;
 const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
 
-export function createBreakout(root, { email, won = false, onWin, onRestart }) {
+export function createBreakout(root, { email, won = false, onWin, onRestart, onLose }) {
   // one abort controller so destroy() can drop every listener at once
   const events = new AbortController();
   const on = (target, type, listener) => target?.addEventListener(type, listener, { signal: events.signal });
@@ -184,8 +194,8 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
   function updateEmailProgress() {
     if (!canvas.getBoundingClientRect().width) return;
 
-    // matches the revealed link, which spans 96% of the board
-    const emailWidth = 300 * 0.96;
+    // matches the revealed link (see --email-span in the css)
+    const emailWidth = 300 * emailSpan;
     const emailLeft = (300 - emailWidth) / 2;
     const em = emailWidth / emailMetrics.total;
 
@@ -193,7 +203,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
       // the 5x7 glyph (plus a pixel of spacing) stretched over the letter's real width
       const scale = emailMetrics.widths[index] * em / 6;
       const start = emailLeft + emailMetrics.offsets[index] * em;
-      const top = 68 - (7 * scale) / 2;
+      const top = emailMiddle - (7 * scale) / 2;
 
       const stillCovered = glyphs[letter].some((row, y) => [...row].some((pixel, x) => {
         if (pixel !== '1') return false;
@@ -210,17 +220,16 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
   }
 
   function newBall(x) {
-    return { x, y: 247, vx: 210 * ballSpeedScale, vy: -290 * ballSpeedScale };
+    return { x, y: paddleY - 21, vx: 210 * ballSpeedScale, vy: -290 * ballSpeedScale };
   }
 
   function reset() {
     const columns = 5;
-    const rows = 2;
-    bricks = Array.from({ length: columns * rows }, (_, i) => ({
+    bricks = Array.from({ length: columns * brickRows }, (_, i) => ({
       x: (i % columns) * (300 / columns),
-      y: 40 + Math.floor(i / columns) * (56 / rows),
+      y: brickTop + Math.floor(i / columns) * brickHeight,
       w: 300 / columns,
-      h: 56 / rows,
+      h: brickHeight,
       row: Math.floor(i / columns),
       color: brickColors[Math.floor(i / columns)],
       alive: true,
@@ -278,9 +287,9 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
     ctx.font = font(10);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('[========]', paddle, 270);
-    ctx.fillText('|', 0, 271);
-    ctx.fillText('|', 294, 271);
+    ctx.fillText('[========]', paddle, paddleY + 2);
+    ctx.fillText('|', 0, paddleY + 3);
+    ctx.fillText('|', 294, paddleY + 3);
 
     ctx.fillStyle = '#111';
     ctx.font = font(12);
@@ -290,8 +299,8 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
     }
 
     if (complete) {
-      pixelText('all clear', 178, 2);
-      pixelText('click to play again', 218);
+      pixelText('all clear', 160, 2);
+      pixelText('click to play again', 195);
     } else if (!running) {
       // dim the board while paused
       ctx.fillStyle = 'rgba(238, 238, 231, .88)';
@@ -358,13 +367,22 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
       keys.clear();
       reset();
       onRestart?.();
+      onLose?.();
       message = 'try again';
       startButton.textContent = 'Try again';
-      status.textContent = 'Ball lost! Board reset. 10 bricks to go.';
+      status.textContent = `Ball lost! Board reset. ${bricks.length} bricks to go.`;
     }
   }
 
   function updateBall(ball, dt) {
+    // keep the ball at this moment's speed, whichever way it's heading
+    const speed = ballSpeed * speedUp(elapsed);
+    const current = Math.hypot(ball.vx, ball.vy);
+    if (current) {
+      ball.vx *= speed / current;
+      ball.vy *= speed / current;
+    }
+
     const oldY = ball.y;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
@@ -406,7 +424,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
     if (crossedPaddle && ball.x >= paddle - 4 && ball.x <= paddle + 64) {
       const angle = (ball.x - paddle - 30) / 34;
       ball.vx = angle * 330 * ballSpeedScale;
-      ball.vy = -Math.sqrt(ballSpeed ** 2 - ball.vx * ball.vx);
+      ball.vy = -Math.sqrt(speed ** 2 - ball.vx * ball.vx);
       // After the opening rallies, guide successful paddle returns toward
       // a remaining brick so the email reveal does not become a long cleanup.
       if (elapsed >= 15) {
@@ -414,13 +432,13 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
           Math.abs(a.x + a.w / 2 - ball.x) - Math.abs(b.x + b.w / 2 - ball.x))[0];
         if (target) {
           const dx = target.x + target.w / 2 - ball.x;
-          const dy = target.y + target.h - 264;
+          const dy = target.y + target.h - (paddleY - 4);
           const distance = Math.hypot(dx, dy);
-          ball.vx = dx / distance * ballSpeed;
-          ball.vy = dy / distance * ballSpeed;
+          ball.vx = dx / distance * speed;
+          ball.vy = dy / distance * speed;
         }
       }
-      ball.y = 264;
+      ball.y = paddleY - 4;
     }
   }
 

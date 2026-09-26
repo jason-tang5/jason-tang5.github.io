@@ -1,7 +1,7 @@
 <script setup>
 // picks what goes inside each window based on its type. the small apps live
 // right here, the bigger ones have their own components.
-import { defineAsyncComponent, ref } from 'vue';
+import { defineAsyncComponent, onBeforeUnmount, ref } from 'vue';
 import { profile, projects, roles } from '../content.mjs';
 import AsciiImage from './AsciiImage.vue';
 import Blog from './Blog.vue';
@@ -11,6 +11,8 @@ import Pictures from './Pictures.vue';
 import RetroIcon from './RetroIcon.vue';
 import TechList from './TechList.vue';
 import { read, save, remove } from '../storage.js';
+import { noteGlyphs, noteColors } from '../notes.mjs';
+import { play } from '../sound.js';
 
 // the games only load when someone actually opens them
 const Game = defineAsyncComponent(() => import('./Game.vue'));
@@ -39,6 +41,59 @@ const colors = [
   ['Plum', '#62465e'],
 ];
 
+// the cd at the bottom of the about page. hovering it spins it, plays a little
+// music box tune and puffs out small notes, like the cd player does while it
+// plays. clicking it opens the real cd player
+const hoverNotes = ref([]);
+const cdSpinning = ref(false);
+const cdDisc = ref(null);
+let hoverNoteId = 0;
+let hoverNoteTimer;
+let tuneTimer;
+let tuneStep = 0;
+
+// the notes are teleported onto the desktop (like the cd player's) so they can
+// float up past the edge of the window instead of being cut off by it
+function spawnHoverNote() {
+  const host = document.querySelector('.desktop');
+  const rect = cdDisc.value?.getBoundingClientRect();
+  if (!host || !rect?.width || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const box = host.getBoundingClientRect();
+  const id = hoverNoteId++;
+  const dir = id % 2 ? 1 : -1;
+  hoverNotes.value.push({
+    id,
+    glyph: noteGlyphs[id % noteGlyphs.length],
+    style: {
+      left: `${rect.left - box.left + rect.width / 2 + dir * rect.width * 0.35}px`,
+      top: `${rect.top - box.top + rect.height * 0.25}px`,
+      color: noteColors[id % noteColors.length],
+      '--dx': `${dir * (20 + Math.random() * 40)}px`,
+      '--dy': `${-(80 + Math.random() * 70)}px`,
+    },
+  });
+}
+
+function startCd() {
+  cdSpinning.value = true;
+  clearInterval(hoverNoteTimer);
+  clearInterval(tuneTimer);
+  spawnHoverNote();
+  hoverNoteTimer = setInterval(spawnHoverNote, 320);
+  tuneStep = 0;
+  play('tune', tuneStep++);
+  tuneTimer = setInterval(() => play('tune', tuneStep++), 240);
+}
+
+function stopCd() {
+  cdSpinning.value = false;
+  clearInterval(hoverNoteTimer);
+  clearInterval(tuneTimer);
+}
+
+onBeforeUnmount(stopCd);
+
 const note = ref(read('note'));
 const noteStatus = ref('');
 
@@ -64,6 +119,38 @@ function clearSaved() {
   <!-- about -->
   <div v-if="win.type === 'about'" class="app-layout about-app">
     <div class="content-scroll about-content">
+      <!-- contact and the cd player as two unlabelled icons in the top right.
+           the envelope wiggles on hover, the cd spins, plays a tune and puffs out notes -->
+      <div class="about-shortcuts raised">
+        <button class="about-shortcut about-contact" aria-label="Contact" @click="emit('open', 'contact')">
+          <RetroIcon name="mail" />
+        </button>
+        <button
+          class="about-shortcut"
+          aria-label="CD Player"
+          @click="emit('open', 'music')"
+          @pointerenter="startCd"
+          @pointerleave="stopCd"
+          @focus="startCd"
+          @blur="stopCd"
+        >
+          <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"/>
+        </button>
+      </div>
+      <Teleport to=".desktop">
+        <span
+          v-for="n in hoverNotes"
+          :key="n.id"
+          class="cd-note cd-note-small"
+          :style="n.style"
+          aria-hidden="true"
+          @animationend="hoverNotes = hoverNotes.filter(h => h.id !== n.id)"
+        >
+          <svg :viewBox="`0 0 ${n.glyph.w} ${n.glyph.h}`" :width="n.glyph.w * 1.5" :height="n.glyph.h * 1.5" shape-rendering="crispEdges">
+            <path :d="n.glyph.d" fill="currentColor"/>
+          </svg>
+        </span>
+      </Teleport>
       <div class="about-grid">
         <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
           <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
@@ -82,21 +169,26 @@ function clearSaved() {
           <p class="intro">{{ profile.intro }}</p>
           <p>{{ profile.bio }}</p>
           <div class="about-bottom">
-            <div class="button-row">
-              <button class="raised" @click="emit('open', 'projects')">Projects <span aria-hidden="true">→</span></button>
-              <button class="raised" @click="emit('open', 'experience')">Experience</button>
-              <button class="raised" @click="emit('open', 'contact')">Contact</button>
+            <!-- the lifts box stretches to exactly the width of the button row above it -->
+            <div class="about-links">
+              <div class="button-row">
+                <button class="raised" @click="emit('open', 'projects')">Projects <span aria-hidden="true">→</span></button>
+                <button class="raised" @click="emit('open', 'experience')">Experience</button>
+                <button class="raised" @click="emit('open', 'resume')">Resume</button>
+                <button class="raised" @click="emit('open', 'blog')">Blog</button>
+              </div>
+              <!-- a windows group box, the etched frame with its title in the border -->
+              <fieldset class="lift-box">
+                <legend>lifts (lb)</legend>
+                <dl>
+                  <div v-for="[lift, weight] in profile.lifts" :key="lift">
+                    <dt>{{ lift }}</dt>
+                    <dd>{{ weight }}</dd>
+                  </div>
+                </dl>
+              </fieldset>
             </div>
           </div>
-          <table class="lift-table">
-            <caption>lifts (lb)</caption>
-            <tbody>
-              <tr v-for="[lift, weight] in profile.lifts" :key="lift">
-                <th scope="row">{{ lift }}</th>
-                <td>{{ weight }}</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -204,7 +296,7 @@ function clearSaved() {
     </object>
   </div>
 
-  <Game v-else-if="win.type === 'contact'" :active="active" @unlock="id => emit('unlock', id)"/>
+  <Game v-else-if="win.type === 'contact'" :active="active" @unlock="(id, message) => emit('unlock', id, message)"/>
   <Mail v-else-if="win.type === 'mail'"/>
   <Music v-else-if="win.type === 'music'" :win="win"/>
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>

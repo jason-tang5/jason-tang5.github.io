@@ -166,6 +166,17 @@ const sounds = {
     burst(ac, { freq: 3000, q: 0.8, length: 0.015, volume: 0.07 });
   },
 
+  // hovering the cd on the about page: a little music box tune, one note per call.
+  // the caller passes the step so the tune starts from the top on every hover
+  tune: (ac, step = 0) => {
+    const melody = [0, 4, 7, 12, 9, 7, 4, 2];
+    const pitch = 523.25 * 2 ** (melody[step % melody.length] / 12);
+    blip(ac, { type: 'sine', from: pitch, length: 0.35, volume: 0.04 });
+    blip(ac, { type: 'triangle', from: pitch * 2, length: 0.08, volume: 0.008 });
+    // a soft low note on the downbeats
+    if (step % 4 === 0) blip(ac, { type: 'sine', from: pitch / 4, length: 0.45, volume: 0.03 });
+  },
+
   // lower and a touch longer than a normal click
   close: ac => {
     blip(ac, { from: 900, to: 500, length: 0.05, volume: 0.06 });

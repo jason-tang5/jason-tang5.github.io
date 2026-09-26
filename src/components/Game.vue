@@ -16,6 +16,11 @@ const beaten = ref(contactBeaten());
 let game;
 let mailTimer;
 
+// three lost balls in a row and mail opens anyway. kept outside the component so
+// closing and reopening the contact window doesn't reset the streak
+const mercyAfter = 3;
+let lossesInARow = 0;
+
 function openMail() {
   emit('unlock', 'mail');
 }
@@ -25,6 +30,7 @@ onMounted(() => {
     email: contact.email,
     won: beaten.value,
     onWin: () => {
+      lossesInARow = 0;
       beatContact();
       beaten.value = true;
       // give the revealed email a moment on screen before the mail window pops up
@@ -34,6 +40,13 @@ onMounted(() => {
       clearTimeout(mailTimer);
       forgetContact();
       beaten.value = false;
+    },
+    onLose: () => {
+      if (++lossesInARow < mercyAfter || beaten.value) return;
+      lossesInARow = 0;
+      beatContact();
+      beaten.value = true;
+      emit('unlock', 'mail', 'Three tries is plenty. Mail is open, say hi anyway!');
     },
   });
   game.setActive(props.active);
@@ -76,6 +89,6 @@ onBeforeUnmount(() => {
     <div id="breakout-progress" class="sr-only" aria-label="Email reveal progress"/>
     <span id="breakout-status" class="sr-only" role="status"/>
 
-    <footer class="status-bar"><span>Move with your mouse, touch, or arrow keys.</span></footer>
+    <footer class="status-bar"><span>move with mouse or arrow keys</span></footer>
   </div>
 </template>

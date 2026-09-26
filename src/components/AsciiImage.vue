@@ -36,10 +36,6 @@ const pageHidden = ref(document.hidden);
 const asciiColumns = imageDetail;
 const imageCellSize = computed(() => 540 / asciiColumns.value);
 const densitySlider = ref(null);
-const modeControls = ref(null);
-// the detail slider starts open so people find it. clicking elsewhere tucks it away
-// and the ascii button brings it back
-const densityOpen = ref(true);
 const spinning = ref(false);
 
 // the ↻ button in the top left brings every knocked out letter back
@@ -103,19 +99,6 @@ class Boundary extends Component {
   }
 }
 
-function restoreAscii() {
-  densityOpen.value = props.enabled ? !densityOpen.value : true;
-  emit('update:enabled', true);
-}
-
-function normalMode() {
-  densityOpen.value = false;
-  emit('update:enabled', false);
-}
-
-function closeDensity(event) {
-  if (!modeControls.value?.contains(event.target)) densityOpen.value = false;
-}
 
 function release() {
   root?.unmount();
@@ -208,7 +191,6 @@ onMounted(() => {
   syncMotion();
   motionQuery.addEventListener('change', syncMotion);
   document.addEventListener('visibilitychange', syncVisibility);
-  document.addEventListener('pointerdown', closeDensity, true);
   host.value.addEventListener('webglcontextlost', lost, true);
   observer = new ResizeObserver(render);
   observer.observe(host.value);
@@ -220,7 +202,6 @@ onBeforeUnmount(() => {
   observer?.disconnect();
   motionQuery?.removeEventListener('change', syncMotion);
   document.removeEventListener('visibilitychange', syncVisibility);
-  document.removeEventListener('pointerdown', closeDensity, true);
   fallbackVideo.value?.pause();
   host.value?.removeEventListener('webglcontextlost', lost, true);
   release();
@@ -286,7 +267,6 @@ onBeforeUnmount(() => {
     <!-- stop events here so clicking the toggle doesn't also poke the image or drag the window -->
     <div
       v-if="mediaType === 'image' || showControls"
-      ref="modeControls"
       class="ascii-mode-controls"
 
       role="group"
@@ -296,9 +276,13 @@ onBeforeUnmount(() => {
       @click.stop
       @keydown.stop
     >
-      <button class="raised" :class="{ pressed: enabled }" :aria-pressed="enabled" :aria-expanded="densityOpen && enabled" @click="restoreAscii">ASCII</button>
-      <button class="raised" :class="{ pressed: !enabled }" :aria-pressed="!enabled" @click="normalMode">Normal</button>
-      <div v-if="densityOpen && enabled" class="ascii-density raised" title="ASCII detail" @keydown.esc.stop="densityOpen = false">
+      <button class="raised" :class="{ pressed: enabled }" :aria-pressed="enabled" @click="emit('update:enabled', true)">ASCII</button>
+      <button class="raised" :class="{ pressed: !enabled }" :aria-pressed="!enabled" @click="emit('update:enabled', false)">Normal</button>
+      <!-- the detail slider stays up the whole time ascii is on -->
+      <div v-if="enabled" class="ascii-density raised" title="ASCII detail">
+        <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
+          <path fill="#404040" d="M0 0h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 4h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 8h3v3H0zm4 0h3v3H4zm4 0h3v3H8z"/>
+        </svg>
         <div
           ref="densitySlider"
           class="volume-slider density-slider"
@@ -322,6 +306,9 @@ onBeforeUnmount(() => {
           <span class="volume-groove" />
           <span class="volume-thumb" />
         </div>
+        <svg width="7" height="7" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true">
+          <path fill="#404040" d="M0 0h3v3H0zm4 0h3v3H4zM0 4h3v3H0zm4 0h3v3H4z"/>
+        </svg>
       </div>
     </div>
   </div>

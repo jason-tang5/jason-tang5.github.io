@@ -6,6 +6,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { albumUrl, tracks } from '../music.mjs';
 import { loadSpotifyApi } from '../spotify.js';
 import { createPlaybackEndTracker } from '../playback-end.mjs';
+import { noteGlyphs, noteColors } from '../notes.mjs';
 
 const props = defineProps({ win: Object });
 
@@ -160,45 +161,7 @@ function seek(event) {
 // ---- floating notes ----
 // they're teleported onto the desktop so they can float out past the window edges
 
-function pixelNote(rows) {
-  const d = rows
-    .flatMap((row, y) => [...row].map((c, x) => (c === 'X' ? `M${x} ${y}h1v1h-1z` : '')))
-    .join('');
-  return { w: rows[0].length, h: rows.length, d };
-}
-
-const noteGlyphs = [
-  // eighth note
-  pixelNote([
-    '...XX....',
-    '...XXX...',
-    '...X.XX..',
-    '...X..XX.',
-    '...X...X.',
-    '...X.....',
-    '...X.....',
-    '.XXX.....',
-    'XXXX.....',
-    'XXXX.....',
-    '.XX......',
-  ]),
-  // two beamed notes
-  pixelNote([
-    '...XXXXXXX',
-    '...XXXXXXX',
-    '...X.....X',
-    '...X.....X',
-    '...X.....X',
-    '...X.....X',
-    '.XXX...XXX',
-    'XXXX..XXXX',
-    'XXXX..XXXX',
-    '.XX....XX.',
-  ]),
-  // quarter note
-  pixelNote(['...X', '...X', '...X', '...X', '...X', '...X', '.XXX', 'XXXX', 'XXXX', '.XX.']),
-];
-const noteColors = ['#000080', '#800080', '#008080', '#800000'];
+// the glyphs and colours live in notes.mjs, the about page uses them too
 
 function spawnNote() {
   const host = document.querySelector('.desktop');

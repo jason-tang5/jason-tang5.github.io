@@ -256,6 +256,7 @@ input[type="checkbox"]:focus-visible {
   background: #c0c0c0;
 }
 
+/* same 30px wide box as the hammer slider in the top left */
 .ascii-density {
   position: absolute;
   bottom: calc(100% + 4px);
@@ -263,7 +264,10 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 5px 3px;
+  gap: 5px;
+  width: 30px;
+  box-sizing: border-box;
+  padding: 5px 0;
   background: #c0c0c0;
   color: #000;
 }
@@ -311,90 +315,26 @@ input[type="checkbox"]:focus-visible {
   }
 }
 
-/* hammer size slider in the bottom right, styled like a win98 trackbar */
+/* hammer size slider, stacked under the reset button in the top left. it's the same
+   groove and raised thumb as the ascii detail slider, in the same grey box */
 .ascii-hammer {
-  --hammer-thumb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='20' viewBox='0 0 11 20'%3E%3Cpath fill='%23c0c0c0' d='M0 0h11v14l-5.5 6L0 14z'/%3E%3Cpath fill='none' stroke='%23fff' d='M.5 13.5V.5h9'/%3E%3Cpath fill='none' stroke='%23404040' d='M10.5.5v13L5.5 19 .5 14'/%3E%3Cpath fill='none' stroke='%23808080' d='M9 2v11l-3.5 4'/%3E%3C/svg%3E");
   position: absolute;
   z-index: 2;
-  right: 6px;
-  bottom: 6px;
+  top: 42px;
+  left: 6px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 5px;
-  width: 146px;
-  max-width: calc(100% - 12px);
+  width: 30px;
   box-sizing: border-box;
-  padding: 1px 5px;
-  color: #222;
+  padding: 5px 0;
   background: #c0c0c0;
-  font: 9px/1.2 Tahoma, 'MS Sans Serif', Arial, sans-serif;
 }
 
-.hammer-size-dot {
-  flex-shrink: 0;
-  border: 1px solid #222;
-  border-radius: 50%;
-  background: #555;
-}
-.hammer-size-dot-small { width: 4px; height: 4px; }
-.hammer-size-dot-large { width: 12px; height: 12px; }
-
-/* the tick marks under the slider */
-.ascii-hammer-track {
-  flex: 1;
-  min-width: 0;
-  height: 26px;
-  background: repeating-linear-gradient(to right, #505050 0 1px, transparent 1px 9px) left 5px bottom 2px / calc(100% - 10px) 3px no-repeat;
-}
-
-.ascii-hammer input {
-  appearance: none;
-  -webkit-appearance: none;
+.ascii-hammer svg,
+.ascii-density svg {
   display: block;
-  width: 100%;
-  height: 20px;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.ascii-hammer input::-webkit-slider-runnable-track {
-  height: 3px;
-  background: #808080;
-  border-top: 1px solid #404040;
-  border-bottom: 1px solid #fff;
-}
-
-.ascii-hammer input::-moz-range-track {
-  height: 1px;
-  background: #808080;
-  border-top: 1px solid #404040;
-  border-bottom: 1px solid #fff;
-}
-
-.ascii-hammer input::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 11px;
-  height: 20px;
-  margin-top: -8px;
-  border: 0;
-  border-radius: 0;
-  background: var(--hammer-thumb) center / contain no-repeat;
-}
-
-.ascii-hammer input::-moz-range-thumb {
-  width: 11px;
-  height: 20px;
-  border: 0;
-  border-radius: 0;
-  background: var(--hammer-thumb) center / contain no-repeat;
-}
-
-.ascii-hammer input:focus-visible {
-  outline: 1px dotted #000;
-  outline-offset: 1px;
 }
 
 /* squeeze the controls on tiny images */
@@ -404,12 +344,6 @@ input[type="checkbox"]:focus-visible {
     font-size: 9px;
   }
 
-  .ascii-hammer {
-    width: calc(100% - 100px);
-    gap: 2px;
-    padding: 1px 3px;
-    font-size: 8px;
-  }
 }
 
 
@@ -545,6 +479,11 @@ input[type="checkbox"]:focus-visible {
 .first-tip p {
   line-height: 1.5;
   margin: 8px 0;
+}
+
+/* same look as the welcome tip, but over the windows so it isn't hidden by the one it's about */
+.desktop-notice {
+  z-index: 100000;
 }
 
 
@@ -1189,36 +1128,43 @@ input[type="checkbox"]:focus-visible {
   min-height: 31px;
 }
 
-/* small monospace table of lifts under the buttons */
-.lift-table {
-  margin-top: 18px;
-  border-collapse: collapse;
+/* the buttons and the lifts box under them share one column, sized by the buttons */
+.about-links {
+  display: grid;
+  gap: 20px;
+}
+
+/* the lifts, in a windows group box: an etched frame with the title in its border.
+   width 0 plus min-width 100% makes it take the button row's width without widening it */
+.lift-box {
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 12px 8px;
+  border: 1px solid #808080;
+  box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #fff;
   font: 12px/1.6 'Courier New', monospace;
   color: #3d3d3a;
 }
 
-.lift-table caption {
-  text-align: left;
+.lift-box legend {
+  padding: 0 4px;
   font-size: 11px;
   letter-spacing: 1px;
   color: #6b6b66;
-  padding-bottom: 4px;
 }
 
-.lift-table th,
-.lift-table td {
-  padding: 2px 0;
-  border-bottom: 1px dotted #bbbcb3;
+.lift-box dl {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin: 0;
 }
 
-.lift-table th {
-  font-weight: normal;
-  text-align: left;
-  padding-right: 32px;
-}
-
-.lift-table td {
-  text-align: right;
+.lift-box dd {
+  margin: 0;
   font-weight: bold;
 }
 
@@ -1236,6 +1182,14 @@ input[type="checkbox"]:focus-visible {
   .portrait-frame .portrait-ascii {
     flex: none;
     aspect-ratio: 1525 / 1940;
+  }
+
+  /* the contact and cd box covers the photo's top right corner here, so the hint
+     moves to the left, next to the reset button */
+  .portrait-hint {
+    right: auto;
+    left: 46px;
+    width: max-content;
   }
 }
 
@@ -1800,6 +1754,92 @@ fieldset {
   animation: cd-note-float 3s steps(24) forwards;
 }
 
+/* the cd in the top right of the about page, the same 32px as the envelope beside it.
+   it spins while hovered */
+.about-cd-disc {
+  display: block;
+  width: 32px;
+  height: 32px;
+  background: url(../assets/cd-disc-frames.png) 0 0 / 384px 32px no-repeat;
+  image-rendering: pixelated;
+  animation: about-cd-spin 1.2s steps(12) infinite paused;
+}
+
+.about-cd-disc.spinning {
+  animation-play-state: running;
+}
+
+@keyframes about-cd-spin {
+  to { background-position: -384px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-cd-disc.spinning {
+    animation-play-state: paused;
+  }
+}
+
+/* contact and the cd player in the top right of the about window, like desktop icons.
+   they sit in the same raised grey box as the ascii sliders, so they still read as
+   controls when a narrow window puts the photo right under them */
+.about-content {
+  position: relative;
+}
+
+.about-shortcuts {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 3px 4px;
+  background: #c0c0c0;
+}
+
+.about-shortcut {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: var(--classic-pointer);
+}
+
+.about-shortcut:focus-visible {
+  outline: 1px dotted #000;
+}
+
+/* hovering hops and wiggles the envelope, in stepped frames so it moves like pixel art */
+.about-contact:hover .retro-icon,
+.about-contact:focus-visible .retro-icon {
+  animation: about-contact-wiggle 0.7s steps(7) infinite;
+}
+
+@keyframes about-contact-wiggle {
+  0% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-4px) rotate(-8deg); }
+  40% { transform: translateY(-4px) rotate(8deg); }
+  60% { transform: translateY(-2px) rotate(-5deg); }
+  80% { transform: translateY(0) rotate(3deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-contact:hover .retro-icon,
+  .about-contact:focus-visible .retro-icon {
+    animation: none;
+  }
+}
+
+/* the smaller notes from hovering the cd on the about page */
+.cd-note-small {
+  filter: drop-shadow(1px 1px 0 #fff);
+  animation-duration: 2s;
+}
+
 @keyframes cd-note-float {
   0% { opacity: 0; transform: translate(0, 0); }
   10% { opacity: 1; }
@@ -1943,21 +1983,25 @@ fieldset {
 /* the email link hides behind the canvas until the board is cleared.
    the position has to line up with where breakout.js expects the letters */
 .contact-game .breakout-email {
+  /* how much of the board the email spans, breakout.js uses the same number */
+  --email-span: .8;
   position: absolute;
+  /* the three brick rows: y 40 to 124 of the 300 unit board */
   inset: 13.3333% 0 auto;
-  height: 18.6667%;
+  height: 28%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* same pixel font as the JASON TANG signature on the desktop. breakout.js measures
-   how many ems wide the address is (--email-em) so it spans 96% of the board */
+   how many ems wide the address is (--email-em) so it spans --email-span of the board,
+   leaving some room at the sides */
 .contact-game .breakout-email a {
-  width: 96%;
+  width: calc(var(--email-span) * 100%);
   max-width: none;
   color: #000080;
-  font: bold calc(96cqw / var(--email-em, calc(var(--email-chars) * .6))) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  font: bold calc(var(--email-span) * 100cqw / var(--email-em, calc(var(--email-chars) * .6))) 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -2112,8 +2156,8 @@ label.mail-label {
   height: 100%;
 }
 
-/* sits along the bottom of the photo, in the gap between the ascii/normal buttons
-   on the left and the hammer slider on the right */
+/* sits along the bottom of the photo, centred and clear of the ascii/normal buttons
+   in the bottom left (the hammer slider lives in the top left now) */
 .picture-subtitle {
   position: absolute;
   left: 50%;
@@ -2121,7 +2165,7 @@ label.mail-label {
   transform: translateX(-50%);
   padding: 3px 8px;
   width: max-content;
-  max-width: calc(100% - 330px);
+  max-width: calc(100% - 250px);
   text-align: center;
   color: #fff;
   background: #000080;
@@ -2133,7 +2177,7 @@ label.mail-label {
 }
 
 /* too narrow for a caption between the controls, so leave it off */
-@container picture (max-width: 460px) {
+@container picture (max-width: 380px) {
   .picture-subtitle {
     display: none;
   }

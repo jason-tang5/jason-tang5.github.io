@@ -32,6 +32,9 @@ const selected = ref(null);
 const startOpen = ref(false);
 const calendar = ref(false);
 const announcement = ref('');
+// a yellow note in the top right, like the welcome tip but on top of the windows
+const notice = ref(null);
+let noticeTimer;
 
 // template refs
 const desktop = ref(null);
@@ -92,9 +95,17 @@ async function focusRegion(id) {
 // locked apps (just mail) stay closed until they're earned, see unlocks.js
 const canOpen = id => Boolean(registry[id]) && (!registry[id].locked || isUnlocked(id));
 
-// contact asks for this after a win, or from its go to mail button
-function unlock(id) {
+// contact asks for this after a win, or from its go to mail button, or with a
+// message when it gives mail away after three losses in a row
+function unlock(id, message) {
   open(id);
+  if (message) showNotice(message);
+}
+
+function showNotice(message) {
+  notice.value = message;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { notice.value = null; }, 8000);
 }
 
 // keep the url in sync so links like #app=projects open the right window.
@@ -545,6 +556,7 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect();
   clearInterval(timer);
   clearTimeout(saveLayoutTimer);
+  clearTimeout(noticeTimer);
   document.removeEventListener('pointerdown', outside);
   document.removeEventListener('keydown', escape);
   document.removeEventListener('pointerdown', pressSound, true);
@@ -596,6 +608,14 @@ onBeforeUnmount(() => {
           <button aria-label="Dismiss welcome message" @click="dismissTip">×</button>
         </div>
         <p>feel free to click around</p>
+      </aside>
+
+      <aside v-if="notice" class="first-tip desktop-notice raised" role="status" aria-label="Notification">
+        <div class="tip-heading">
+          <strong>Mail unlocked</strong>
+          <button aria-label="Dismiss notification" @click="notice = null">×</button>
+        </div>
+        <p>{{ notice }}</p>
       </aside>
 
       <DesktopWindow

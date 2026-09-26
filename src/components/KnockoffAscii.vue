@@ -27,6 +27,35 @@ const characters = ' .,:;i1tfLCG08@';
 const canvas = ref(null);
 const remaining = ref(0);
 const hammerSize = ref(2);
+const hammerSlider = ref(null);
+let hammerDragging = false;
+
+// the hammer slider runs 1 (bottom) to 7 (top) in quarter steps, dragged or with the keys
+function setHammer(value) {
+  hammerSize.value = Math.max(1, Math.min(7, Math.round(value * 4) / 4));
+}
+
+function hammerAt(event) {
+  const rect = hammerSlider.value.getBoundingClientRect();
+  setHammer(1 + (rect.bottom - event.clientY - 5.5) / (rect.height - 11) * 6);
+}
+
+function hammerDown(event) {
+  if (event.button !== 0) return;
+  hammerDragging = true;
+  hammerSlider.value.setPointerCapture(event.pointerId);
+  hammerSlider.value.focus();
+  hammerAt(event);
+}
+
+function hammerKeys(event) {
+  const steps = { ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5, PageUp: 1.5, PageDown: -1.5 };
+  if (event.key === 'Home') setHammer(1);
+  else if (event.key === 'End') setHammer(7);
+  else if (event.key in steps) setHammer(hammerSize.value + steps[event.key]);
+  else return;
+  event.preventDefault();
+}
 
 let picture;
 let observer;
@@ -533,21 +562,37 @@ onBeforeUnmount(() => {
     @keydown.space.stop.prevent="keyboard"
   />
 
-  <!-- hammer size slider. stops events so dragging it doesn't smash letters or move the window -->
-  <div v-show="visible" class="ascii-hammer" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
-    <span class="hammer-size-dot hammer-size-dot-small" aria-hidden="true"/>
-    <div class="ascii-hammer-track">
-      <input
-        v-model.number="hammerSize"
-        aria-label="Hammer size"
-        type="range"
-        min="1"
-        max="7"
-        step="0.25"
-        :aria-valuetext="`Size ${hammerSize}`"
-        :title="`Hammer size: ${hammerSize}`"
-      >
+  <!-- hammer size slider, built like the ascii detail slider and stacked under the reset
+       button. a big pixel circle marks the big end, a small one the small end. stops events
+       so dragging it doesn't smash letters or move the window -->
+  <div v-show="visible" class="ascii-hammer raised" title="Hammer size" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
+    <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
+      <path fill="#404040" d="M3 0h5v1H3zM1 1h9v2H1zM0 3h11v5H0zM1 8h9v2H1zM3 10h5v1H3z"/>
+    </svg>
+    <div
+      ref="hammerSlider"
+      class="volume-slider density-slider"
+      role="slider"
+      :tabindex="visible ? 0 : -1"
+      aria-label="Hammer size"
+      aria-orientation="vertical"
+      aria-valuemin="1"
+      aria-valuemax="7"
+      :aria-valuenow="hammerSize"
+      :aria-valuetext="`Size ${hammerSize}`"
+      :style="{ '--level': (hammerSize - 1) / 6 * 100 }"
+      @pointerdown="hammerDown"
+      @pointermove="hammerDragging && hammerAt($event)"
+      @pointerup="hammerDragging = false"
+      @pointercancel="hammerDragging = false"
+      @lostpointercapture="hammerDragging = false"
+      @keydown="hammerKeys"
+    >
+      <span class="volume-groove" />
+      <span class="volume-thumb" />
     </div>
-    <span class="hammer-size-dot hammer-size-dot-large" aria-hidden="true"/>
+    <svg width="5" height="5" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true">
+      <path fill="#404040" d="M1 0h3v1H1zM0 1h5v3H0zM1 4h3v1H1z"/>
+    </svg>
   </div>
 </template>
