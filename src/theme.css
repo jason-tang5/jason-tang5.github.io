@@ -275,6 +275,42 @@ input[type="checkbox"]:focus-visible {
   min-height: 25px;
 }
 
+/* the pixel ↻ in the top left that brings the letters back */
+.ascii-reset.raised {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  padding: 0;
+  background: #c0c0c0;
+}
+
+.ascii-reset svg {
+  display: block;
+}
+
+/* one clockwise turn in quarter steps, so the pixels stay square */
+.ascii-reset.spinning svg {
+  animation: ascii-reset-spin 0.4s steps(4, end);
+}
+
+@keyframes ascii-reset-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascii-reset.spinning svg {
+    animation: none;
+  }
+}
+
 /* hammer size slider in the bottom right, styled like a win98 trackbar */
 .ascii-hammer {
   --hammer-thumb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='20' viewBox='0 0 11 20'%3E%3Cpath fill='%23c0c0c0' d='M0 0h11v14l-5.5 6L0 14z'/%3E%3Cpath fill='none' stroke='%23fff' d='M.5 13.5V.5h9'/%3E%3Cpath fill='none' stroke='%23404040' d='M10.5.5v13L5.5 19 .5 14'/%3E%3Cpath fill='none' stroke='%23808080' d='M9 2v11l-3.5 4'/%3E%3C/svg%3E");
@@ -1432,10 +1468,10 @@ input[type="checkbox"]:focus-visible {
   margin: 12px 0;
 }
 
-/* one line under each title in the post list */
+/* one line under each post's date in the post list */
 .blog-list .blog-subtitle {
-  margin: 2px 0;
-  color: #3c3c46;
+  margin-top: 14px;
+  color: #111;
 }
 
 /* the small, medium and large A buttons */
@@ -1582,11 +1618,14 @@ input[type="checkbox"]:focus-visible {
   padding: 0;
 }
 
+/* each post is its title, the date, then the subtitle, with an etched line under it */
 .blog-list li {
-  margin: 20px 0;
   display: flex;
   flex-direction: column;
   align-items: start;
+  padding: 22px 0 24px;
+  border-bottom: 1px solid #a0a0a0;
+  box-shadow: 0 1px 0 #e4e4e4;
 }
 
 .blog-list button {
@@ -1594,8 +1633,16 @@ input[type="checkbox"]:focus-visible {
   border: 0;
   padding: 0;
   font: inherit;
+  font-size: 17px;
+  font-weight: bold;
+  text-align: left;
   color: #000080;
   text-decoration: underline;
+}
+
+.blog-list time {
+  margin-top: 4px;
+  color: #808088;
 }
 
 /* the editor you get when signed in reuses the mail window's fields */
@@ -2023,6 +2070,7 @@ label.mail-label {
 /* biggest size that fits the stage while keeping the photo's shape */
 .pictures-hero {
   position: relative;
+  container: picture / inline-size;
   margin: 0;
   width: min(calc(100cqw - 80px), calc(100cqh * var(--photo-ratio)));
   aspect-ratio: var(--photo-ratio);
@@ -2062,15 +2110,16 @@ label.mail-label {
   height: 100%;
 }
 
-/* sits above the ascii controls at the bottom of the photo */
+/* sits along the bottom of the photo, in the gap between the ascii/normal buttons
+   on the left and the hammer slider on the right */
 .picture-subtitle {
   position: absolute;
   left: 50%;
-  bottom: 74px;
+  bottom: 8px;
   transform: translateX(-50%);
   padding: 3px 8px;
   width: max-content;
-  max-width: calc(100% - 20px);
+  max-width: calc(100% - 330px);
   text-align: center;
   color: #fff;
   background: #000080;
@@ -2079,6 +2128,13 @@ label.mail-label {
   box-shadow: 1px 1px 0 #000;
   font: 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
   pointer-events: none;
+}
+
+/* too narrow for a caption between the controls, so leave it off */
+@container picture (max-width: 460px) {
+  .picture-subtitle {
+    display: none;
+  }
 }
 
 .picture-subtitle span {

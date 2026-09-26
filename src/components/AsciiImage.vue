@@ -9,7 +9,6 @@ import { createElement, Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VideoAscii } from 'react-video-ascii';
 import KnockoffAscii from './KnockoffAscii.vue';
-import { read, save } from '../storage.js';
 import { imageDetail } from '../ascii-density.js';
 
 const props = defineProps({
@@ -31,15 +30,24 @@ const failed = ref(false);
 const asciiReset = ref(0);
 const reducedMotion = ref(false);
 const pageHidden = ref(document.hidden);
-const densityKey = props.mediaType === 'video' ? 'video-ascii-columns' : 'image-ascii-columns';
-const savedColumns = Number(read(densityKey, String(props.columns || (props.mediaType === 'video' ? 220 : 90))));
-const asciiColumns = props.mediaType === 'image' ? imageDetail : ref(Number.isFinite(savedColumns) ? Math.min(220, Math.max(40, savedColumns)) : 220);
-// A shared pixel pitch keeps characters the same size on wide and narrow photos.
+// one detail setting for every photo and video in my pictures. it becomes a letter
+// size in pixels, not a column count, so a narrow portrait video and a wide landscape
+// one (or a photo) get the same size letters at the same slider position
+const asciiColumns = imageDetail;
 const imageCellSize = computed(() => 540 / asciiColumns.value);
-if (props.mediaType === 'video') watch(asciiColumns, value => save(densityKey, value));
 const densitySlider = ref(null);
 const modeControls = ref(null);
-const densityOpen = ref(false);
+// the detail slider starts open so people find it. clicking elsewhere tucks it away
+// and the ascii button brings it back
+const densityOpen = ref(true);
+const spinning = ref(false);
+
+// the ↻ button in the top left brings every knocked out letter back
+function resetAscii() {
+  asciiReset.value++;
+  spinning.value = false;
+  requestAnimationFrame(() => { spinning.value = true; });
+}
 let densityDragging = false;
 
 function setColumns(value) {
@@ -135,7 +143,9 @@ function render() {
 
   // the gpu loop keeps running so the mouse trail and ripples can fade out.
   // with reduced motion it's paused but still draws the frame.
-  const columns = props.showControls ? asciiColumns.value : (props.columns || Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7))));
+  const columns = props.showControls
+    ? Math.max(20, Math.round(host.value.clientWidth / imageCellSize.value))
+    : (props.columns || Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7))));
   root.render(createElement(Boundary, null, createElement(VideoAscii, {
     src: props.source,
     mediaType: props.mediaType,
@@ -257,6 +267,22 @@ onBeforeUnmount(() => {
       :reduced-motion="reducedMotion"
       @error="failed = true"
     />
+    <button
+      v-if="mediaType === 'image' && enabled && !failed"
+      class="ascii-reset raised"
+      :class="{ spinning }"
+      title="Bring the letters back"
+      aria-label="Bring the ASCII letters back"
+      @pointerdown.stop
+      @pointermove.stop
+      @keydown.stop
+      @click.stop="resetAscii"
+      @animationend="spinning = false"
+    >
+      <svg width="24" height="24" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+        <path fill="#404040" d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/>
+      </svg>
+    </button>
     <!-- stop events here so clicking the toggle doesn't also poke the image or drag the window -->
     <div
       v-if="mediaType === 'image' || showControls"
@@ -283,7 +309,7 @@ onBeforeUnmount(() => {
           aria-valuemin="40"
           aria-valuemax="220"
           :aria-valuenow="asciiColumns"
-          :aria-valuetext="mediaType === 'image' ? `${Math.round((asciiColumns - 40) / 180 * 100)}% detail` : `${asciiColumns} columns`"
+          :aria-valuetext="`${Math.round((asciiColumns - 40) / 180 * 100)}% detail`"
           :aria-disabled="!enabled"
           :style="{ '--level': (asciiColumns - 40) / 180 * 100 }"
           @pointerdown="densityDown"

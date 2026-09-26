@@ -311,8 +311,8 @@ async function destroy() {
         <ul v-else class="blog-list">
           <li v-for="entry in allPosts" :key="entry.slug">
             <button @click="slug = entry.slug">{{ entry.title }}</button>
-            <span v-if="entry.subtitle" class="blog-subtitle">{{ entry.subtitle }}</span>
             <time :datetime="entry.date">{{ date(entry.date) }}</time>
+            <span v-if="entry.subtitle" class="blog-subtitle">{{ entry.subtitle }}</span>
           </li>
         </ul>
       </template>
