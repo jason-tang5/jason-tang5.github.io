@@ -64,6 +64,11 @@ try {
     if (r.url().startsWith(base) && r.status() >= 400) missing.push(r.url());
   });
 
+  // the static server has no worker. act like a visitor who isn't signed in:
+  // no posts written on the site, and access never lets /api/admin/* through
+  await page.route('**/api/blog', route => route.fulfill({ json: { posts: [] } }));
+  await page.route('**/api/admin/**', route => route.abort());
+
   // opens an app through the url hash like a shared link would
   const open = async id => {
     await page.evaluate(id => { location.hash = `app=${id}`; }, id);

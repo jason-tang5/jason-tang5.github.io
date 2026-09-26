@@ -1531,6 +1531,20 @@ input[type="checkbox"]:focus-visible {
   text-decoration: underline;
 }
 
+/* the editor you get when signed in reuses the mail window's fields */
+.blog-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 4px;
+  gap: 4px;
+}
+
+.blog-source {
+  font: 14px/1.6 Consolas, 'Courier New', monospace;
+}
+
 
 /* ---- settings ---- */
 

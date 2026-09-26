@@ -1,6 +1,7 @@
 // cloudflare workers config for jasontang.dev.
 // the built site in dist/ is served as static files. only /api/* runs the
-// worker in worker/index.js, which sends the mail window's messages
+// worker in worker/index.js, which sends the mail window's messages and
+// saves blog posts
 {
 	"name": "jasontang-dev",
 	"main": "worker/index.js",
@@ -26,6 +27,22 @@
 			"destination_address": "jasontcanada@gmail.com"
 		}
 	],
+	// blog posts written from the site. create it with
+	// `npx wrangler kv namespace create BLOG` and paste the id here
+	"kv_namespaces": [
+		{
+			"binding": "BLOG",
+			"id": "47a530bb2a704a848e32675d8694433d",
+			"remote": true
+		}
+	],
+	// only this email can write posts. ACCESS_TEAM_DOMAIN and ACCESS_AUD come from the
+	// cloudflare access application protecting /api/admin/* (see the readme)
+	"vars": {
+		"ADMIN_EMAIL": "jasontcanada@gmail.com",
+		"ACCESS_TEAM_DOMAIN": "quiet-butterfly-8b30.cloudflareaccess.com",
+		"ACCESS_AUD": "f86b7c00ec8b87b8ee86249e4a3a9524dedc9ff6f7c36a5585d61de0d71c904c"
+	},
 	"routes": [
 		{
 			"pattern": "jasontang.dev",

@@ -1,8 +1,12 @@
 <script setup>
-// blog list and article view. posts come from blog.mjs unless the test passes some in.
+// blog list, article view and (when i'm signed in) the editor. posts come from
+// blog.mjs plus whatever i've written on the site, which the worker keeps in kv
+// (worker/blog.mjs). the test can pass its own posts in.
 // every block renders as plain text, demos run in a sandboxed iframe.
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick, onMounted } from 'vue';
 import { posts as localPosts } from '../blog.mjs';
+import { parse, slugify } from '../blog-markup.mjs';
+import { read, save, remove } from '../storage.js';
 
 const props = defineProps({
   posts: { type: Array, default: () => localPosts },
@@ -11,19 +15,75 @@ const props = defineProps({
 const slug = ref(null);
 const status = ref('');
 const reading = ref(null);
+const written = ref([]);
+// my email once access says i'm signed in
+const admin = ref(null);
+const draft = ref(null);
+const previewing = ref(false);
+const saving = ref(false);
 
-const post = computed(() => props.posts.find(p => p.slug === slug.value));
+// posts written on the site win over ones in blog.mjs with the same slug
+const allPosts = computed(() => {
+  const slugs = new Set(written.value.map(p => p.slug));
+  return [...written.value, ...props.posts.filter(p => !slugs.has(p.slug))]
+    .sort((a, b) => b.date.localeCompare(a.date));
+});
+
+const draftPost = computed(() => draft.value && {
+  ...draft.value,
+  lead: draft.value.leadImage ? { type: 'image', src: draft.value.leadImage, alt: draft.value.title } : null,
+  blocks: parse(draft.value.source),
+});
+
+const post = computed(() => previewing.value ? draftPost.value : allPosts.value.find(p => p.slug === slug.value));
 
 // jump back to the top whenever you switch posts
-watch(slug, async () => {
+watch([slug, previewing], async () => {
   status.value = '';
   await nextTick();
   reading.value?.scrollTo(0, 0);
 });
 
+// keep the draft around so closing the window doesn't lose it
+watch(draft, value => value ? save('blog-draft', JSON.stringify(value)) : remove('blog-draft'), { deep: true });
+
+onMounted(async () => {
+  try {
+    const response = await fetch('api/blog');
+    if (response.ok) written.value = (await response.json()).posts ?? [];
+  } catch {
+    // no worker (like in vite dev), so just the posts in blog.mjs
+  }
+
+  try {
+    // without an access cookie this redirects to the sign in page, which counts as signed out
+    const response = await fetch('api/admin/me', { redirect: 'manual' });
+    if (response.ok) admin.value = (await response.json()).email ?? null;
+  } catch {
+    // signed out
+  }
+
+  if (admin.value) {
+    try {
+      const saved = JSON.parse(read('blog-draft', 'null'));
+      if (saved) {
+        draft.value = saved;
+        status.value = 'Restored your unsaved draft.';
+      }
+    } catch {
+      remove('blog-draft');
+    }
+  }
+});
+
 // noon so the date doesn't slip a day in timezones behind utc
 function date(value) {
   return new Date(`${value}T12:00:00`).toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function today() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
 async function copy(code) {
@@ -34,21 +94,137 @@ async function copy(code) {
     status.value = 'Copy unavailable. Select the code and copy it manually.';
   }
 }
+
+function newPost() {
+  draft.value = { title: '', slug: '', date: today(), leadImage: '', source: '', previousSlug: '', slugEdited: false };
+  previewing.value = false;
+}
+
+function edit(entry) {
+  draft.value = {
+    title: entry.title,
+    slug: entry.slug,
+    date: entry.date,
+    leadImage: entry.leadImage ?? '',
+    source: entry.source,
+    previousSlug: entry.slug,
+    slugEdited: true,
+  };
+  previewing.value = false;
+}
+
+function retitle() {
+  if (!draft.value.slugEdited) draft.value.slug = slugify(draft.value.title);
+}
+
+function close() {
+  if (draft.value.source && !confirm('Discard this draft?')) return;
+  draft.value = null;
+  previewing.value = false;
+}
+
+async function request(method, path, body) {
+  const response = await fetch(`api/admin/blog/${encodeURIComponent(path)}`, {
+    method,
+    redirect: 'manual',
+    headers: { 'Content-Type': 'application/json' },
+    body: body && JSON.stringify(body),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Couldn’t reach the server. Are you still signed in?');
+  return result;
+}
+
+async function publish() {
+  if (saving.value) return;
+  saving.value = true;
+  status.value = 'Saving…';
+
+  try {
+    const { title, date, leadImage, source, previousSlug } = draft.value;
+    const saved = (await request('PUT', draft.value.slug, { title, date, leadImage, source, previousSlug })).post;
+    written.value = [saved, ...written.value.filter(p => p.slug !== saved.slug && p.slug !== previousSlug)];
+    draft.value = null;
+    previewing.value = false;
+    slug.value = saved.slug;
+    await nextTick();
+    status.value = 'Published.';
+  } catch (error) {
+    status.value = error.message;
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function destroy() {
+  const target = draft.value.previousSlug;
+  if (!confirm(`Delete “${draft.value.title}”? This can’t be undone.`)) return;
+
+  try {
+    await request('DELETE', target);
+    written.value = written.value.filter(p => p.slug !== target);
+    draft.value = null;
+    previewing.value = false;
+    slug.value = null;
+    await nextTick();
+    status.value = 'Deleted.';
+  } catch (error) {
+    status.value = error.message;
+  }
+}
 </script>
 
 <template>
   <div class="app-layout">
     <div class="toolbar">
-      <button v-if="post" class="raised" @click="slug = null">Back to Blog</button>
-      <span v-else>Blog</span>
+      <template v-if="draft">
+        <button class="raised" :disabled="saving" @click="publish">Publish</button>
+        <button class="raised" :class="{ pressed: previewing }" @click="previewing = !previewing">Preview</button>
+        <button class="raised" @click="close">Cancel</button>
+        <button v-if="draft.previousSlug" class="raised toolbar-link" @click="destroy">Delete</button>
+      </template>
+      <template v-else-if="post">
+        <button class="raised" @click="slug = null">Back to Blog</button>
+        <button v-if="admin && post.source" class="raised" @click="edit(post)">Edit</button>
+      </template>
+      <template v-else>
+        <span>Blog</span>
+        <button v-if="admin" class="raised" @click="newPost">New Post</button>
+        <a v-if="admin" class="toolbar-link" href="/cdn-cgi/access/logout">Sign out</a>
+      </template>
     </div>
 
-    <div ref="reading" class="content-scroll blog-reading">
+    <!-- enter in a field shouldn't publish half a post, so submitting does nothing -->
+    <form v-if="draft && !previewing" class="blog-editor" @submit.prevent>
+      <div class="mail-fields">
+        <label class="raised mail-label" for="blog-title">Title</label>
+        <input id="blog-title" v-model="draft.title" class="inset" maxlength="200" required @input="retitle">
+
+        <label class="raised mail-label" for="blog-slug">Slug</label>
+        <input id="blog-slug" v-model="draft.slug" class="inset" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" required @input="draft.slugEdited = true">
+
+        <label class="raised mail-label" for="blog-date">Date</label>
+        <input id="blog-date" v-model="draft.date" class="inset" type="date" required>
+
+        <label class="raised mail-label" for="blog-lead">Image</label>
+        <input id="blog-lead" v-model="draft.leadImage" class="inset" placeholder="optional lead image, https://… or /assets/…">
+      </div>
+
+      <textarea
+        v-model="draft.source"
+        class="mail-message inset blog-source"
+        aria-label="Post"
+        maxlength="50000"
+        placeholder="Write here. Blank lines split paragraphs, ## starts a heading, ![alt](url &quot;caption&quot;) adds an image, ``` fences code."
+      />
+    </form>
+
+    <div v-else ref="reading" class="content-scroll blog-reading">
       <template v-if="!post">
         <h1>Blog</h1>
-        <p v-if="!posts.length">No posts published yet.</p>
+        <p v-if="!allPosts.length">No posts published yet.</p>
         <ul v-else class="blog-list">
-          <li v-for="entry in posts" :key="entry.slug">
+          <li v-for="entry in allPosts" :key="entry.slug">
             <button @click="slug = entry.slug">{{ entry.title }}</button>
             <time :datetime="entry.date">{{ date(entry.date) }}</time>
           </li>
@@ -56,7 +232,7 @@ async function copy(code) {
       </template>
 
       <article v-else>
-        <h1>{{ post.title }}</h1>
+        <h1>{{ post.title || 'Untitled' }}</h1>
         <time :datetime="post.date">{{ date(post.date) }}</time>
         <template v-for="(block, i) in [post.lead, ...post.blocks].filter(Boolean)" :key="i">
           <p v-if="block.type === 'paragraph'">{{ block.text }}</p>
@@ -84,6 +260,9 @@ async function copy(code) {
       </article>
     </div>
 
-    <footer class="status-bar" role="status"><span>{{ status || `${posts.length} posts` }}</span></footer>
+    <footer class="status-bar" role="status">
+      <span>{{ status || (draft ? (previewing ? 'Previewing. Press Preview again to keep writing.' : 'Writing a post.') : `${allPosts.length} posts`) }}</span>
+      <span v-if="admin">Signed in</span>
+    </footer>
   </div>
 </template>
