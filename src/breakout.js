@@ -3,7 +3,7 @@
 // scaled up with css, so all the numbers below are in those canvas units.
 //
 // start with won: true to show the board already cleared. onWin runs when the
-// board is cleared, onRestart when the restart button is pressed. returns
+// board is cleared, onRestart when a round is reset. returns
 // { setActive, destroy } so the vue component can pause it when the window
 // loses focus and clean up when it closes.
 
@@ -46,7 +46,7 @@ const brickColors = ['#000080', '#244f9c', '#3972ac', '#538eaf', '#008080', '#37
 const ballSpeedScale = 0.5;
 const ballSpeed = 380 * ballSpeedScale;
 const paddleY = 268;
-const brickArt = ['+--------+', '|        |', '+--------+'];
+const brickArt = ['+--------+', '|########|', '+--------+'];
 const brickFontSize = 9;
 const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
@@ -354,11 +354,13 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
     // drop balls that fell off the bottom
     balls = balls.filter(ball => ball.y <= 306);
     if (!balls.length) {
-      balls.push(newBall(paddle + 30));
       running = false;
+      keys.clear();
+      reset();
+      onRestart?.();
       message = 'try again';
       startButton.textContent = 'Try again';
-      status.textContent = 'Ball lost! Your cleared bricks stay cleared.';
+      status.textContent = 'Ball lost! Board reset. 10 bricks to go.';
     }
   }
 
