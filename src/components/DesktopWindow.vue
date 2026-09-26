@@ -41,7 +41,7 @@ function focus() {
 
 // starts a drag. no edge means we're moving the whole window by the title bar
 function start(event, edge = '') {
-  if (event.button !== 0 || props.compact || props.win.maximized) return;
+  if (event.button !== 0 || props.compact || (props.win.maximized && edge)) return;
   if (event.target.closest('button')) return;
 
   focus();
@@ -51,6 +51,9 @@ function start(event, edge = '') {
     y: event.clientY,
     start: { ...bounds(props.win), minWidth: props.win.minWidth, minHeight: props.win.minHeight },
     edge,
+    maximized: props.win.maximized,
+    anchor: (event.clientX - root.value.getBoundingClientRect().left) / root.value.getBoundingClientRect().width,
+    titleOffset: event.clientY - root.value.getBoundingClientRect().top,
     target: event.currentTarget,
     pointer: event.pointerId,
   };
@@ -60,6 +63,23 @@ function start(event, edge = '') {
 
 function move(event) {
   if (!gesture) return;
+  if (event.pointerId !== gesture.pointer) return;
+  if (gesture.maximized) {
+    // Keep clicks and double-clicks maximized until a deliberate downward drag.
+    if (event.clientY - gesture.y < 6) return;
+    const rect = root.value.getBoundingClientRect();
+    emit('maximize', props.win.id);
+    const restored = clampBounds({
+      ...props.win,
+      x: event.clientX - rect.left - props.win.width * gesture.anchor,
+      y: event.clientY - rect.top - gesture.titleOffset,
+    }, props.area);
+    Object.assign(props.win, restored);
+    gesture.start = { ...restored, minWidth: props.win.minWidth, minHeight: props.win.minHeight };
+    gesture.x = event.clientX;
+    gesture.y = event.clientY;
+    gesture.maximized = false;
+  }
   const dx = event.clientX - gesture.x;
   const dy = event.clientY - gesture.y;
   const next = gesture.edge
@@ -193,6 +213,7 @@ onBeforeUnmount(() => {
       @pointermove="move"
       @pointerup="end"
       @pointercancel="end"
+      @lostpointercapture="end"
       @dblclick="onTitleDoubleClick"
     >
       <button

@@ -131,6 +131,20 @@ try {
     return [Math.round(b.x), Math.round(b.y)];
   }).toEqual([Math.round(moved.x), Math.round(moved.y)]);
 
+  // Pulling down a maximized title bar restores its previous dimensions.
+  const normalSize = await about.boundingBox();
+  await about.getByRole('button', { name: 'Maximize About Jason', exact: true }).click();
+  await expect(about).toHaveClass(/maximized/);
+  const title = await about.locator('.top-bar').boundingBox();
+  await page.mouse.move(title.x + title.width / 2, title.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(title.x + title.width / 2 + 30, title.y + 90, { steps: 8 });
+  await page.mouse.up();
+  await expect(about).not.toHaveClass(/maximized/);
+  const restoredSize = await about.boundingBox();
+  assert.ok(Math.abs(restoredSize.width - normalSize.width) < 2 && Math.abs(restoredSize.height - normalSize.height) < 2);
+  assert.ok(restoredSize.y > title.y + 20, 'restored window follows downward drag');
+
   // ---- settings and reduced motion ----
 
   await open('settings');
