@@ -4,6 +4,7 @@
 import { defineAsyncComponent, onBeforeUnmount, ref } from 'vue';
 import { profile, projects, roles } from '../content.mjs';
 import AsciiImage from './AsciiImage.vue';
+import Analytics from './Analytics.vue';
 import Blog from './Blog.vue';
 import Music from './Music.vue';
 import Mail from './Mail.vue';
@@ -301,6 +302,7 @@ function clearSaved() {
   <Mail v-else-if="win.type === 'mail'"/>
   <Music v-else-if="win.type === 'music'" :win="win"/>
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>
+  <Analytics v-else-if="win.type === 'analytics'"/>
   <Blog v-else-if="win.type === 'blog'"/>
   <div v-else-if="win.type === 'games'" class="app-layout">
     <div class="address-bar"><span>Address</span><div class="inset">Portfolio:\Games</div></div>

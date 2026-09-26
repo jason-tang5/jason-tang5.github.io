@@ -2234,7 +2234,8 @@ label.mail-label {
   flex: 1;
   min-height: 0;
   margin: 10px;
-  container-type: size;
+  /* named so a small my pictures window can switch the ascii controls under the photo */
+  container: stage / size;
   display: grid;
   place-items: center;
   background: #20202b;
@@ -3179,5 +3180,89 @@ label.mail-label {
     height: auto;
     min-height: 180px;
     margin: 4px 10px 10px;
+  }
+}
+
+
+/* ---- ascii controls in a small my pictures window ----
+   the same layout phones get (see "ascii controls on phones"), switched on by the size
+   of the photo area instead of the screen. once the photo is shorter than about 310px
+   the sliders coming down from the top and up from the bottom run into each other,
+   which happens when the area is under about 340px tall, or under about 620px wide
+   (wide photos get short there) */
+@container stage (max-height: 340px) or (max-width: 620px) {
+  .ascii-image {
+    overflow: visible;
+  }
+
+  .ascii-mode-controls {
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: 0;
+    max-width: none;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .ascii-density {
+    position: static;
+    flex-direction: row-reverse;
+    width: auto;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  /* right after the hammer slider rather than on the photo's right edge, so they
+     can't collide under a very narrow portrait photo */
+  .ascii-reset.raised {
+    top: calc(100% + 50px);
+    left: 136px;
+    right: auto;
+  }
+
+  .ascii-hammer {
+    top: calc(100% + 50px);
+    left: 0;
+    flex-direction: row-reverse;
+    width: auto;
+    height: 30px;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .ascii-density .density-slider,
+  .ascii-hammer .density-slider {
+    width: 84px;
+    height: 18px;
+  }
+
+  .ascii-density .volume-groove,
+  .ascii-hammer .volume-groove {
+    left: 0;
+    right: 0;
+    top: 7px;
+    bottom: auto;
+    width: auto;
+    height: 4px;
+  }
+
+  .ascii-density .volume-thumb,
+  .ascii-hammer .volume-thumb {
+    top: 0;
+    bottom: auto;
+    left: calc(var(--level) * (100% - 11px) / 100);
+    width: 11px;
+    height: 18px;
+  }
+
+  /* room under the photo for the two rows */
+  .pictures-hero {
+    margin-bottom: 88px;
+    width: min(calc(100cqw - 80px), calc((100cqh - 88px) * var(--photo-ratio)));
+  }
+
+  .picture-subtitle {
+    display: block !important;
+    max-width: calc(100% - 20px);
   }
 }

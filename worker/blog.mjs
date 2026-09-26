@@ -4,6 +4,7 @@
 //   GET    /api/blog               every post, newest first
 //   GET    /api/blog/images/:name  an image pasted into a post
 //   GET    /api/admin/login        access makes me sign in first, then this sends me back to the blog
+//                                   (or ?next=analytics for the analytics window)
 //   GET    /api/admin/me           200 with my email if i'm signed in
 //   PUT    /api/admin/blog/:slug   create or replace a post
 //   DELETE /api/admin/blog/:slug   delete a post
@@ -104,7 +105,10 @@ export async function blog(request, env, { verify = verifyAccess } = {}) {
   const email = await verify(request, env);
   if (!email) return json({ error: 'Sign in first.' }, 401);
 
-  if (pathname === '/api/admin/login') return Response.redirect(new URL('/#app=blog', url).href, 302);
+  if (pathname === '/api/admin/login') {
+    const next = url.searchParams.get('next') === 'analytics' ? 'analytics' : 'blog';
+    return Response.redirect(new URL(`/#app=${next}`, url).href, 302);
+  }
   if (pathname === '/api/admin/me') return json({ email });
 
   // access cookies go along with any request, so make sure writes come from the site itself

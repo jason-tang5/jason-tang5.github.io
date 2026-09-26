@@ -6,7 +6,13 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
 <template>
   <svg :class="['retro-icon', { small }]" viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">
     <g stroke="#111" stroke-width="1" stroke-linejoin="miter">
-      <g v-if="name === 'music'">
+      <g v-if="name === 'chart'">
+        <path fill="#fffbe8" d="M2 2h28v28H2z"/>
+        <path fill="#008080" d="M6 19h4v7H6z"/>
+        <path fill="#d79936" d="M14 13h4v13h-4z"/>
+        <path fill="#000080" d="M22 6h4v20h-4z"/>
+      </g>
+      <g v-else-if="name === 'music'">
         <image href="../../assets/cd-player.png" width="32" height="32"/>
       </g>
       <g v-else-if="name === 'pictures'">

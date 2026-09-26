@@ -22,6 +22,7 @@ import {
 import { read, save, remove } from './storage.js';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from './sound.js';
 import { isUnlocked } from './unlocks.js';
+import { trackOnce } from './analytics.js';
 
 const defaultWallpaper = '#008080';
 const wallpaperColors = ['#008080', '#18334f', '#576575', '#3c6255', '#62465e'];
@@ -149,6 +150,8 @@ function open(id, updateUrl = true, sound = true) {
 
     win = reactive(win);
     if (sound) play('open');
+    // windows put back after a refresh were opened on an earlier visit, so skip them
+    if (!restoring) trackOnce('open', id);
     windows.push(win);
   }
 
@@ -244,12 +247,16 @@ watch(
   { deep: true },
 );
 
+let restoring = false;
+
 function restoreOpen() {
+  restoring = true;
   for (const { id, minimized } of loadOpen()) {
     if (!canOpen(id)) continue;
     open(id, false, false);
     if (minimized) get(id).minimized = true;
   }
+  restoring = false;
 }
 
 // on phones every window is full screen, so there's nothing worth remembering.

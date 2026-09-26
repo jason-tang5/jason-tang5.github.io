@@ -3,7 +3,8 @@
 // scaled up with css, so all the numbers below are in those canvas units.
 //
 // start with won: true to show the board already cleared. onWin runs when the
-// board is cleared, onRestart when a round is reset, onLose when the ball is lost. returns
+// board is cleared, onRestart when a round is reset, onLose when the ball is lost,
+// onStart whenever play starts or resumes. returns
 // { setActive, destroy } so the vue component can pause it when the window
 // loses focus and clean up when it closes.
 
@@ -61,7 +62,7 @@ const brickFontSize = 9;
 const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
 
-export function createBreakout(root, { email, won = false, onWin, onRestart, onLose }) {
+export function createBreakout(root, { email, won = false, onWin, onRestart, onLose, onStart }) {
   // one abort controller so destroy() can drop every listener at once
   const events = new AbortController();
   const on = (target, type, listener) => target?.addEventListener(type, listener, { signal: events.signal });
@@ -344,6 +345,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     if (complete) reset();
     started = true;
     running = !running;
+    if (running) onStart?.();
     message = 'paused';
     startButton.textContent = running ? 'Pause' : 'Resume';
     schedule();

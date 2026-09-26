@@ -8,6 +8,7 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { contact } from '../content.mjs';
 import { createBreakout } from '../breakout.js';
 import { beatContact, contactBeaten, forgetContact } from '../unlocks.js';
+import { track, trackOnce } from '../analytics.js';
 
 const props = defineProps({ active: Boolean });
 const emit = defineEmits(['unlock']);
@@ -21,6 +22,11 @@ let mailTimer;
 const mercyAfter = 3;
 let lossesInARow = 0;
 
+// for the analytics window: how many balls are lost, and how long a win takes from
+// the first time play started this visit
+let firstStart = 0;
+let losses = 0;
+
 function openMail() {
   emit('unlock', 'mail');
 }
@@ -29,7 +35,13 @@ onMounted(() => {
   game = createBreakout(root.value, {
     email: contact.email,
     won: beaten.value,
+    onStart: () => {
+      firstStart ||= Date.now();
+      trackOnce('breakout-start');
+    },
     onWin: () => {
+      track('breakout-complete');
+      trackOnce('breakout-win', '', Math.round((Date.now() - firstStart) / 1000));
       lossesInARow = 0;
       beatContact();
       beaten.value = true;
@@ -42,7 +54,9 @@ onMounted(() => {
       beaten.value = false;
     },
     onLose: () => {
+      track('breakout-lose', '', ++losses);
       if (++lossesInARow < mercyAfter || beaten.value) return;
+      trackOnce('breakout-mercy');
       lossesInARow = 0;
       beatContact();
       beaten.value = true;
@@ -50,6 +64,10 @@ onMounted(() => {
     },
   });
   game.setActive(props.active);
+  // the email revealed on the board is a mailto link. clicking it skips the mail form
+  root.value.querySelector('.breakout-email').addEventListener('click', event => {
+    if (event.target.closest('a')) trackOnce('email-click');
+  });
 });
 
 // pause when the window isn't in front

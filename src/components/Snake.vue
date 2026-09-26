@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { columns, rows, directions, newSnake, stepSnake } from '../snake.mjs';
 import { read, save } from '../storage.js';
 import { play } from '../sound.js';
+import { track } from '../analytics.js';
 import { buzz } from '../haptics.js';
 
 const props = defineProps({ active: Boolean });
@@ -91,6 +92,7 @@ function tick() {
   const before = game.value.score;
   game.value = stepSnake(game.value, turns.shift() || game.value.direction);
   if (game.value.score > before) {
+    track('snake-score', '', game.value.score);
     play('eat');
     buzz(25);
   }

@@ -9,6 +9,7 @@ import { parse, slugify } from '../blog-markup.mjs';
 import { pastedTable } from '../blog-paste.mjs';
 import InlineText from './InlineText.vue';
 import { read, save, remove } from '../storage.js';
+import { trackOnce } from '../analytics.js';
 
 const props = defineProps({
   posts: { type: Array, default: () => localPosts },
@@ -52,6 +53,9 @@ const textSize = ref(Math.min(Math.max(Number(read('blog-text-size', '0')) || 0,
 watch(textSize, value => save('blog-text-size', String(value)));
 
 // jump back to the top whenever you switch posts
+// counts which posts get read, for the analytics window
+watch(slug, value => { if (value) trackOnce('blog-post', value); });
+
 watch([slug, previewing], async () => {
   status.value = '';
   await nextTick();

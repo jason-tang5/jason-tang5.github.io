@@ -9,6 +9,7 @@ import { contact } from '../content.mjs';
 import { play } from '../sound.js';
 // the same checks the worker runs, so the two can't disagree
 import { validate } from '../../worker/contact.mjs';
+import { track, trackOnce } from '../analytics.js';
 
 const name = ref('');
 const email = ref('');
@@ -38,6 +39,7 @@ function fieldFor(error) {
 
 async function showError(text, field = fieldFor(text)) {
   dialog.value = { text, field };
+  track('mail-error', field || 'other');
   play('error');
   await nextTick();
   okButton.value?.focus();
@@ -76,9 +78,11 @@ async function send() {
     message.value = '';
     result.value = { ok: true, text: 'Message sent! I’ll get back to you soon.' };
     notify('Message sent', 'Thanks! I’ll get back to you soon.');
+    trackOnce('mail-sent');
     play('chime');
   } catch (error) {
     // the message stays in the box so it can be sent again
+    track('mail-failed');
     result.value = { ok: false, text: `Not sent: ${error.message}` };
     notify('Couldn’t send', `${error.message} You can also email ${contact.email}.`);
     showError(`${error.message} You can also email ${contact.email}.`, fieldFor(error.message));

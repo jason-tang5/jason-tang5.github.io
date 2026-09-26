@@ -68,3 +68,26 @@ the old address, jason-tang5.github.io, is now just a redirect: `github-pages/in
 - don chia's [win95](https://github.com/DonChiaQE/win95)
 - [lucasjin.ca](https://lucasjin.ca), thank you for video-to-ascii
 - [expensive.toys](https://expensive.toys/)
+
+
+### Analytics
+
+The Analytics desktop window shows public visitor counts, the highest recorded Snake
+score, and Minesweeper / Breakout completions for the selected 7, 30, or 90 days.
+Viewers are interacting page loads, not unique people. Replays count as separate
+completions. Analytics Engine retains three months of events and can sample data,
+so counts may be estimates and high scores are the highest retained observations.
+Client-reported game results are a casual scoreboard, not verified competition scores.
+
+Public data is allowlisted by `/api/analytics`; detailed breakdowns remain behind
+Cloudflare Access at `/api/admin/analytics`. Only jasontang.dev sends events, after
+the first interaction, using an in-memory visit identifier with no analytics cookies.
+
+Create a Cloudflare API token with Account / Account Analytics / Read for the account
+in wrangler.jsonc, then run `npx wrangler secret put ANALYTICS_TOKEN`. Deploy with
+`npm run deploy`. Until configured, the window shows an unavailable state rather
+than invented numbers. Official setup: https://developers.cloudflare.com/analytics/analytics-engine/sql-api/
+
+For a JSON report, set `CLOUDFLARE_ACCOUNT_ID` and `ANALYTICS_TOKEN` in your environment
+and run `node scripts/analytics-report.mjs 30`. Do not commit the token or report.
+Run `npm test`, `npm run build`, and `node tests/analytics-browser.mjs` to verify.

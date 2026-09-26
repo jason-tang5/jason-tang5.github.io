@@ -16,6 +16,8 @@ import {
   segmentsOn,
 } from '../minesweeper-art.mjs';
 
+import { track } from '../analytics.js';
+
 const props = defineProps({ active: Boolean, win: Object });
 
 // [rows, cols, mines]
@@ -213,6 +215,8 @@ function lose(cell) {
 }
 
 function win() {
+  if (state.value !== 'playing') return;
+  track('minesweeper-win', level.value.toLowerCase(), seconds.value);
   state.value = 'won';
   clearInterval(timer);
   cells.value.forEach(c => {
@@ -303,8 +307,8 @@ onBeforeUnmount(() => {
         aria-haspopup="menu"
         :aria-expanded="menuOpen"
         @click="toggleMenu"
-      ><u>G</u>ame</button>
-      <div v-if="menuOpen" class="mines-menu raised" role="menu" aria-label="Game" @keydown="menuKeys">
+      ><u>D</u>ifficulty</button>
+      <div v-if="menuOpen" class="mines-menu raised" role="menu" aria-label="Difficulty" @keydown="menuKeys">
         <button
           v-for="(_, name) in levels"
           :key="name"
