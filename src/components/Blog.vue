@@ -135,6 +135,46 @@ async function request(method, path, body) {
   return result;
 }
 
+let uploads = 0;
+
+// pasting or dropping an image into the post uploads it and puts an image line
+// where the cursor was. a placeholder line holds its spot while it uploads
+async function addImages(event, files) {
+  const images = [...files].filter(file => file.type.startsWith('image/'));
+  if (!images.length) return;
+  event.preventDefault();
+
+  for (const file of images) {
+    const placeholder = `![Uploading image ${++uploads}…]()`;
+    insertLine(event.target, placeholder);
+    try {
+      const response = await fetch('api/admin/images', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': file.type }, body: file });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Couldn’t upload that image. Are you still signed in?');
+      if (!draft.value) return; // cancelled while it uploaded
+      // a dropped file's name makes a starting alt text, a pasted screenshot is just image.png
+      const alt = file.name && file.name !== 'image.png' ? file.name.replace(/\.[^.]+$/, '') : 'Pasted image';
+      draft.value.source = draft.value.source.replace(placeholder, `![${alt}](${result.src})`);
+      status.value = 'Image added. Change the text in [ ] to describe it.';
+    } catch (error) {
+      if (!draft.value) return;
+      draft.value.source = draft.value.source.replace(`${placeholder}\n`, '').replace(placeholder, '');
+      status.value = error.message;
+    }
+  }
+}
+
+// images only render on a line of their own
+function insertLine(textarea, line) {
+  const { source } = draft.value;
+  const at = textarea.selectionStart ?? source.length;
+  const before = source.slice(0, at);
+  const after = source.slice(textarea.selectionEnd ?? at);
+  const text = `${before && !before.endsWith('\n') ? '\n' : ''}${line}\n`;
+  draft.value.source = before + text + after;
+  nextTick(() => textarea.setSelectionRange(at + text.length, at + text.length));
+}
+
 async function publish() {
   if (saving.value) return;
   saving.value = true;
@@ -215,7 +255,9 @@ async function destroy() {
         class="mail-message inset blog-source"
         aria-label="Post"
         maxlength="50000"
-        placeholder="Write here. Blank lines split paragraphs, ## starts a heading, ![alt](url &quot;caption&quot;) adds an image, ``` fences code."
+        placeholder="Write here. Blank lines split paragraphs, ## starts a heading, ![alt](url &quot;caption&quot;) adds an image (or paste one in), ``` fences code."
+        @paste="addImages($event, $event.clipboardData.files)"
+        @drop="addImages($event, $event.dataTransfer.files)"
       />
     </form>
 

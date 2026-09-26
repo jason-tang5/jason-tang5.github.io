@@ -27,6 +27,18 @@ test('parses paragraphs, headings, images and code', () => {
   ]);
 });
 
+test('code blocks close however the fence is typed', () => {
+  const code = (language = 'js') => [
+    { type: 'code', language, code: 'let a = 1' },
+    { type: 'paragraph', text: 'after' },
+  ];
+  assert.deepEqual(parse('```js\nlet a = 1\n```\nafter'), code());
+  assert.deepEqual(parse('```js\nlet a = 1```\nafter'), code());
+  assert.deepEqual(parse('```js\nlet a = 1\n```  after'), code());
+  assert.deepEqual(parse('```let a = 1```\nafter'), code(''));
+  assert.deepEqual(parse('```js\nlet a = 1'), [{ type: 'code', language: 'js', code: 'let a = 1' }]);
+});
+
 test('images with unsafe addresses stay as plain text', () => {
   assert.deepEqual(parse('![x](javascript:alert(1))'), [{ type: 'paragraph', text: '![x](javascript:alert(1))' }]);
   assert.deepEqual(parse('![x](//evil.example/a.png)')[0].type, 'paragraph');
@@ -55,11 +67,16 @@ test('validates posts', () => {
 
 function fakeEnv() {
   const store = new Map();
+  const meta = new Map();
   return {
     store,
     BLOG: {
       get: async (key, type) => (store.has(key) ? (type === 'json' ? JSON.parse(store.get(key)) : store.get(key)) : null),
-      put: async (key, value) => void store.set(key, value),
+      put: async (key, value, options) => {
+        store.set(key, value);
+        meta.set(key, options?.metadata);
+      },
+      getWithMetadata: async key => ({ value: store.get(key) ?? null, metadata: meta.get(key) ?? null }),
     },
   };
 }
@@ -113,6 +130,42 @@ test('create, rename and delete posts', async () => {
   assert.equal((await call(env, 'DELETE', '/api/admin/blog/older')).status, 200);
   ({ posts } = await (await call(env, 'GET', '/api/blog')).json());
   assert.deepEqual(posts.map(p => p.slug), ['hello']);
+});
+
+test('pasted images upload and come back', async () => {
+  const env = fakeEnv();
+  const upload = (body, type = 'image/png', options = signedIn, headers = { Origin: site }) => blog(
+    new Request(`${site}/api/admin/images`, { method: 'POST', headers: { 'Content-Type': type, ...headers }, body }),
+    env,
+    options,
+  );
+  const png = new Uint8Array([137, 80, 78, 71, 1, 2, 3]);
+
+  assert.equal((await upload(png, 'image/png', signedOut)).status, 401);
+  assert.equal((await upload(png, 'image/png', signedIn, { Origin: 'https://evil.example' })).status, 403);
+  assert.equal((await upload(png, 'image/svg+xml')).status, 415);
+  assert.equal((await upload(new Uint8Array(0))).status, 400);
+  assert.equal((await upload(new Uint8Array(10 * 1024 * 1024 + 1))).status, 413);
+  assert.equal(env.store.size, 0);
+
+  const response = await upload(png);
+  assert.equal(response.status, 201);
+  const { src } = await response.json();
+  assert.match(src, /^\/api\/blog\/images\/[a-f0-9]{64}\.png$/);
+
+  // the same image again reuses the same address
+  assert.equal((await (await upload(png)).json()).src, src);
+  assert.equal(env.store.size, 1);
+
+  const image = await call(env, 'GET', src, null, signedOut, {});
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('Content-Type'), 'image/png');
+  assert.equal(image.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.deepEqual(new Uint8Array(await image.arrayBuffer()), png);
+  assert.equal((await call(env, 'GET', `/api/blog/images/${'0'.repeat(64)}.png`, null, signedOut, {})).status, 404);
+
+  // and the parser accepts it as an image line
+  assert.deepEqual(parse(`![Pasted image](${src})`)[0].type, 'image');
 });
 
 // ---- cloudflare access tokens ----

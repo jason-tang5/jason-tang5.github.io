@@ -1,7 +1,7 @@
 // cloudflare worker for jasontang.dev. everything is the static site in dist/,
 // except /api/*: /api/contact emails the mail window's messages to me through
 // cloudflare email routing (the SEND_EMAIL binding in wrangler.jsonc), and
-// /api/blog + /api/admin/* (blog.mjs) let me write blog posts from the site.
+// /api/blog/* + /api/admin/* (blog.mjs) let me write blog posts and paste images from the site.
 // videos also come through here so safari gets the range requests it needs (video.mjs)
 import { EmailMessage } from 'cloudflare:email';
 import { buildEmail, validate } from './contact.mjs';
@@ -49,7 +49,7 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     if (pathname === '/api/contact') return contact(request, env);
-    if (pathname === '/api/blog' || pathname.startsWith('/api/admin/')) return blog(request, env);
+    if (pathname === '/api/blog' || pathname.startsWith('/api/blog/') || pathname.startsWith('/api/admin/')) return blog(request, env);
     if (pathname.endsWith('.mp4')) return video(request, env);
     return env.ASSETS.fetch(request);
   },
