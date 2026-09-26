@@ -281,7 +281,7 @@ async function destroy() {
         <input id="blog-title" v-model="draft.title" class="inset" maxlength="200" required @input="retitle">
 
         <label class="raised mail-label" for="blog-subtitle">Subtitle</label>
-        <input id="blog-subtitle" v-model="draft.subtitle" class="inset" maxlength="200" placeholder="optional, one line under the title">
+        <input id="blog-subtitle" v-model="draft.subtitle" class="inset" maxlength="200" placeholder="optional, one line under the title in the post list">
 
         <label class="raised mail-label" for="blog-slug">Slug</label>
         <input id="blog-slug" v-model="draft.slug" class="inset" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" required @input="draft.slugEdited = true">
@@ -311,6 +311,7 @@ async function destroy() {
         <ul v-else class="blog-list">
           <li v-for="entry in allPosts" :key="entry.slug">
             <button @click="slug = entry.slug">{{ entry.title }}</button>
+            <span v-if="entry.subtitle" class="blog-subtitle">{{ entry.subtitle }}</span>
             <time :datetime="entry.date">{{ date(entry.date) }}</time>
           </li>
         </ul>
@@ -318,7 +319,6 @@ async function destroy() {
 
       <article v-else :style="{ zoom: sizes[textSize][1] }">
         <h1>{{ post.title || 'Untitled' }}</h1>
-        <p v-if="post.subtitle" class="blog-subtitle">{{ post.subtitle }}</p>
         <time :datetime="post.date">{{ date(post.date) }}</time>
         <template v-for="(block, i) in blocks" :key="i">
           <component :is="block.type === 'paragraph' ? 'p' : headingTag(block)" v-if="block.type === 'paragraph' || block.type === 'heading'">

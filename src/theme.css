@@ -1432,11 +1432,10 @@ input[type="checkbox"]:focus-visible {
   margin: 12px 0;
 }
 
-/* one line under a post's title */
-.blog-reading .blog-subtitle {
-  margin: -6px 0 8px;
+/* one line under each title in the post list */
+.blog-list .blog-subtitle {
+  margin: 2px 0;
   color: #3c3c46;
-  font-size: 16px;
 }
 
 /* the small, medium and large A buttons */

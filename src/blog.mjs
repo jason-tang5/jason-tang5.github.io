@@ -1,6 +1,6 @@
 // blog posts live here. each post looks like:
 //   { slug, title, subtitle, date: 'YYYY-MM-DD', lead, blocks }
-// (subtitle is optional, one line under the title)
+// (subtitle is optional, one line under the title in the post list)
 //
 // block types:
 //   paragraph { text }
