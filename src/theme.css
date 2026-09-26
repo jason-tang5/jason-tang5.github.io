@@ -1196,9 +1196,11 @@ input[type="checkbox"]:focus-visible {
 
 /* ---- projects ---- */
 
+/* the preview grows with the window (40% of it) between 205px and 460px, so a big or
+   maximized window doesn't leave the list with a huge empty right side */
 .project-explorer {
   display: grid;
-  grid-template-columns: 205px minmax(0, 1fr);
+  grid-template-columns: clamp(205px, 40%, 460px) minmax(0, 1fr);
   background: white;
 }
 
@@ -1208,8 +1210,11 @@ input[type="checkbox"]:focus-visible {
   padding: 24px 18px;
 }
 
+/* the selected project's name, in the blog's pixel heading font */
 .project-preview h2 {
-  font-size: 19px;
+  font: bold 19px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
   margin: 18px 0 12px;
 }
 
@@ -1306,9 +1311,9 @@ input[type="checkbox"]:focus-visible {
   font-size: 16px;
 }
 
-/* project windows use the blog's headings: the pixel font, the name like a post
-   title and each section like a # heading with a rule under it */
-.project-document :is(h1, h2) {
+/* project and experience windows use the blog's headings: the pixel font, the title
+   like a post title and each section like a # heading with a rule under it */
+.pixel-headings :is(h1, h2) {
   font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
   font-weight: bold;
   letter-spacing: normal;
@@ -1317,12 +1322,12 @@ input[type="checkbox"]:focus-visible {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.project-document h1 {
+.pixel-headings h1 {
   font-size: 22px;
   margin: 8px 0 12px;
 }
 
-.project-document h2 {
+.pixel-headings h2 {
   font-size: 20px;
   margin: 1.7em 0 .4em;
   padding-bottom: 4px;
@@ -1366,12 +1371,14 @@ input[type="checkbox"]:focus-visible {
   gap: 6px;
 }
 
-/* small raised "buttons" that lift a little when you hover them */
+/* small raised "buttons" that lift a little when you hover them. they set their own
+   font and colour so they look the same in experience, the projects list (grey small
+   text) and a project window (a courier line) */
 .tech-chip.raised {
   display: inline-block;
   padding: 3px 9px;
-  font-size: 12px;
-  line-height: 1.4;
+  font: 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
+  color: #111;
   cursor: default;
   transition: transform .12s, background-color .12s;
 }

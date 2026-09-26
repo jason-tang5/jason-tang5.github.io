@@ -211,7 +211,7 @@ function clearSaved() {
         <RetroIcon :name="selected.icon"/>
         <h2>{{ selected.name }}</h2>
         <p>{{ selected.summary }}</p>
-        <small><TechList :items="selected.tech"/></small>
+        <small><TechList :items="selected.tech" chips/></small>
         <button class="raised" @click="emit('open', selected.id)">View project →</button>
       </aside>
       <div class="project-list">
@@ -240,11 +240,11 @@ function clearSaved() {
       <button class="raised" @click="emit('open', 'projects')">All projects</button>
       <a v-if="win.project.demo" class="raised link-button" :href="win.project.demo" target="_blank" rel="noopener">Open demo ↗ <span class="sr-only">(new tab)</span></a>
     </div>
-    <article class="content-scroll document project-document">
+    <article class="content-scroll document pixel-headings">
       <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
       <h1>{{ win.project.name }}</h1>
       <p class="intro">{{ win.project.summary }}</p>
-      <p class="tech-line"><TechList :items="win.project.tech"/></p>
+      <p class="tech-line"><TechList :items="win.project.tech" chips/></p>
       <template v-if="win.project.contribution">
         <h2>What I built</h2>
         <p>{{ win.project.contribution }}</p>
@@ -264,7 +264,7 @@ function clearSaved() {
   <!-- experience -->
   <div v-else-if="win.type === 'experience'" class="app-layout">
     <div class="toolbar"><RetroIcon name="document" small/><span>Experience.txt</span></div>
-    <article class="content-scroll document">
+    <article class="content-scroll document pixel-headings">
       <p class="eyebrow">WORK & EDUCATION</p>
       <h1>Experience</h1>
       <section v-for="role in roles" :key="role.company" class="role">
