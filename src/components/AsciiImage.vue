@@ -9,6 +9,7 @@ import { createElement, Component } from 'react';
 import { createRoot } from 'react-dom/client';
 import { VideoAscii } from 'react-video-ascii';
 import KnockoffAscii from './KnockoffAscii.vue';
+import { read, save } from '../storage.js';
 
 const props = defineProps({
   source: String,
@@ -19,6 +20,7 @@ const props = defineProps({
   poster: String,
   columns: Number,
   cellSize: Number,
+  showControls: Boolean,
 });
 const emit = defineEmits(['update:enabled']);
 
@@ -28,6 +30,38 @@ const failed = ref(false);
 const asciiReset = ref(0);
 const reducedMotion = ref(false);
 const pageHidden = ref(document.hidden);
+const savedColumns = Number(read('video-ascii-columns', '220'));
+const videoColumns = ref(Number.isFinite(savedColumns) ? Math.min(220, Math.max(40, savedColumns)) : 220);
+watch(videoColumns, value => save('video-ascii-columns', value));
+const densitySlider = ref(null);
+let densityDragging = false;
+
+function setColumns(value) {
+  videoColumns.value = Math.max(40, Math.min(220, Math.round(value / 10) * 10));
+}
+
+function densityAt(event) {
+  const rect = densitySlider.value.getBoundingClientRect();
+  setColumns(40 + (event.clientX - rect.left - 5.5) / (rect.width - 11) * 180);
+}
+
+function densityDown(event) {
+  if (!props.enabled || event.button !== 0) return;
+  densityDragging = true;
+  densitySlider.value.setPointerCapture(event.pointerId);
+  densitySlider.value.focus();
+  densityAt(event);
+}
+
+function densityKeys(event) {
+  if (!props.enabled) return;
+  const steps = { ArrowRight: 10, ArrowUp: 10, ArrowLeft: -10, ArrowDown: -10, PageUp: 30, PageDown: -30 };
+  if (event.key === 'Home') setColumns(40);
+  else if (event.key === 'End') setColumns(220);
+  else if (event.key in steps) setColumns(videoColumns.value + steps[event.key]);
+  else return;
+  event.preventDefault();
+}
 
 // only burn gpu when someone can actually see it
 const running = computed(() =>
@@ -87,7 +121,7 @@ function render() {
 
   // the gpu loop keeps running so the mouse trail and ripples can fade out.
   // with reduced motion it's paused but still draws the frame.
-  const columns = props.columns || Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7)));
+  const columns = props.showControls ? videoColumns.value : (props.columns || Math.min(180, Math.max(40, Math.round(host.value.clientWidth / 7))));
   root.render(createElement(Boundary, null, createElement(VideoAscii, {
     src: props.source,
     mediaType: props.mediaType,
@@ -95,7 +129,7 @@ function render() {
     mouseEffect: running.value ? mouseTrail : false,
     clickEffect: running.value ? ripple : false,
     revealEffect: false,
-    maxDpr: 1,
+    maxDpr: props.showControls ? 2 : 1,
     numColsRaw: columns,
     brightnessRaw: 1.15,
     saturationRaw: 1.2,
@@ -129,6 +163,7 @@ watch(
     props.source,
     props.mediaType,
     props.columns,
+    videoColumns.value,
     props.enabled,
     props.visible,
     failed.value,
@@ -168,7 +203,7 @@ onBeforeUnmount(() => {
 <template>
   <div
     class="ascii-image"
-    :role="mediaType === 'image' ? 'group' : 'img'"
+    :role="mediaType === 'image' || showControls ? 'group' : 'img'"
     :aria-label="description"
   >
     <img :src="poster || source" alt="" class="ascii-original">
@@ -207,8 +242,9 @@ onBeforeUnmount(() => {
     />
     <!-- stop events here so clicking the toggle doesn't also poke the image or drag the window -->
     <div
-      v-if="mediaType === 'image'"
+      v-if="mediaType === 'image' || showControls"
       class="ascii-mode-controls"
+      :class="{ 'ascii-video-controls': mediaType === 'video' }"
       role="group"
       aria-label="Photo rendering"
       @pointerdown.stop
@@ -218,6 +254,33 @@ onBeforeUnmount(() => {
     >
       <button class="raised" :class="{ pressed: !enabled }" :aria-pressed="!enabled" @click="emit('update:enabled', false)">Normal</button>
       <button class="raised" :class="{ pressed: enabled }" :aria-pressed="enabled" @click="restoreAscii">ASCII</button>
+      <div v-if="mediaType === 'video'" class="ascii-video-density">
+        Columns
+        <div
+          ref="densitySlider"
+          class="volume-slider density-slider"
+          role="slider"
+          :tabindex="enabled ? 0 : -1"
+          aria-label="Video ASCII columns"
+          aria-orientation="horizontal"
+          aria-valuemin="40"
+          aria-valuemax="220"
+          :aria-valuenow="videoColumns"
+          :aria-disabled="!enabled"
+          :style="{ '--level': (videoColumns - 40) / 180 * 100 }"
+          @pointerdown="densityDown"
+          @pointermove="densityDragging && enabled && densityAt($event)"
+          @pointerup="densityDragging = false"
+          @pointercancel="densityDragging = false"
+          @lostpointercapture="densityDragging = false"
+          @keydown="densityKeys"
+        >
+          <span class="volume-groove" />
+          <span class="volume-ticks" />
+          <span class="volume-thumb" />
+        </div>
+        <output>{{ videoColumns }}</output>
+      </div>
     </div>
   </div>
 </template>

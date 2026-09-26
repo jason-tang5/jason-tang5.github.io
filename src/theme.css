@@ -250,6 +250,25 @@ input[type="checkbox"]:focus-visible {
   z-index: 2;
 }
 
+.ascii-video-controls {
+  max-width: calc(100% - 12px);
+  flex-wrap: wrap;
+  background: #c0c0c0;
+}
+
+.ascii-video-density {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  color: #000;
+  font-size: 11px;
+}
+
+.ascii-video-density output {
+  min-width: 3ch;
+}
+
 .ascii-mode-controls .raised {
   padding: 3px 8px;
   font-size: 11px;
@@ -904,6 +923,40 @@ input[type="checkbox"]:focus-visible {
   border: 1px solid;
   border-color: #fff #000 #000 #fff;
   box-shadow: inset -1px -1px #808080;
+}
+
+.density-slider {
+  width: 110px;
+  height: 30px;
+}
+
+.density-slider[aria-disabled="true"] {
+  opacity: .5;
+}
+
+.density-slider .volume-groove {
+  left: 0;
+  right: 0;
+  top: 10px;
+  bottom: auto;
+  width: auto;
+  height: 4px;
+}
+
+.density-slider .volume-ticks {
+  left: 5px;
+  top: 24px;
+  width: 101px;
+  height: 6px;
+  background: repeating-linear-gradient(to right, #000 0 1px, transparent 1px 10px);
+}
+
+.density-slider .volume-thumb {
+  left: calc(var(--level) * (100% - 11px) / 100);
+  top: 1px;
+  bottom: auto;
+  width: 11px;
+  height: 22px;
 }
 
 .volume-mute {
@@ -1844,7 +1897,11 @@ fieldset {
 .pictures-hero .ascii-original,
 .pictures-hero .ascii-layer,
 .picture-thumbnails img {
-  filter: brightness(1.22) saturate(1.25);
+  filter: brightness(var(--photo-brightness, 1.22)) saturate(1.25);
+}
+
+.pictures-hero .ascii-knockoff {
+  filter: brightness(var(--ascii-brightness, 1));
 }
 
 .picture-arrow {

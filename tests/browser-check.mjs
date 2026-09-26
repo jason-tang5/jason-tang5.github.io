@@ -10,6 +10,7 @@ import { resolve, sep, extname } from 'node:path';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createServer as createViteServer } from 'vite';
+import { photos } from '../src/photos.mjs';
 
 const root = resolve('dist');
 const mime = {
@@ -168,7 +169,7 @@ try {
 
   await open('pictures');
   const pictures = page.locator('[data-window="pictures"]');
-  await expect(pictures.locator('.picture-thumbnails button')).toHaveCount(9);
+  await expect(pictures.locator('.picture-thumbnails button')).toHaveCount(photos.length);
   await expect(pictures.locator('.pictures-hero canvas')).toHaveCount(1);
   await pictures.screenshot({ path: 'tmp/qa/pictures-desktop.png' });
 
@@ -176,18 +177,18 @@ try {
   const modes = pictures.getByRole('group', { name: 'Photo rendering' });
   await modes.getByRole('button', { name: 'Normal', exact: true }).click();
   await expect(pictures.locator('canvas')).toHaveCount(0);
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < photos.length; i++) {
     await pictures.locator('.picture-thumbnails button').nth(i).click();
-    await expect(pictures.locator('.status-bar > span:first-child')).toHaveText(`${i + 1} / 9`);
+    await expect(pictures.locator('.status-bar > span:first-child')).toHaveText(`${i + 1} / ${photos.length}`);
     await expect.poll(() => pictures.locator('.pictures-hero img').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
   }
 
   await modes.getByRole('button', { name: 'ASCII', exact: true }).click();
   await expect(pictures.locator('canvas')).toHaveCount(1);
   await pictures.getByRole('button', { name: 'Previous photo' }).click();
-  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText('8 / 9');
+  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText(`${photos.length - 1} / ${photos.length}`);
   await page.keyboard.press('ArrowRight');
-  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText('9 / 9');
+  await expect(pictures.locator('.status-bar > span:first-child')).toHaveText(`${photos.length} / ${photos.length}`);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await pictures.screenshot({ path: 'tmp/qa/pictures-mobile.png' });

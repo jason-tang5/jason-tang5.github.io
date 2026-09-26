@@ -41,10 +41,14 @@ function keys(event) {
   <div class="app-layout pictures-app" @keydown="keys">
     <div class="pictures-stage">
       <button class="raised picture-arrow picture-arrow-prev" aria-label="Previous photo" @click="step(-1)">←</button>
-      <figure class="pictures-hero" :style="{ '--photo-ratio': photo.width / photo.height }">
+      <figure class="pictures-hero" :style="{ '--photo-ratio': photo.width / photo.height, '--photo-brightness': photo.brightness ?? 1.22, '--ascii-brightness': photo.brightness ?? 1 }">
         <AsciiImage
+          :key="photo.id"
           class="picture-image inset"
           :source="photo.source"
+          :media-type="photo.mediaType || 'image'"
+          :poster="photo.poster"
+          show-controls
           :description="photo.description"
           :enabled="ascii"
           :visible="visible"
@@ -67,7 +71,7 @@ function keys(event) {
         :class="['raised', { pressed: selected === index }]"
         @click="selected = index"
       >
-        <img :src="entry.thumbnail" alt="" width="54" height="54" loading="lazy">
+        <img :src="entry.thumbnail" :style="{ '--photo-brightness': entry.brightness ?? 1.22 }" alt="" width="54" height="54" loading="lazy">
       </button>
     </nav>
 
