@@ -111,13 +111,15 @@ test('next focus skips minimized windows and chooses the most recent visible win
   assert.equal(nextVisible(windows.map(w => ({ ...w, minimized: true }))), null);
 });
 
-test('projects, experience and contact pop out left to right, about fills most of the screen', () => {
+test('projects, experience and contact pop out left to right, about opens centered up top', () => {
   for (const viewport of [area, { width: 1024, height: 600 }]) {
     const [projects, experience, contact] = columnApps.map(id => presetBounds(id, viewport));
     assert.ok(projects.x < experience.x && experience.x < contact.x);
+    for (const w of [projects, experience, contact]) assert.ok(w.height < viewport.height * 0.6);
     const about = presetBounds('about', viewport);
     for (const w of [projects, experience, contact, about]) assert.ok(inside(w, viewport));
-    assert.ok(about.width > viewport.width * 0.8 && about.height > viewport.height * 0.8);
+    assert.ok(Math.abs(about.x * 2 + about.width - viewport.width) <= 1);
+    assert.ok(about.width < viewport.width * 0.7 && about.height < viewport.height * 0.7);
     assert.equal(presetBounds('notepad', viewport), null);
   }
 });

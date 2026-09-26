@@ -114,23 +114,32 @@ export function nextVisible(windows) {
   return open[0]?.id || null;
 }
 
-// set spots for a fresh visit: about opens big in the middle of the screen, and
-// projects, experience and contact each pop out into their own column, left to
-// right, when they're first opened.
+// set spots for a fresh visit: about opens centered across the top of the screen, and
+// projects, experience and contact each pop out left to right when they're first
+// opened, overlapping a little in the lower half so about stays visible behind them.
+// numbers are x, y, width, height as fractions of the work area.
 export const columnApps = ['projects', 'experience', 'contact'];
+const columnSpots = {
+  projects: [0.02, 0.37, 0.4, 0.52],
+  experience: [0.3, 0.44, 0.42, 0.55],
+  contact: [0.74, 0.43, 0.25, 0.51],
+};
 
 export function presetBounds(id, area) {
-  const gap = 12;
-  const column = columnApps.indexOf(id);
-  if (column >= 0) {
-    const width = Math.floor((area.width - gap * 4) / 3);
-    const step = (area.width - gap * 2 - width) / 2;
-    return { x: Math.round(gap + step * column), y: gap, width, height: area.height - gap * 2 };
+  const spot = columnSpots[id];
+  if (spot) {
+    const [x, y, width, height] = spot;
+    return {
+      x: Math.round(area.width * x),
+      y: Math.round(area.height * y),
+      width: Math.round(area.width * width),
+      height: Math.round(area.height * height),
+    };
   }
   if (id === 'about') {
-    const width = Math.round(area.width * 0.88);
-    const height = Math.round(area.height * 0.9);
-    return { x: Math.round((area.width - width) / 2), y: Math.round((area.height - height) / 2), width, height };
+    const width = Math.round(area.width * 0.6);
+    const height = Math.round(area.height * 0.66);
+    return { x: Math.round((area.width - width) / 2), y: Math.round(area.height * 0.1), width, height };
   }
   return null;
 }
