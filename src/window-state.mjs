@@ -113,3 +113,24 @@ export function nextVisible(windows) {
   const open = windows.filter(w => !w.minimized).sort((a, b) => b.z - a.z);
   return open[0]?.id || null;
 }
+
+// set spots for a fresh visit: about opens big in the middle of the screen, and
+// projects, experience and contact each pop out into their own column, left to
+// right, when they're first opened.
+export const columnApps = ['projects', 'experience', 'contact'];
+
+export function presetBounds(id, area) {
+  const gap = 12;
+  const column = columnApps.indexOf(id);
+  if (column >= 0) {
+    const width = Math.floor((area.width - gap * 4) / 3);
+    const step = (area.width - gap * 2 - width) / 2;
+    return { x: Math.round(gap + step * column), y: gap, width, height: area.height - gap * 2 };
+  }
+  if (id === 'about') {
+    const width = Math.round(area.width * 0.88);
+    const height = Math.round(area.height * 0.9);
+    return { x: Math.round((area.width - width) / 2), y: Math.round((area.height - height) / 2), width, height };
+  }
+  return null;
+}

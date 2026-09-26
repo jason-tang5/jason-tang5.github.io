@@ -16,6 +16,7 @@ import {
   nextVisible,
   placeBeside,
   restoreWindow,
+  presetBounds,
   toggleMaximize,
 } from './window-state.mjs';
 import { read, save, remove } from './storage.js';
@@ -117,13 +118,15 @@ function open(id, updateUrl = true) {
   keyboardReturn = document.activeElement;
   let win = get(id);
   if (!win) {
-    // put it back where it was last time, or else open off to the side of
-    // whatever is already on screen instead of right on top of it
+    // put it back where it was last time, or its set spot if it has one, or else
+    // open off to the side of whatever is already on screen instead of right on top of it
     const saved = savedLayout[id];
+    const preset = !compact.value && presetBounds(id, area);
     const anchor = active.value && get(active.value);
     const beside = anchor && visible(anchor) && !anchor.maximized && !compact.value;
 
     if (isSavedBounds(saved)) win = restoreWindow(registry[id], saved, windows.length, area);
+    else if (preset) win = restoreWindow(registry[id], preset, windows.length, area);
     else if (beside) win = placeBeside(registry[id], anchor, windows.length, area);
     else win = createWindow(registry[id], windows.length, area);
 

@@ -10,6 +10,8 @@ import {
   toggleMaximize,
   nextVisible,
   bounds,
+  columnApps,
+  presetBounds,
 } from '../src/window-state.mjs';
 
 const area = { width: 1440, height: 860 };
@@ -107,4 +109,15 @@ test('next focus skips minimized windows and chooses the most recent visible win
   ];
   assert.equal(nextVisible(windows), 'contact');
   assert.equal(nextVisible(windows.map(w => ({ ...w, minimized: true }))), null);
+});
+
+test('projects, experience and contact pop out left to right, about fills most of the screen', () => {
+  for (const viewport of [area, { width: 1024, height: 600 }]) {
+    const [projects, experience, contact] = columnApps.map(id => presetBounds(id, viewport));
+    assert.ok(projects.x < experience.x && experience.x < contact.x);
+    const about = presetBounds('about', viewport);
+    for (const w of [projects, experience, contact, about]) assert.ok(inside(w, viewport));
+    assert.ok(about.width > viewport.width * 0.8 && about.height > viewport.height * 0.8);
+    assert.equal(presetBounds('notepad', viewport), null);
+  }
 });
