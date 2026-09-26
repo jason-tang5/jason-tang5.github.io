@@ -28,10 +28,31 @@ export function parse(source) {
 
     if (line.startsWith('```')) {
       flush();
+      const rest = line.slice(3);
+      // ```x = 1``` all on one line
+      if (rest.includes('```')) {
+        blocks.push({ type: 'code', language: '', code: rest.slice(0, rest.indexOf('```')).trim() });
+        paragraph.push(...[rest.slice(rest.indexOf('```') + 3).trim()].filter(Boolean));
+        continue;
+      }
       const code = [];
-      // an unclosed fence runs to the end of the post
-      while (++i < lines.length && lines[i].trim() !== '```') code.push(lines[i]);
-      blocks.push({ type: 'code', language: line.slice(3).trim(), code: code.join('\n') });
+      let after = '';
+      // closes on a line starting with ``` (text after it carries on as a paragraph)
+      // or a code line ending in ```. an unclosed fence runs to the end of the post
+      while (++i < lines.length) {
+        const next = lines[i].trimEnd();
+        if (next.trim().startsWith('```')) {
+          after = next.trim().slice(3).trim();
+          break;
+        }
+        if (next.endsWith('```')) {
+          code.push(next.slice(0, -3).trimEnd());
+          break;
+        }
+        code.push(lines[i]);
+      }
+      blocks.push({ type: 'code', language: rest.trim(), code: code.join('\n') });
+      if (after) paragraph.push(after);
     } else if (/^#+\s/.test(line)) {
       flush();
       blocks.push({ type: 'heading', text: line.replace(/^#+\s+/, '') });
