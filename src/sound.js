@@ -156,10 +156,12 @@ const sounds = {
     });
   },
 
-  // breakout brick: an arcade blip plus a small crack. row 0 is the top,
-  // and higher rows play higher notes
-  brick: (ac, row = 0) => {
-    const pitch = 520 + (5 - row) * 90;
+  // breakout brick: an arcade blip plus a small crack. each brick broken this
+  // round climbs one note up a major scale, so the last brick is the highest
+  brick: (ac, broken = 0) => {
+    const scale = [0, 2, 4, 5, 7, 9, 11];
+    const step = scale[broken % 7] + 12 * Math.floor(broken / 7);
+    const pitch = 440 * 2 ** (step / 12);
     blip(ac, { from: pitch, to: pitch * 0.92, length: 0.06, volume: 0.05 });
     burst(ac, { freq: 3000, q: 0.8, length: 0.015, volume: 0.07 });
   },

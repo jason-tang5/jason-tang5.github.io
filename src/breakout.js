@@ -387,7 +387,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart }) {
 
       brick.alive = false;
       breakText(brick);
-      play('brick', brick.row);
+      play('brick', score);
       updateEmailProgress();
       score += 1;
 
