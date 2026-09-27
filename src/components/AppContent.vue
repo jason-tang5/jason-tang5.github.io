@@ -551,7 +551,7 @@ function balloonDone(event, id) {
         <p>{{ selected.summary }}</p>
         <div class="preview-actions">
           <small><TechList :items="selected.tech" chips/></small>
-          <button class="raised" @click="emit('open', selected.id)">View project →</button>
+          <button class="raised" @click="emit('open', selected.id)">View project</button>
         </div>
         <!-- the project's first figure, the same one that opens its what i built -->
         <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
