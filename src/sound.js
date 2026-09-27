@@ -197,6 +197,15 @@ const sounds = {
     blip(ac, { from: 600, to: 350, start: 0.045, length: 0.05, volume: 0.04 });
   },
 
+  // flipping light/dark: the snap of a light switch, then a soft sweep up for
+  // day or down for night
+  theme: (ac, dark = false) => {
+    burst(ac, { freq: 2400, q: 1.5, length: 0.01, volume: 0.08 });
+    const [a, b] = dark ? [880, 440] : [440, 880];
+    blip(ac, { type: 'sine', from: a, to: b, start: 0.02, length: 0.22, volume: 0.05 });
+    blip(ac, { type: 'sine', from: a * 1.5, to: b * 1.5, start: 0.05, length: 0.2, volume: 0.02 });
+  },
+
   // two rising notes
   open: ac => {
     blip(ac, { type: 'triangle', from: 660, length: 0.07, volume: 0.08 });

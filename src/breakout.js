@@ -44,6 +44,15 @@ const glyphs = {
 };
 
 const brickColors = ['#000080', '#244f9c', '#3972ac', '#538eaf', '#008080', '#379b95', '#7170a0', '#9693b7'];
+// the same rows brightened up for the black board in dark mode
+const darkBrickColors = ['#6f86ff', '#6a95e6', '#72a8dc', '#86bedb', '#2cc3b9', '#5fd0c8', '#a3a1d8', '#c0bde6'];
+const palettes = {
+  light: { board: '#eeeee7', dim: 'rgba(238, 238, 231, .88)', score: '#bcbcbc', ink: '#000080', ball: '#111' },
+  dark: { board: '#000', dim: 'rgba(0, 0, 0, .85)', score: '#444', ink: '#9db4ff', ball: '#eee' },
+};
+const isDark = () => document.documentElement.dataset.theme === 'dark';
+const colors = () => palettes[isDark() ? 'dark' : 'light'];
+const brickColor = brick => (isDark() ? darkBrickColors[brickColors.indexOf(brick.color)] : brick.color);
 const ballSpeedScale = 0.65;
 const ballSpeed = 380 * ballSpeedScale;
 // the ball speeds up the longer a round goes: about 1% a second, up to 1.6x
@@ -110,7 +119,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   const keys = new Set();
   const letterSprites = new Map();
 
-  function pixelText(text, y, size = 1.5, color = '#000080') {
+  function pixelText(text, y, size = 1.5, color = colors().ink) {
     ctx.fillStyle = color;
     ctx.font = font(size * 7);
     ctx.textAlign = 'center';
@@ -126,7 +135,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
 
     brickArt.forEach((row, line) => [...row].forEach((letter, column) => {
       if (letter === ' ') return;
-      const key = `${brick.color}:${letter}`;
+      const key = `${brickColor(brick)}:${letter}`;
       if (!letterSprites.has(key)) {
         const sprite = document.createElement('canvas');
         sprite.width = 10;
@@ -135,7 +144,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
         pen.font = font(brickFontSize);
         pen.textAlign = 'center';
         pen.textBaseline = 'middle';
-        pen.fillStyle = brick.color;
+        pen.fillStyle = brickColor(brick);
         pen.fillText(letter, 5, 6);
         letterSprites.set(key, sprite);
       }
@@ -261,18 +270,19 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
 
   function draw() {
     ctx.clearRect(0, 0, 300, 300);
+    const palette = colors();
 
     // score on the left, bricks left on the right
-    ctx.fillStyle = '#bcbcbc';
+    ctx.fillStyle = palette.score;
     drawScore(score, 20);
     drawScore(bricks.filter(brick => brick.alive).length, 240);
 
     for (const brick of bricks) {
       if (!brick.alive) continue;
       // solid background so the email underneath stays hidden until the brick breaks
-      ctx.fillStyle = '#eeeee7';
+      ctx.fillStyle = palette.board;
       ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
-      ctx.fillStyle = brick.color;
+      ctx.fillStyle = brickColor(brick);
       // Use a real monospace grid; never stretch glyphs to fill the brick.
       ctx.font = font(brickFontSize);
       ctx.textAlign = 'center';
@@ -284,7 +294,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     }
 
     // paddle and the little side walls
-    ctx.fillStyle = '#000080';
+    ctx.fillStyle = palette.ink;
     ctx.font = font(10);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
@@ -292,7 +302,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     ctx.fillText('|', 0, paddleY + 3);
     ctx.fillText('|', 294, paddleY + 3);
 
-    ctx.fillStyle = '#111';
+    ctx.fillStyle = palette.ball;
     ctx.font = font(12);
     ctx.textAlign = 'center';
     for (const ball of balls) {
@@ -304,7 +314,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
       pixelText('click to play again', 195);
     } else if (!running) {
       // dim the board while paused
-      ctx.fillStyle = 'rgba(238, 238, 231, .88)';
+      ctx.fillStyle = palette.dim;
       ctx.fillRect(0, 0, 300, 300);
       if (started) {
         pixelText(message, 125, 2);
@@ -537,6 +547,9 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   // the letter positions depend on the board size, so recheck when it resizes
   const observer = new ResizeObserver(updateEmailProgress);
   observer.observe(canvas);
+  // repaint straight away when the site flips between light and dark
+  const themeObserver = new MutationObserver(draw);
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   return {
     setActive(value) {
@@ -547,6 +560,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
       pause();
       events.abort();
       observer.disconnect();
+      themeObserver.disconnect();
     },
   };
 }

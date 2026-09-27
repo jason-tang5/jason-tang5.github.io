@@ -17,6 +17,8 @@ import TechList from './TechList.vue';
 import { read, save, remove } from '../storage.js';
 import { noteGlyphs, noteColors } from '../notes.mjs';
 import { play } from '../sound.js';
+import { theme, setTheme } from '../theme.js';
+import { defaultWallpaper, wallpaperFilter, wallpapers } from '../wallpaper.js';
 
 // the games only load when someone actually opens them
 const Game = defineAsyncComponent(() => import('./Game.vue'));
@@ -37,13 +39,6 @@ const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
 const portraitAscii = ref(read('portrait-ascii', 'on') !== 'off');
 
-const colors = [
-  ['Classic teal', '#008080'],
-  ['Midnight blue', '#18334f'],
-  ['Slate', '#576575'],
-  ['Forest', '#3c6255'],
-  ['Plum', '#62465e'],
-];
 
 // the cd at the bottom of the about page. hovering it spins it, plays a little
 // music box tune and puffs out small notes, like the cd player does while it
@@ -312,28 +307,45 @@ function setPortraitAscii(value) {
   <div v-else-if="win.type === 'settings'" class="app-layout">
     <div class="content-scroll settings-content">
       <h1>Desktop Settings</h1>
-      <div class="monitor-preview inset" :style="{ background: wallpaper }">
+      <div class="monitor-preview inset">
+        <span class="wallpaper-tone" :style="{ '--tone-filter': wallpaperFilter(wallpaper), backgroundColor: wallpaper }"/>
         <RetroIcon name="computer"/>
         <span>Jason’s desktop</span>
       </div>
       <fieldset>
-        <legend>Desktop tint</legend>
+        <legend>Appearance</legend>
+        <div class="theme-choices" role="group" aria-label="Color theme">
+          <button
+            v-for="mode in ['light', 'dark']"
+            :key="mode"
+            class="raised"
+            :class="{ pressed: theme === mode }"
+            :aria-pressed="theme === mode"
+            @click="setTheme(mode)"
+          >
+            <RetroIcon :name="mode === 'light' ? 'sun' : 'moon'" small/>
+            {{ mode === 'light' ? 'Light' : 'Dark' }}
+          </button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Desktop color</legend>
         <div class="swatches">
           <button
-            v-for="[label, color] in colors"
+            v-for="{ label, color, filter } in wallpapers"
             :key="color"
             class="swatch raised"
-            :style="{ background: color }"
             :aria-label="label"
             :aria-pressed="wallpaper === color"
             :title="label"
             @click="emit('wallpaper', color)"
           >
+            <span class="wallpaper-tone" :style="{ '--tone-filter': filter, backgroundColor: color }"/>
             <span v-if="wallpaper === color">✓</span>
           </button>
         </div>
       </fieldset>
-      <button class="raised" @click="emit('wallpaper', '#008080')">Reset wallpaper</button>
+      <button class="raised" @click="emit('wallpaper', defaultWallpaper)">Reset wallpaper</button>
     </div>
     <footer class="status-bar"><span>Display properties</span></footer>
   </div>

@@ -14,14 +14,38 @@
 :root {
   font-family: Tahoma, 'MS Sans Serif', Arial, sans-serif;
   font-size: 13px;
-  color: #171717;
+  color: var(--ink);
   color-scheme: light;
   --surface: #c0c0c0;
   --light: #fff;
   --shadow: #808080;
   --edge: #000;
   --navy: #000080;
-  --taskbar-height: 40px;
+  --dark: #404040;
+  --hilite: #dfdfdf;
+  --hover: #cbcbcb;
+  --paper: #fff;
+  --ink: #171717;
+  --muted: #555;
+  --tip: #ffffdf;
+  --taskbar-height: 46px;
+}
+
+/* dark mode: the same win95 bevels, just dimmed. set by theme.js */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #3b3b3f;
+  --light: #6b6b72;
+  --shadow: #1e1e22;
+  --edge: #050505;
+  --dark: #151517;
+  --hilite: #535358;
+  --hover: #46464b;
+  --paper: #1f1f23;
+  --ink: #e6e6e6;
+  --muted: #a9a9ad;
+  --tip: #3a3722;
+  --navy: #1c2a7a;
 }
 
 
@@ -55,12 +79,12 @@ button {
 /* the classic engraved look for disabled text */
 button:disabled {
   cursor: var(--classic-disabled);
-  color: #626262;
+  color: var(--d-disabled, #626262);
   text-shadow: 1px 1px #fff;
 }
 
 a {
-  color: #000080;
+  color: var(--d-link, #000080);
   text-underline-offset: 2px;
 }
 
@@ -87,8 +111,8 @@ a {
 
 hr {
   border: 0;
-  border-top: 1px solid #808080;
-  border-bottom: 1px solid white;
+  border-top: 1px solid var(--shadow);
+  border-bottom: 1px solid var(--light);
   margin: 4px;
 }
 
@@ -114,7 +138,7 @@ hr {
   background: var(--surface);
   border: 2px solid;
   border-color: var(--light) var(--edge) var(--edge) var(--light);
-  box-shadow: inset -1px -1px var(--shadow), inset 1px 1px #dfdfdf;
+  box-shadow: inset -1px -1px var(--shadow), inset 1px 1px var(--hilite);
 }
 
 .raised {
@@ -138,11 +162,11 @@ a.raised,
 button.raised:hover:not(:disabled):not(.pressed):not(:active),
 a.raised:hover:not(.pressed):not(:active),
 .control:hover:not(:disabled):not(:active) {
-  background: #cbcbcb;
+  background: var(--hover);
 }
 
 .project-row:hover:not(.selected) {
-  background: #f0f0f7;
+  background: var(--d-row-hover, #f0f0f7);
 }
 
 .desktop-shortcut:hover:not(.selected):not(:focus-visible) span {
@@ -157,18 +181,35 @@ input[type="checkbox"] {
   width: 13px;
   height: 13px;
   margin: 0;
-  background: #fff;
+  background: var(--paper);
   border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
-  box-shadow: inset 1px 1px #000, inset -1px -1px #dfdfdf;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  box-shadow: inset 1px 1px var(--edge), inset -1px -1px var(--hilite);
 }
 
 input[type="checkbox"]:checked {
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h1v3H6zM5 1h1v3H5zM4 2h1v3H4zM3 3h1v3H3zM2 4h1v3H2zM1 3h1v3H1zM0 2h1v3H0z'/%3E%3C/svg%3E") center / 7px 7px no-repeat;
+  background: var(--paper) var(--check-mark) center / 7px 7px no-repeat;
+}
+
+:root {
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h1v3H6zM5 1h1v3H5zM4 2h1v3H4zM3 3h1v3H3zM2 4h1v3H2zM1 3h1v3H1zM0 2h1v3H0z'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M6 0h1v3H6zM5 1h1v3H5zM4 2h1v3H4zM3 3h1v3H3zM2 4h1v3H2zM1 3h1v3H1zM0 2h1v3H0z'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] .ascii-image svg path[fill="#404040"] {
+  fill: var(--ink);
+}
+
+/* the speaker's sound waves are plain outlines, so light them up on the dark taskbar */
+:root[data-theme="dark"] .tray-sound .retro-icon path[fill="none"]:not([stroke]) {
+  stroke: var(--ink);
 }
 
 input[type="checkbox"]:disabled {
-  background-color: #c0c0c0;
+  background-color: var(--surface);
 }
 
 input[type="checkbox"]:focus-visible {
@@ -178,7 +219,7 @@ input[type="checkbox"]:focus-visible {
 .inset {
   border: 2px solid;
   border-color: var(--shadow) var(--light) var(--light) var(--shadow);
-  box-shadow: inset 1px 1px #000;
+  box-shadow: inset 1px 1px var(--edge);
 }
 
 
@@ -235,7 +276,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .ascii-knockoff:focus-visible {
-  outline: 2px dashed #fff;
+  outline: 2px dashed var(--light);
   outline-offset: -4px;
 }
 
@@ -253,7 +294,7 @@ input[type="checkbox"]:focus-visible {
 .ascii-mode-controls {
   max-width: calc(100% - 12px);
   flex-wrap: wrap;
-  background: #c0c0c0;
+  background: var(--surface);
 }
 
 /* same 30px wide box as the hammer slider in the top left */
@@ -268,8 +309,8 @@ input[type="checkbox"]:focus-visible {
   width: 30px;
   box-sizing: border-box;
   padding: 5px 0;
-  background: #c0c0c0;
-  color: #000;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 
@@ -291,7 +332,7 @@ input[type="checkbox"]:focus-visible {
   height: 30px;
   min-height: 0;
   padding: 0;
-  background: #c0c0c0;
+  background: var(--surface);
 }
 
 .ascii-reset svg {
@@ -329,7 +370,7 @@ input[type="checkbox"]:focus-visible {
   width: 30px;
   box-sizing: border-box;
   padding: 5px 0;
-  background: #c0c0c0;
+  background: var(--surface);
 }
 
 .ascii-hammer svg,
@@ -410,7 +451,7 @@ input[type="checkbox"]:focus-visible {
 .desktop-shortcut.selected span,
 .desktop-shortcut:focus-visible span {
   background: var(--navy);
-  outline: 1px dotted #fff;
+  outline: 1px dotted var(--light);
   text-shadow: none;
 }
 
@@ -456,7 +497,7 @@ input[type="checkbox"]:focus-visible {
   top: 25px;
   width: 256px;
   padding: 10px 12px 12px;
-  background: #ffffdf;
+  background: var(--tip);
   font-size: 12px;
   z-index: 0;
 }
@@ -555,16 +596,16 @@ input[type="checkbox"]:focus-visible {
   padding: 0;
   background: var(--surface);
   border: 1px solid;
-  border-color: #fff #000 #000 #fff;
-  box-shadow: inset -1px -1px #808080;
-  color: #000;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  box-shadow: inset -1px -1px var(--shadow);
+  color: var(--ink);
   font-weight: bold;
   font-size: 20px;
   line-height: 16px;
 }
 
 .control:active:not(:disabled) {
-  border-color: #000 #fff #fff #000;
+  border-color: var(--edge) var(--light) var(--light) var(--edge);
   box-shadow: none;
 }
 
@@ -665,7 +706,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .keyboard-hint {
-  background: #ffffdf;
+  background: var(--tip);
   padding: 7px;
   font-size: 12px;
 }
@@ -699,7 +740,7 @@ input[type="checkbox"]:focus-visible {
 
 .status-bar > span {
   border: 1px solid;
-  border-color: #888 #fff #fff #888;
+  border-color: var(--d-line, #888) var(--light) var(--light) var(--d-line, #888);
   padding: 4px 7px;
 }
 
@@ -714,7 +755,7 @@ input[type="checkbox"]:focus-visible {
   flex-wrap: wrap;
   gap: 7px;
   padding: 7px;
-  border-bottom: 1px solid #888;
+  border-bottom: 1px solid var(--d-line, #888);
   min-height: 38px;
   font-size: 12px;
 }
@@ -736,7 +777,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .address-bar .inset {
-  background: #fff;
+  background: var(--paper);
   padding: 5px 8px;
   flex: 1;
   min-width: 0;
@@ -745,7 +786,7 @@ input[type="checkbox"]:focus-visible {
 /* links that look like buttons */
 .link-button {
   display: inline-block;
-  color: #111;
+  color: var(--ink);
   text-decoration: none;
   text-align: center;
 }
@@ -760,7 +801,7 @@ input[type="checkbox"]:focus-visible {
   align-items: stretch;
   gap: 5px;
   background: var(--surface);
-  border-top: 2px solid #fff;
+  border-top: 2px solid var(--light);
   z-index: 100000;
   flex-shrink: 0;
 }
@@ -779,8 +820,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .taskbar-divider {
-  border-left: 1px solid #808080;
-  border-right: 1px solid #fff;
+  border-left: 1px solid var(--shadow);
+  border-right: 1px solid var(--light);
   margin: 2px;
 }
 
@@ -816,7 +857,7 @@ input[type="checkbox"]:focus-visible {
 
 .task-button.pressed {
   font-weight: bold;
-  background: #dedede;
+  background: var(--d-pressed, #dedede);
 }
 
 .tray {
@@ -867,7 +908,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .volume-slider:focus-visible {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
   outline-offset: 2px;
 }
 
@@ -878,8 +919,8 @@ input[type="checkbox"]:focus-visible {
   bottom: 0;
   width: 4px;
   border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
-  box-shadow: inset 1px 1px #000;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  box-shadow: inset 1px 1px var(--edge);
 }
 
 .volume-ticks {
@@ -888,7 +929,7 @@ input[type="checkbox"]:focus-visible {
   top: 5px;
   width: 6px;
   height: 101px;
-  background: repeating-linear-gradient(#000 0 1px, transparent 1px 10px);
+  background: repeating-linear-gradient(var(--ink) 0 1px, transparent 1px 10px);
 }
 
 /* --level is 0 to 100, set from VolumeControl.vue */
@@ -898,10 +939,10 @@ input[type="checkbox"]:focus-visible {
   bottom: calc(var(--level) * (100% - 11px) / 100);
   width: 22px;
   height: 11px;
-  background: #c0c0c0;
+  background: var(--surface);
   border: 1px solid;
-  border-color: #fff #000 #000 #fff;
-  box-shadow: inset -1px -1px #808080;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  box-shadow: inset -1px -1px var(--shadow);
 }
 
 .density-slider {
@@ -921,7 +962,7 @@ input[type="checkbox"]:focus-visible {
 
 /* like windows, keyboard focus puts a dotted box around the label, not the checkbox */
 .volume-mute:has(input:focus-visible) span {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
   outline-offset: 1px;
 }
 
@@ -965,7 +1006,7 @@ input[type="checkbox"]:focus-visible {
 
 /* the grey strip down the side with my name written sideways */
 .identity-strip {
-  background: #808080;
+  background: var(--shadow);
   color: white;
   width: 31px;
   flex-shrink: 0;
@@ -1010,7 +1051,7 @@ input[type="checkbox"]:focus-visible {
   border: 0;
   background: transparent;
   text-align: left;
-  color: #111;
+  color: var(--ink);
   text-decoration: none;
   font-size: 12px;
 }
@@ -1035,7 +1076,7 @@ input[type="checkbox"]:focus-visible {
   container-type: inline-size;
   display: flex;
   flex-direction: column;
-  background: #f5f4ed;
+  background: var(--d-page, #f5f4ed);
   padding: 20px 24px;
 }
 
@@ -1090,7 +1131,7 @@ input[type="checkbox"]:focus-visible {
 .about-copy .subtitle {
   font-size: 11px;
   line-height: 1.5;
-  color: #51514d;
+  color: var(--d-muted, #51514d);
   margin: 0 0 16px;
 }
 
@@ -1107,7 +1148,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .about-bottom {
-  border-top: 1px solid #bbbcb3;
+  border-top: 1px solid var(--d-rule, #bbbcb3);
   margin-top: 22px;
   padding-top: 16px;
   display: flex;
@@ -1142,17 +1183,18 @@ input[type="checkbox"]:focus-visible {
   box-sizing: border-box;
   margin: 0;
   padding: 6px 12px 8px;
-  border: 1px solid #808080;
-  box-shadow: 1px 1px 0 #fff, inset 1px 1px 0 #fff;
+  border: 1px solid var(--shadow);
+  box-shadow: 1px 1px 0 var(--light), inset 1px 1px 0 var(--light);
   font: 12px/1.6 'Courier New', monospace;
-  color: #3d3d3a;
+  color: var(--d-muted, #3d3d3a);
 }
 
 .lift-box legend {
   padding: 0 4px;
+  background: var(--d-page, transparent);
   font-size: 11px;
   letter-spacing: 1px;
-  color: #6b6b66;
+  color: var(--d-muted, #6b6b66);
 }
 
 .lift-box dl {
@@ -1201,12 +1243,12 @@ input[type="checkbox"]:focus-visible {
 .project-explorer {
   display: grid;
   grid-template-columns: clamp(205px, 40%, 460px) minmax(0, 1fr);
-  background: white;
+  background: var(--paper);
 }
 
 .project-preview {
-  background: #eeeee7;
-  border-right: 1px solid #bbb;
+  background: var(--d-page-alt, #eeeee7);
+  border-right: 1px solid var(--d-rule, #bbb);
   padding: 24px 18px;
 }
 
@@ -1227,7 +1269,7 @@ input[type="checkbox"]:focus-visible {
   display: block;
   line-height: 1.65;
   font-size: 11px;
-  color: #4c4c4c;
+  color: var(--d-muted, #4c4c4c);
   margin: 16px 0 24px;
 }
 
@@ -1243,7 +1285,7 @@ input[type="checkbox"]:focus-visible {
   display: grid;
   grid-template-columns: 1fr 100px;
   background: var(--surface);
-  border-bottom: 1px solid #888;
+  border-bottom: 1px solid var(--d-line, #888);
   padding: 5px 8px;
   font-size: 11px;
 }
@@ -1255,7 +1297,7 @@ input[type="checkbox"]:focus-visible {
   align-items: center;
   gap: 8px;
   border: 0;
-  background: white;
+  background: var(--paper);
   text-align: left;
   font-size: 12px;
 }
@@ -1264,7 +1306,7 @@ input[type="checkbox"]:focus-visible {
   margin-left: auto;
   width: 92px;
   font-size: 10px;
-  color: #555;
+  color: var(--muted);
 }
 
 .project-row.selected {
@@ -1277,7 +1319,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .list-help {
-  color: #666;
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.6;
   padding: 18px 12px;
@@ -1287,7 +1329,7 @@ input[type="checkbox"]:focus-visible {
 /* ---- documents (single project, experience) ---- */
 
 .document {
-  background: #fff;
+  background: var(--paper);
   padding: 26px 30px;
   font-size: 15px;
   line-height: 1.65;
@@ -1331,7 +1373,7 @@ input[type="checkbox"]:focus-visible {
   font-size: 20px;
   margin: 1.7em 0 .4em;
   padding-bottom: 4px;
-  border-bottom: 1px solid #c0c0c0;
+  border-bottom: 1px solid var(--surface);
 }
 
 .document p {
@@ -1345,7 +1387,7 @@ input[type="checkbox"]:focus-visible {
 .document .tech-line {
   font: 12px/1.7 'Courier New', monospace;
   padding: 10px 0;
-  border-block: 1px solid #ccc;
+  border-block: 1px solid var(--d-rule, #ccc);
 }
 
 .document ul {
@@ -1362,7 +1404,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .tech-tag:hover {
-  color: #000080;
+  color: var(--d-link, #000080);
 }
 
 .tech-chips {
@@ -1378,26 +1420,26 @@ input[type="checkbox"]:focus-visible {
   display: inline-block;
   padding: 3px 9px;
   font: 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
-  color: #111;
+  color: var(--ink);
   cursor: default;
   transition: transform .12s, background-color .12s;
 }
 
 .tech-chip.raised:hover {
   transform: translateY(-1px);
-  background: #cbcbcb;
+  background: var(--hover);
 }
 
 .eyebrow {
   font: 11px 'Courier New', monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #555;
+  color: var(--muted);
   margin: 0 0 10px;
 }
 
 .role {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--d-rule, #ccc);
   padding-bottom: 12px;
   margin-bottom: 25px;
 }
@@ -1408,7 +1450,7 @@ input[type="checkbox"]:focus-visible {
 
 .role .role-date {
   font: 11px/1.5 'Courier New', monospace;
-  color: #666;
+  color: var(--muted);
   margin-bottom: 7px;
 }
 
@@ -1428,7 +1470,7 @@ input[type="checkbox"]:focus-visible {
   flex: 1;
   min-height: 0;
   border: 0;
-  background: white;
+  background: var(--paper);
 }
 
 
@@ -1436,7 +1478,7 @@ input[type="checkbox"]:focus-visible {
 
 /* same warm off-white as the about window */
 .blog-reading {
-  background: #f5f4ed;
+  background: var(--d-page, #f5f4ed);
   padding: clamp(16px, 4vw, 36px);
   font: 14px/1.6 Tahoma, 'MS Sans Serif', Arial, sans-serif;
 }
@@ -1456,7 +1498,7 @@ input[type="checkbox"]:focus-visible {
 /* one line under each post's date in the post list */
 .blog-list .blog-subtitle {
   margin-top: 14px;
-  color: #111;
+  color: var(--ink);
 }
 
 /* the small, medium and large A buttons */
@@ -1485,7 +1527,7 @@ input[type="checkbox"]:focus-visible {
 
 .blog-reading h2 {
   font-size: 20px;
-  border-bottom: 1px solid #c0c0c0;
+  border-bottom: 1px solid var(--surface);
   padding-bottom: 4px;
 }
 
@@ -1510,13 +1552,13 @@ input[type="checkbox"]:focus-visible {
 
 .blog-table th,
 .blog-table td {
-  border: 1px solid #a0a0a0;
+  border: 1px solid var(--d-rule, #a0a0a0);
   padding: 5px 10px;
   vertical-align: top;
 }
 
 .blog-table th {
-  background: #c0c0c0;
+  background: var(--surface);
   font-weight: bold;
   white-space: nowrap;
 }
@@ -1543,14 +1585,14 @@ input[type="checkbox"]:focus-visible {
 }
 
 .blog-reading .inline-code {
-  background: #eeeef3;
-  border: 1px solid #d6d6de;
+  background: var(--d-code, #eeeef3);
+  border: 1px solid var(--d-rule, #d6d6de);
   padding: 0 3px;
   font: 13px Consolas, 'Courier New', monospace;
 }
 
 .blog-reading time {
-  color: #62626a;
+  color: var(--d-muted, #62626a);
   font: 12px Tahoma, sans-serif;
 }
 
@@ -1565,13 +1607,13 @@ input[type="checkbox"]:focus-visible {
 
 .blog-reading figcaption {
   font-size: 13px;
-  color: #555;
+  color: var(--muted);
 }
 
 .blog-demo {
   width: 100%;
   height: 300px;
-  border: 1px solid #888;
+  border: 1px solid var(--d-line, #888);
   margin-top: 24px;
 }
 
@@ -1595,7 +1637,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .code-block button {
-  color: #111;
+  color: var(--ink);
 }
 
 .blog-list {
@@ -1610,8 +1652,8 @@ input[type="checkbox"]:focus-visible {
   align-items: start;
   padding: 22px 0 24px;
   /* the etched windows divider, a grey line over a white one, same as <hr> */
-  border-bottom: 1px solid #808080;
-  box-shadow: 0 1px 0 #fff;
+  border-bottom: 1px solid var(--shadow);
+  box-shadow: 0 1px 0 var(--light);
 }
 
 .blog-list button {
@@ -1622,13 +1664,13 @@ input[type="checkbox"]:focus-visible {
   font-size: 17px;
   font-weight: bold;
   text-align: left;
-  color: #000080;
+  color: var(--d-link, #000080);
   text-decoration: underline;
 }
 
 .blog-list time {
   margin-top: 4px;
-  color: #808088;
+  color: var(--d-muted, #808088);
 }
 
 /* the editor you get when signed in reuses the mail window's fields */
@@ -1672,7 +1714,7 @@ input[type="checkbox"]:focus-visible {
 fieldset {
   margin: 0 0 20px;
   padding: 14px;
-  border: 1px solid #808080;
+  border: 1px solid var(--shadow);
 }
 
 .swatches {
@@ -1681,6 +1723,7 @@ fieldset {
 }
 
 .swatch {
+  position: relative;
   width: 44px;
   height: 38px;
   padding: 0;
@@ -1829,7 +1872,7 @@ fieldset {
   display: flex;
   gap: 2px;
   padding: 3px 4px;
-  background: #c0c0c0;
+  background: var(--surface);
 }
 
 .about-shortcut {
@@ -1844,7 +1887,7 @@ fieldset {
 }
 
 .about-shortcut:focus-visible {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
 }
 
 /* hovering hops and wiggles the envelope, in stepped frames so it moves like pixel art */
@@ -1895,8 +1938,8 @@ fieldset {
   padding: 1px;
   font: inherit;
   border-radius: 0;
-  color: #111;
-  background: #fff;
+  color: var(--ink);
+  background: var(--paper);
 }
 
 .cd-timeline {
@@ -1918,7 +1961,7 @@ fieldset {
   width: 100%;
   height: 3px;
   background: #888;
-  border-bottom: 1px solid white;
+  border-bottom: 1px solid var(--light);
   margin: 0;
   border-radius: 0;
 }
@@ -1928,8 +1971,8 @@ fieldset {
   width: 10px;
   height: 21px;
   border: 2px solid;
-  border-color: white #555 #555 white;
-  background: #c0c0c0;
+  border-color: var(--light) #555 #555 var(--light);
+  background: var(--surface);
   border-radius: 0;
 }
 
@@ -1937,8 +1980,8 @@ fieldset {
   width: 8px;
   height: 18px;
   border: 2px solid;
-  border-color: white #555 #555 white;
-  background: #c0c0c0;
+  border-color: var(--light) #555 #555 var(--light);
+  background: var(--surface);
   border-radius: 0;
 }
 
@@ -1993,6 +2036,8 @@ fieldset {
 .cd-embed iframe {
   border: 0;
   display: block;
+  width: calc(100% + 16px) !important;
+  margin: -8px;
 }
 
 
@@ -2000,7 +2045,7 @@ fieldset {
 
 .contact-game .game-content {
   padding: 12px;
-  background: #c0c0c0;
+  background: var(--surface);
   container-type: size;
   display: grid;
   place-items: center;
@@ -2058,7 +2103,7 @@ fieldset {
 }
 
 .contact-game canvas:focus-visible {
-  outline: 1px dotted #000080;
+  outline: 1px dotted var(--d-link, #000080);
   outline-offset: -3px;
 }
 
@@ -2076,7 +2121,7 @@ fieldset {
 }
 
 button.raised.tinted:hover:not(:disabled):not(:active) {
-  background: #b8c3e6;
+  background: var(--d-tinted-hover, #b8c3e6);
 }
 
 .raised.tinted:active:not(:disabled) {
@@ -2105,11 +2150,11 @@ button.raised.tinted:hover:not(:disabled):not(:active) {
 }
 
 .mail-result.sent span {
-  color: #145a24;
+  color: var(--d-ok, #145a24);
 }
 
 .mail-result.failed span {
-  color: #8a1010;
+  color: var(--d-bad, #8a1010);
 }
 
 /* the windows 95 error box over the mail window */
@@ -2199,13 +2244,13 @@ label.mail-label {
   min-width: 0;
   height: 26px;
   padding: 3px 6px;
-  background: #fff;
+  background: var(--paper);
   border-radius: 0;
 }
 
 .mail-fields input[readonly] {
-  background: #d8d8d8;
-  color: #6b6b6b;
+  background: var(--d-readonly, #d8d8d8);
+  color: var(--d-muted, #6b6b6b);
 }
 
 .mail-message {
@@ -2214,14 +2259,14 @@ label.mail-label {
   width: 100%;
   resize: none;
   padding: 6px;
-  background: #fff;
+  background: var(--paper);
   border-radius: 0;
   font-size: 13px;
 }
 
 .mail-message::placeholder {
   font-style: italic;
-  color: #8a8a8a;
+  color: var(--d-muted, #8a8a8a);
 }
 
 .mail-trap {
@@ -2303,8 +2348,8 @@ label.mail-label {
   color: #fff;
   background: #000080;
   border: 2px solid;
-  border-color: #fff #404040 #404040 #fff;
-  box-shadow: 1px 1px 0 #000;
+  border-color: var(--light) var(--dark) var(--dark) var(--light);
+  box-shadow: 1px 1px 0 var(--edge);
   font: 12px/1.4 Tahoma, 'MS Sans Serif', Arial, sans-serif;
   pointer-events: none;
 }
@@ -2344,7 +2389,7 @@ label.mail-label {
 }
 
 .picture-thumbnails button[aria-pressed="true"] {
-  outline: 2px solid #000080;
+  outline: 2px solid var(--d-link, #000080);
   outline-offset: -2px;
 }
 
@@ -2357,7 +2402,7 @@ label.mail-label {
    squares are always 24px. the window resizes itself to fit and small screens scroll */
 
 .minesweeper-app {
-  background: #c0c0c0;
+  background: var(--surface);
 }
 
 .mines-menubar {
@@ -2441,7 +2486,7 @@ label.mail-label {
   background: #000;
   padding: 2px;
   border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
 }
 
 .mines-counter.right {
@@ -2508,9 +2553,9 @@ label.mail-label {
 
 .mine-cell.open {
   border: 0;
-  border-right: 1px solid #808080;
-  border-bottom: 1px solid #808080;
-  background: #c0c0c0;
+  border-right: 1px solid var(--shadow);
+  border-bottom: 1px solid var(--shadow);
+  background: var(--surface);
 }
 
 .mine-cell.boom {
@@ -2518,7 +2563,7 @@ label.mail-label {
 }
 
 .mine-cell:focus-visible {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
   outline-offset: -3px;
 }
 
@@ -2548,8 +2593,8 @@ label.mail-label {
 .mine-cell.n4 { color: #000080; }
 .mine-cell.n5 { color: #800000; }
 .mine-cell.n6 { color: #008080; }
-.mine-cell.n7 { color: #000; }
-.mine-cell.n8 { color: #808080; }
+.mine-cell.n7 { color: var(--ink); }
+.mine-cell.n8 { color: var(--shadow); }
 
 
 /* ---- smaller screens ---- */
@@ -2767,7 +2812,7 @@ label.mail-label {
 
   .project-preview {
     border-right: 0;
-    border-top: 1px solid #aaa;
+    border-top: 1px solid var(--d-rule, #aaa);
     padding: 20px;
   }
 
@@ -2852,8 +2897,8 @@ label.mail-label {
   top: 15px;
   padding: 7px 10px;
   border: 1px solid #171717;
-  background: #ffffdf;
-  color: #171717;
+  background: var(--tip);
+  color: var(--ink);
   box-shadow: 2px 2px 0 #0005;
   font-size: 12px;
   pointer-events: none;
@@ -2871,7 +2916,7 @@ label.mail-label {
   align-items: flex-start;
   gap: 16px;
   padding: 22px;
-  background: #fff;
+  background: var(--paper);
   flex-wrap: wrap;
 }
 .game-shortcut {
@@ -2884,8 +2929,8 @@ label.mail-label {
   background: transparent;
 }
 .game-shortcut:hover, .game-shortcut:focus-visible {
-  background: #e4e8f5;
-  border: 1px dotted #000080;
+  background: var(--d-row-hover, #e4e8f5);
+  border: 1px dotted var(--d-link, #000080);
 }
 /* ---- snake, as a vertical handheld ----
    a light grey body with a big rounded bottom right corner, a dark bezel around the
@@ -3011,7 +3056,7 @@ label.mail-label {
 }
 
 .snake-pill:focus-visible {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
   outline-offset: 2px;
 }
 
@@ -3064,7 +3109,7 @@ label.mail-label {
 }
 
 .snake-pad-button:focus-visible {
-  outline: 1px dotted #000;
+  outline: 1px dotted var(--edge);
   outline-offset: 1px;
 }
 
@@ -3273,13 +3318,50 @@ label.mail-label {
 }
 
 .about-copy h1 { font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; }
-.tray-sound.raised { border: 2px solid; border-color: #fff #404040 #404040 #fff; background: #c0c0c0; min-height: 30px; }
+.tray-sound.raised,
+.tray-theme.raised { border: 2px solid; border-color: var(--light) var(--dark) var(--dark) var(--light); background: var(--surface); min-height: 30px; }
+.tray-sound.raised:active,
+.tray-theme.raised:active { border-color: var(--dark) var(--light) var(--light) var(--dark); }
+.tray-theme.raised { display: grid; place-items: center; width: 30px; padding: 0; margin-right: 4px; }
+.theme-choices { display: flex; gap: 8px; }
+.theme-choices .raised { display: flex; align-items: center; gap: 6px; }
 .mail-fields { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .mail-fields input:not([readonly]) { grid-column: span 2; }
 .mail-send { height: 26px; padding: 0 16px; font-weight: bold; }
-.mail-fields input::placeholder, .mail-message::placeholder { color: #666; font-style: italic; opacity: 1; }
+.mail-fields input::placeholder, .mail-message::placeholder { color: var(--muted); font-style: italic; opacity: 1; }
 
 .video-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+
+:root[data-theme="dark"] {
+  --d-page: #232327;
+  --d-page-alt: #2a2a2f;
+  --d-code: #2e2e36;
+  --d-row-hover: #2f3346;
+  --d-pressed: #4a4a50;
+  --d-readonly: #2c2c30;
+  --d-tinted-hover: #3d4a80;
+  --d-link: #9db4ff;
+  --d-muted: #a9a9ad;
+  --d-disabled: #77777c;
+  --d-ok: #7ddc8f;
+  --d-bad: #ff8a80;
+  --d-line: #55555b;
+  --d-rule: #45454b;
+}
+
+:root[data-theme="dark"] .contact-game .breakout-board {
+  background: #000;
+}
+
+:root[data-theme="dark"] .contact-game .breakout-email a {
+  color: #9db4ff;
+}
+
+:root[data-theme="dark"] .raised.tinted {
+  --tint: #34407a;
+  box-shadow: inset -1px -1px #1c2350, inset 1px 1px #5563a8;
+}
+
 /* ---- sticky notes ----
    the list (Stickies.vue) and each note window (StickyNote.vue), windows 10
    sticky notes redrawn in pixels. light by default, dark with the site theme */

@@ -23,9 +23,9 @@ import { read, save, remove } from './storage.js';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from './sound.js';
 import { isUnlocked } from './unlocks.js';
 import { trackOnce } from './analytics.js';
+import { theme, setTheme } from './theme.js';
+import { defaultWallpaper, wallpaperFilter, wallpapers } from './wallpaper.js';
 
-const defaultWallpaper = '#008080';
-const wallpaperColors = ['#008080', '#18334f', '#576575', '#3c6255', '#62465e'];
 
 const windows = reactive([]);
 const active = ref(null);
@@ -43,15 +43,15 @@ const desktop = ref(null);
 const start = ref(null);
 const startMenu = ref(null);
 
-// the work area is the screen minus the 40px taskbar
-const area = reactive({ width: innerWidth, height: innerHeight - 40 });
+// the work area is the screen minus the 46px taskbar
+const area = reactive({ width: innerWidth, height: innerHeight - 46 });
 // on small screens windows go full screen and only the active one shows
 const compact = ref(innerWidth <= 700);
 const clock = ref(new Date());
 const tip = ref(read('tip') !== 'dismissed');
 
 const savedColor = read('wallpaper', defaultWallpaper);
-const wallpaper = ref(wallpaperColors.includes(savedColor) ? savedColor : defaultWallpaper);
+const wallpaper = ref(wallpapers.some(w => w.color === savedColor) ? savedColor : defaultWallpaper);
 const wallpaperUrl = new URL('../assets/vaporwave-sunset.mp4', import.meta.url).href;
 const wallpaperPoster = new URL('../assets/vaporwave-sunset-poster.png', import.meta.url).href;
 
@@ -586,6 +586,7 @@ onBeforeUnmount(() => {
     <main ref="desktop" class="desktop" aria-label="Jason Tang’s desktop" @pointerdown.self="selected = null">
       <AsciiImage
         class="desktop-wallpaper"
+        :style="{ filter: wallpaperFilter(wallpaper) }"
         :columns="350"
         :source="wallpaperUrl"
         :poster="wallpaperPoster"
@@ -703,6 +704,14 @@ onBeforeUnmount(() => {
           @click="toggleVolume"
         >
           <RetroIcon :name="audible ? 'sound' : 'mute'" small/>
+        </button>
+        <button
+          class="tray-theme raised"
+          :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          @click="setTheme(theme === 'dark' ? 'light' : 'dark')"
+        >
+          <RetroIcon :name="theme === 'dark' ? 'moon' : 'sun'" small/>
         </button>
         <VolumeControl
           v-if="volumeOpen"
