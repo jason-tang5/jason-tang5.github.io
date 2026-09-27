@@ -9,6 +9,7 @@ import { loadSpotifyApi } from '../spotify.js';
 import { createPlaybackEndTracker } from '../playback-end.mjs';
 import { noteGlyphs, noteColors } from '../notes.mjs';
 import MusicVisualizer from './MusicVisualizer.vue';
+import RetroSelect from './RetroSelect.vue';
 import { play } from '../sound.js';
 import { buzz } from '../haptics.js';
 import { read, save } from '../storage.js';
@@ -325,9 +326,8 @@ onBeforeUnmount(() => {
       </button>
 
       <div class="cd-controls">
-        <select class="cd-track inset" aria-label="Track" :disabled="discEjected || inserted !== 0" :value="selected" @change="choose(Number($event.target.value))">
-          <option v-for="(track, i) in tracks" :key="track.uri" :value="i">{{ i + 1 }} of {{ tracks.length }}: {{ track.title }}</option>
-        </select>
+        <RetroSelect class="cd-track" label="Track" :disabled="discEjected || inserted !== 0" :model-value="selected"
+          :options="tracks.map((track, i) => `${i + 1} of ${tracks.length}: ${track.title}`)" @update:model-value="choose"/>
 
         <div class="cd-timeline">
           <output aria-label="Elapsed time">{{ time(position) }}</output>
