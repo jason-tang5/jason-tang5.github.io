@@ -24,6 +24,7 @@ export const apps = [
   app('music', 'CD Player', 'music', 306, 264, 306, 264),
   app('blog', 'Blog', 'notebook', 720, 580),
   app('games', 'Games', 'games', 440, 350, 300, 270),
+  app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
   app('analytics', 'Analytics', 'chart', 720, 640),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
@@ -32,9 +33,16 @@ export const apps = [
   app('mail', 'Mail', 'mail', 500, 450, 360, 330),
 ];
 
+// the apps that live inside the games and fun stuff folders instead of on the desktop
+export const folders = {
+  games: ['minesweeper', 'snake', 'reversi'],
+  funstuff: ['pictures', 'stickies', 'music', 'analytics'],
+};
+const tucked = ['settings', 'mail', ...Object.values(folders).flat()];
+
 for (const a of apps) {
-  a.desktop = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // gets a desktop icon
-  a.menu = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // shows up in the start menu
+  a.desktop = !tucked.includes(a.id); // gets a desktop icon
+  a.menu = !tucked.includes(a.id); // shows up in the start menu
   a.fixedSize = a.id === 'music';
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
 }

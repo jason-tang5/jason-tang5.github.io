@@ -83,6 +83,15 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path stroke="#fff5b8" d="M4 15h23"/>
         <path fill="#5b2fa0" stroke="none" d="M12 18h1v1H12zM18 18h1v1H18zM13 19h1v1H13zM17 19h1v1H17zM12 20h7v1H12zM11 21h2v1H11zM14 21h3v1H14zM18 21h2v1H18zM10 22h11v1H10zM10 23h1v1H10zM12 23h7v1H12zM20 23h1v1H20zM10 24h1v1H10zM12 24h1v1H12zM18 24h1v1H18zM20 24h1v1H20zM13 25h2v1H13zM16 25h2v1H16z"/>
       </g>
+      <!-- the fun stuff folder: the same yellow folder with a pixel star on the front -->
+      <g v-else-if="name === 'funstuff'">
+        <path fill="#c69b27" d="M2 8h11l3 3h14v5H2z"/>
+        <path fill="#fff3a3" d="M3 6h10l3 3h13v6H3z"/>
+        <path fill="#f3d568" d="M1 13h30l-4 16H4z"/>
+        <path stroke="#fff5b8" d="M4 15h23"/>
+        <path fill="#e8467c" stroke="none" d="M15 17h2v2h-2zM14 19h4v1h-4zM10 20h12v2H10zM12 22h8v1h-8zM13 23h6v1h-6zM12 24h3v2h-3zM17 24h3v2h-3zM11 26h2v1h-2zM19 26h2v1h-2z"/>
+        <path fill="#ffb3c9" stroke="none" d="M15 19h1v1h-1zM12 20h2v1h-2z"/>
+      </g>
       <g v-else-if="name === 'folder' || name === 'case'">
         <path :fill="name === 'case' ? '#936d35' : '#c69b27'" d="M2 8h11l3 3h14v5H2z"/>
         <path fill="#fff3a3" d="M3 6h10l3 3h13v6H3z"/>
