@@ -835,7 +835,20 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   gap: 4px;
   overflow-x: auto;
-  scrollbar-width: thin;
+}
+
+/* the taskbar only scrolls when it's crammed, so it gets a shorter bar, arrows included */
+.task-items::-webkit-scrollbar {
+  height: 12px;
+}
+
+.task-items::-webkit-scrollbar-button:single-button {
+  width: 14px;
+  height: 12px;
+}
+
+.task-items::-webkit-scrollbar-thumb {
+  background-image: none;
 }
 
 .task-button {
@@ -969,7 +982,8 @@ input[type="checkbox"]:focus-visible {
 .clock {
   min-width: 83px;
   background: var(--surface);
-  font-size: 11px;
+  font: 12px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
   padding: 2px 8px;
   white-space: nowrap;
 }
@@ -1876,13 +1890,6 @@ fieldset {
 }
 
 .about-shortcut {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 42px;
-  padding: 0;
-  border: 0;
-  background: none;
   cursor: var(--classic-pointer);
 }
 
@@ -2029,8 +2036,14 @@ fieldset {
   line-height: 1.4;
 }
 
+/* spotify's embed has rounded corners, so crop 8px off each edge to keep the
+   frame square and win95 like */
 .cd-embed {
   min-width: 270px;
+  height: 136px;
+  overflow: hidden;
+  border: 2px solid;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
 }
 
 .cd-embed iframe {
@@ -3322,6 +3335,9 @@ label.mail-label {
 .tray-theme.raised { border: 2px solid; border-color: var(--light) var(--dark) var(--dark) var(--light); background: var(--surface); min-height: 30px; }
 .tray-sound.raised:active,
 .tray-theme.raised:active { border-color: var(--dark) var(--light) var(--light) var(--dark); }
+.icon-button svg { width: 32px; height: 32px; shape-rendering: crispEdges; fill: var(--ink); }
+.icon-button svg .accent { fill: var(--d-link, #000080); }
+.icon-button svg .page { fill: var(--paper); }
 .tray-theme.raised { display: grid; place-items: center; width: 30px; padding: 0; margin-right: 4px; }
 .theme-choices { display: flex; gap: 8px; }
 .theme-choices .raised { display: flex; align-items: center; gap: 6px; }
@@ -3361,6 +3377,93 @@ label.mail-label {
   --tint: #34407a;
   box-shadow: inset -1px -1px #1c2350, inset 1px 1px #5563a8;
 }
+
+/* ---- scrollbars ----
+   win95 ones everywhere: a dithered track, a raised thumb and pixel arrow buttons.
+   firefox can't style those parts, so it just gets the colours */
+
+:root {
+  --track-a: #fff;
+  --track-b: #a8a8a8;
+  --arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v1h1v1h1v1h1v1H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
+  --arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h7v1H6v1H5v1H4v1H3V3H2V2H1V1H0z'/%3E%3C/svg%3E");
+  --arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v7H3V6H2V5H1V4H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
+  --arrow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h1v1h1v1h1v1h1v1H3v1H2v1H1v1H0z'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+  --track-a: #19191c;
+  --track-b: #2a2a2e;
+  --arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M3 0h1v1h1v1h1v1h1v1H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
+  --arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M0 0h7v1H6v1H5v1H4v1H3V3H2V2H1V1H0z'/%3E%3C/svg%3E");
+  --arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M3 0h1v7H3V6H2V5H1V4H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
+  --arrow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M0 0h1v1h1v1h1v1h1v1H3v1H2v1H1v1H0z'/%3E%3C/svg%3E");
+}
+
+::-webkit-scrollbar {
+  width: 18px;
+  height: 18px;
+}
+
+/* the dithered track. dark mode sinks it well below the thumb so the thumb stands out */
+::-webkit-scrollbar-track {
+  background: repeating-conic-gradient(var(--track-a) 0 25%, var(--track-b) 0 50%) 0 0 / 2px 2px;
+}
+
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-button:single-button {
+  background-color: var(--surface);
+  border: 2px solid;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  box-shadow: inset -1px -1px var(--shadow), inset 1px 1px var(--hilite);
+}
+
+/* a little pixel grip in the middle of the thumb */
+::-webkit-scrollbar-thumb:vertical {
+  min-height: 24px;
+  background-image: repeating-linear-gradient(var(--shadow) 0 1px, var(--light) 1px 2px, transparent 2px 4px);
+  background-size: 8px 7px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  min-width: 24px;
+  background-image: repeating-linear-gradient(90deg, var(--shadow) 0 1px, var(--light) 1px 2px, transparent 2px 4px);
+  background-size: 7px 8px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+::-webkit-scrollbar-button:single-button {
+  display: block;
+  width: 18px;
+  height: 18px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+::-webkit-scrollbar-button:single-button:active {
+  border-color: var(--shadow);
+  box-shadow: none;
+  background-position: calc(50% + 1px) calc(50% + 1px);
+}
+
+::-webkit-scrollbar-button:single-button:vertical:decrement { background-image: var(--arrow-up); }
+::-webkit-scrollbar-button:single-button:vertical:increment { background-image: var(--arrow-down); }
+::-webkit-scrollbar-button:single-button:horizontal:decrement { background-image: var(--arrow-left); }
+::-webkit-scrollbar-button:single-button:horizontal:increment { background-image: var(--arrow-right); }
+
+::-webkit-scrollbar-corner {
+  background: var(--surface);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: var(--surface) var(--track-b);
+  }
+}
+
 
 /* ---- sticky notes ----
    the list (Stickies.vue) and each note window (StickyNote.vue), windows 10
@@ -3725,4 +3828,80 @@ label.mail-label {
   font: inherit;
   font-size: 14px;
   outline: none;
+}
+
+/* ---- tooltips (tooltips.js) ----
+   the pale yellow win95 kind, in the pixel font */
+
+.pixel-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100000;
+  max-width: 260px;
+  padding: 2px 6px 3px;
+  background: var(--d-tooltip, #ffffe1);
+  color: var(--ink);
+  border: 1px solid var(--edge);
+  box-shadow: 2px 2px 0 rgb(0 0 0 / .45);
+  font: 11px/1.35 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  pointer-events: none;
+  white-space: pre-line;
+}
+
+.pixel-tip[hidden] {
+  display: none;
+}
+
+:root[data-theme="dark"] {
+  --d-tooltip: #3a3722;
+}
+
+/* ---- internet explorer style toolbar buttons ----
+   flat, a big icon with its label underneath, and a thin bevel only on hover */
+
+.ie-toolbar {
+  gap: 2px;
+}
+
+.ie-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 62px;
+  padding: 4px 6px 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ie-button:hover,
+.ie-button:focus-visible {
+  border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+  outline: none;
+}
+
+.ie-button:active {
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+}
+
+.ie-button:active > * {
+  transform: translate(1px, 1px);
+}
+
+.ie-button:focus-visible span {
+  outline: 1px dotted var(--ink);
+}
+
+.button-row.ie-toolbar .ie-button {
+  min-height: 0;
+  font-size: 11px;
 }

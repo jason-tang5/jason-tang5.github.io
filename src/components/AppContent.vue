@@ -3,6 +3,7 @@
 // right here, the bigger ones have their own components.
 import { defineAsyncComponent, onBeforeUnmount, ref } from 'vue';
 import { profile, projects, roles } from '../content.mjs';
+import { registry } from '../registry.js';
 import AsciiImage from './AsciiImage.vue';
 import Analytics from './Analytics.vue';
 import Blog from './Blog.vue';
@@ -105,15 +106,15 @@ function setPortraitAscii(value) {
   <!-- about -->
   <div v-if="win.type === 'about'" class="app-layout about-app">
     <div class="content-scroll about-content">
-      <!-- contact and the cd player as two unlabelled icons in the top right.
+      <!-- contact and the cd player as two toolbar icons in the top right.
            the envelope wiggles on hover, the cd spins, plays a tune and puffs out notes -->
       <div class="about-shortcuts raised">
-        <button class="about-shortcut about-contact" aria-label="Contact" @click="emit('open', 'contact')">
+        <button class="about-shortcut ie-button about-contact" @click="emit('open', 'contact')">
           <RetroIcon name="mail" />
+          <span>Contact</span>
         </button>
         <button
-          class="about-shortcut"
-          aria-label="CD Player"
+          class="about-shortcut ie-button"
           @click="emit('open', 'music')"
           @pointerenter="startCd"
           @pointerleave="stopCd"
@@ -121,6 +122,7 @@ function setPortraitAscii(value) {
           @blur="stopCd"
         >
           <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"/>
+          <span>CD Player</span>
         </button>
       </div>
       <Teleport to=".desktop">
@@ -157,11 +159,11 @@ function setPortraitAscii(value) {
           <div class="about-bottom">
             <!-- the lifts box stretches to exactly the width of the button row above it -->
             <div class="about-links">
-              <div class="button-row">
-                <button class="raised" @click="emit('open', 'projects')">Projects</button>
-                <button class="raised" @click="emit('open', 'experience')">Experience</button>
-                <button class="raised" @click="emit('open', 'resume')">Resume</button>
-                <button class="raised" @click="emit('open', 'blog')">Blog</button>
+              <div class="button-row ie-toolbar">
+                <button v-for="id in ['projects', 'experience', 'resume', 'blog']" :key="id" class="ie-button" @click="emit('open', id)">
+                  <RetroIcon :name="registry[id].icon"/>
+                  <span>{{ registry[id].label }}</span>
+                </button>
               </div>
               <!-- a windows group box, the etched frame with its title in the border -->
               <fieldset class="lift-box">
@@ -272,13 +274,18 @@ function setPortraitAscii(value) {
 
   <!-- resume pdf -->
   <div v-else-if="win.type === 'resume'" class="app-layout">
-    <div class="toolbar">
-      <a class="raised link-button" :href="resumeUrl" target="_blank" rel="noopener">Open PDF</a>
-      <a class="raised link-button" :href="resumeUrl" download="Jason_Tang_Resume.pdf">Download</a>
-      <button class="raised" @click="emit('open', 'experience')">View experience</button>
+    <div class="toolbar ie-toolbar">
+      <a class="ie-button icon-button" :href="resumeUrl" target="_blank" rel="noopener" title="Open PDF in a new tab">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="page" d="M1 3h9v12H1z"/><path d="M1 3h9v1H1zM1 14h9v1H1zM1 3h1v12H1zM9 9h1v6H9zM3 6h4v1H3zM3 8h3v1H3zM3 10h4v1H3z"/><path class="accent" d="M9 1h6v6h-1V3h-1v1h-1v1h-1v1h-1v1H9V6h1V5h1V4h1V3h1V2H9z"/></svg>
+        <span>Open PDF</span>
+      </a>
+      <a class="ie-button icon-button" :href="resumeUrl" download="Jason_Tang_Resume.pdf" title="Download PDF">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="accent" d="M7 1h2v7h2v1h-1v1H9v1H7v-1H6V9H5V8h2z"/><path d="M1 10h1v4h12v-4h1v5H1z"/></svg>
+        <span>Download</span>
+      </a>
     </div>
     <object class="resume-viewer" :data="resumeUrl" type="application/pdf" aria-label="Jason Tang resume">
-      <p>Your browser cannot display this PDF. <a :href="resumeUrl">Open PDF</a> or <button @click="emit('open', 'experience')">View experience</button>.</p>
+      <p>Your browser cannot display this PDF. <a :href="resumeUrl">Open PDF</a>.</p>
     </object>
   </div>
 
