@@ -291,7 +291,12 @@ onBeforeUnmount(() => {
 /* visitors by day and boards cleared side by side, stacked on a phone */
 .history-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; margin-top: 12px; }
 .history-row .pixel-pie { flex-direction: column; align-items: flex-start; }
-@media (max-width: 700px) { .history-row { grid-template-columns: minmax(0, 1fr); } }
+/* stacked on a phone, the pie and the cartridge each sit in the middle of their row */
+@media (max-width: 700px) {
+  .history-row { grid-template-columns: minmax(0, 1fr); }
+  .history-row .pixel-pie { align-items: center; }
+  .history-row .analytics-cart { margin-inline: auto; }
+}
 .analytics-refresh { display: inline-flex; align-items: center; gap: 6px; }
 .analytics-refresh svg { width: 16px; height: 16px; fill: currentColor; }
 .score-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
