@@ -21,6 +21,9 @@ const props = defineProps({
   columns: Number,
   cellSize: Number,
   showControls: Boolean,
+  // an element to move the controls into (my pictures' toolbar on a phone) instead of
+  // floating them over the photo
+  controlsTo: { type: Object, default: null },
 });
 const emit = defineEmits(['update:enabled']);
 
@@ -306,8 +309,10 @@ onBeforeUnmount(() => {
 
       :visible="visible"
       :reduced-motion="reducedMotion"
+      :controls-to="controlsTo"
       @error="failed = true"
     />
+    <Teleport :to="controlsTo || 'body'" :disabled="!controlsTo">
     <button
       v-if="mediaType === 'image' && enabled && !failed"
       class="ascii-reset raised"
@@ -324,8 +329,10 @@ onBeforeUnmount(() => {
         <path fill="#404040" d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/>
       </svg>
     </button>
+    </Teleport>
     <button v-if="mediaType === 'video' && playbackBlocked" class="raised video-play" @click.stop="retryPlayback">Play video</button>
     <!-- stop events here so clicking the toggle doesn't also poke the image or drag the window -->
+    <Teleport :to="controlsTo || 'body'" :disabled="!controlsTo">
     <div
       v-if="mediaType === 'image' || showControls"
       class="ascii-mode-controls"
@@ -372,5 +379,6 @@ onBeforeUnmount(() => {
         </svg>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>

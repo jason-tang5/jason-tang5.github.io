@@ -18,6 +18,7 @@ const props = defineProps({
   visible: Boolean,
   reducedMotion: Boolean,
   resetVersion: Number,
+  controlsTo: { type: Object, default: null },
 });
 const emit = defineEmits(['error']);
 
@@ -643,6 +644,7 @@ onBeforeUnmount(() => {
   <!-- hammer size slider, built like the ascii detail slider and stacked under the reset
        button. a big pixel circle marks the big end, a small one the small end. stops events
        so dragging it doesn't smash letters or move the window -->
+  <Teleport :to="controlsTo || 'body'" :disabled="!controlsTo">
   <div v-show="visible" class="ascii-hammer raised" title="Hammer size" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
     <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
       <path fill="#404040" d="M3 0h5v1H3zM1 1h9v2H1zM0 3h11v5H0zM1 8h9v2H1zM3 10h5v1H3z"/>
@@ -687,4 +689,5 @@ onBeforeUnmount(() => {
       </svg>
     </button>
   </div>
+  </Teleport>
 </template>

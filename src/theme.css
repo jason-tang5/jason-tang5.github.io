@@ -5782,6 +5782,74 @@ label.mail-label {
   }
 }
 
+/* ---- my pictures on a phone ----
+   the arrows and the ascii controls sit in a toolbar over the photo (Pictures.vue moves
+   them there), so the photo gets the rest of the room and nothing hangs off it */
+.pictures-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 0;
+  flex-shrink: 0;
+}
+
+/* every control in the toolbar is the same 32px tall, the arrows and the reset
+   centred in their squares */
+.pictures-toolbar .picture-arrow {
+  position: static;
+  transform: none;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+}
+
+.pictures-toolbar .picture-arrow svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--ink);
+}
+
+.pictures-controls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.pictures-controls .ascii-mode-controls,
+.pictures-controls .ascii-hammer,
+.pictures-controls .ascii-reset.raised {
+  position: static;
+  box-sizing: border-box;
+  height: 32px;
+}
+
+.pictures-controls .ascii-mode-controls { order: 1; }
+.pictures-controls .ascii-mode-controls .raised { min-height: 0; }
+.pictures-controls .ascii-hammer { order: 2; }
+.pictures-controls .ascii-reset.raised { order: 3; width: 32px; }
+
+.pictures-controls .ascii-reset svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pictures-app.phone .pictures-stage {
+  touch-action: pan-y pinch-zoom;
+}
+
+.pictures-app.phone .pictures-hero {
+  margin: 0;
+  width: min(calc(100cqw - 16px), calc((100cqh - 16px) * var(--photo-ratio)));
+}
+
 .about-copy h1 { font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; }
 .tray-sound.raised,
 .tray-theme.raised { border: 2px solid; border-color: var(--light) var(--dark) var(--dark) var(--light); background: var(--surface); min-height: 30px; }
