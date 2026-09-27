@@ -28,7 +28,8 @@ import { trackOnce } from './analytics.js';
 import { theme, setTheme } from './theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from './wallpaper.js';
 import { useResting } from './resting.js';
-import { autoHide, edgeNotices, taskbarEdge } from './taskbar.js';
+import { autoHide, edgeNotices, setAutoHide, taskbarEdge } from './taskbar.js';
+import { addNote } from './stickies.js';
 
 
 const windows = reactive([]);
@@ -330,6 +331,73 @@ function taskMenuKeys(event) {
   items[(i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
 }
 
+// ---- right click menus on the desktop and the taskbar ----
+// right clicking empty desktop or empty taskbar opens a win98 style menu instead of
+// the browser's. icons, windows and taskbar buttons keep their own behaviour.
+// { kind: 'desktop' | 'taskbar', x, y } where x and y are the menu's top left corner
+const contextMenu = ref(null);
+const contextMenuEl = ref(null);
+
+async function openContextMenu(event, kind) {
+  event.preventDefault();
+  startOpen.value = false;
+  calendar.value = false;
+  volumeOpen.value = false;
+  taskMenu.value = null;
+  contextMenu.value = { kind, x: event.clientX, y: event.clientY };
+  await nextTick();
+  // like windows, it opens up or left of the pointer when it would run off the screen
+  const el = contextMenuEl.value;
+  if (!el) return;
+  const { width, height } = el.getBoundingClientRect();
+  if (event.clientX + width > innerWidth) contextMenu.value.x = Math.max(0, event.clientX - width);
+  if (event.clientY + height > innerHeight) contextMenu.value.y = Math.max(0, event.clientY - height);
+  el.querySelector('button:not(:disabled)')?.focus();
+}
+
+// only the bare desktop (or its wallpaper) and the empty parts of the taskbar count
+function desktopContext(event) {
+  if (event.target.closest('.desktop-shortcut, .window, .first-tip')) return;
+  openContextMenu(event, 'desktop');
+}
+function taskbarContext(event) {
+  if (event.target.closest('button')) return;
+  openContextMenu(event, 'taskbar');
+}
+
+// every open window stacked from the top left, each a step down and to the right
+function cascade() {
+  const shown = windows.filter(w => !w.minimized);
+  shown.forEach((w, i) => {
+    if (w.maximized) toggleMaximize(w, area);
+    Object.assign(w, clampBounds({ ...w, x: 24 + i * 28, y: 20 + i * 28 }, area));
+  });
+  if (shown.length) focus(shown.at(-1).id);
+}
+
+function contextAction(action) {
+  contextMenu.value = null;
+  if (action === 'arrange') Object.keys(iconCells).forEach(id => delete iconCells[id]);
+  else if (action === 'note') open(addNote());
+  else if (action === 'properties') open('settings');
+  else if (action === 'cascade') cascade();
+  else if (action === 'minimize') minimizeAll();
+  else if (action === 'autohide') setAutoHide(!autoHide.value);
+}
+
+function contextMenuKeys(event) {
+  if (event.key === 'Escape') {
+    contextMenu.value = null;
+    event.stopPropagation();
+    return;
+  }
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+  event.preventDefault();
+  const items = [...contextMenuEl.value.querySelectorAll('button:not(:disabled)')];
+  const i = items.indexOf(document.activeElement);
+  items[(i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+}
+
 // ---- remembering window positions ----
 
 function loadLayout() {
@@ -625,6 +693,7 @@ function outside(event) {
   const inMenu = startMenu.value?.contains(event.target) || start.value?.contains(event.target);
   if (startOpen.value && !inMenu) dismissStart(false);
   if (!taskMenuEl.value?.contains(event.target)) taskMenu.value = null;
+  if (!contextMenuEl.value?.contains(event.target)) contextMenu.value = null;
   if (!event.target.closest('.tray')) {
     calendar.value = false;
     volumeOpen.value = false;
@@ -633,6 +702,7 @@ function outside(event) {
 
 function escape(event) {
   if (event.key !== 'Escape') return;
+  contextMenu.value = null;
   if (startOpen.value) {
     dismissStart();
     event.preventDefault();
@@ -719,11 +789,31 @@ function hashOpen() {
   if (canOpen(id)) open(id, false);
 }
 
-function showDesktop() {
+// the show desktop button is a toggle, like windows: the first click minimizes
+// everything and remembers what was open, the next click brings those windows back.
+// opening anything in between starts over
+let desktopShown = null;
+
+function minimizeAll() {
   windows.forEach(w => { w.minimized = true; });
   active.value = null;
   startOpen.value = false;
   nextTick(() => document.querySelector('.desktop-shortcut')?.focus());
+}
+
+function showDesktop() {
+  const stillHidden = desktopShown && windows.every(w => w.minimized);
+  if (stillHidden) {
+    const { ids, front } = desktopShown;
+    desktopShown = null;
+    startOpen.value = false;
+    windows.filter(w => ids.includes(w.id)).forEach(w => { w.minimized = false; });
+    if (front && get(front)) focus(front);
+    return;
+  }
+  const ids = windows.filter(w => !w.minimized).map(w => w.id);
+  desktopShown = ids.length ? { ids, front: active.value } : null;
+  minimizeAll();
 }
 
 onMounted(() => {
@@ -785,7 +875,7 @@ onBeforeUnmount(() => {
     :class="[`taskbar-${edge}`, { resting, 'taskbar-autohide': autoHide, 'taskbar-shown': taskbarShown }]"
     :style="{ '--desktop': wallpaper }"
   >
-    <main ref="desktop" class="desktop" aria-label="Jason Tang’s desktop" @pointerdown.self="selected = null">
+    <main ref="desktop" class="desktop" aria-label="Jason Tang’s desktop" @pointerdown.self="selected = null" @contextmenu="desktopContext">
       <AsciiImage
         class="desktop-wallpaper"
         :style="{ filter: wallpaperFilter(wallpaper) }"
@@ -862,7 +952,7 @@ onBeforeUnmount(() => {
       </DesktopWindow>
     </main>
 
-    <nav ref="taskbarEl" class="taskbar" aria-label="Taskbar" @focusin="autoHide && showTaskbar()" @focusout="autoHide && hideTaskbarSoon()">
+    <nav ref="taskbarEl" class="taskbar" aria-label="Taskbar" @contextmenu="taskbarContext" @focusin="autoHide && showTaskbar()" @focusout="autoHide && hideTaskbarSoon()">
       <button
         ref="start"
         class="start-button raised"
@@ -984,6 +1074,31 @@ onBeforeUnmount(() => {
       <button role="menuitem" :disabled="compact || get(taskMenu.id).fixedSize || get(taskMenu.id).maximized" @click="taskMenuAction('maximize')"><MenuGlyph name="maximize"/>Maximize</button>
       <hr>
       <button role="menuitem" data-sound="none" @click="taskMenuAction('close')"><MenuGlyph name="close"/><strong>Close</strong></button>
+    </div>
+
+    <div
+      v-if="contextMenu"
+      ref="contextMenuEl"
+      class="system-menu context-menu raised"
+      role="menu"
+      :aria-label="contextMenu.kind === 'desktop' ? 'Desktop menu' : 'Taskbar menu'"
+      :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+      @keydown="contextMenuKeys"
+      @contextmenu.prevent
+    >
+      <template v-if="contextMenu.kind === 'desktop'">
+        <button role="menuitem" :disabled="!Object.keys(iconCells).length" @click="contextAction('arrange')"><MenuGlyph/>Arrange Icons</button>
+        <button role="menuitem" @click="contextAction('note')"><MenuGlyph/>New Sticky Note</button>
+        <hr>
+        <button role="menuitem" @click="contextAction('properties')"><MenuGlyph/><strong>Properties</strong></button>
+      </template>
+      <template v-else>
+        <button role="menuitem" :disabled="compact || !windows.some(w => !w.minimized)" @click="contextAction('cascade')"><MenuGlyph/>Cascade Windows</button>
+        <button role="menuitem" :disabled="!windows.some(w => !w.minimized)" @click="contextAction('minimize')"><MenuGlyph name="minimize"/>Minimize All Windows</button>
+        <hr>
+        <button role="menuitemcheckbox" :aria-checked="autoHide" @click="contextAction('autohide')"><MenuGlyph :name="autoHide ? 'check' : ''"/>Auto-hide the Taskbar</button>
+        <button role="menuitem" @click="contextAction('properties')"><MenuGlyph/><strong>Properties</strong></button>
+      </template>
     </div>
 
     <div class="sr-only" role="status">{{ announcement }}</div>

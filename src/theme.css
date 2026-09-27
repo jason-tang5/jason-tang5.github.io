@@ -739,6 +739,14 @@ input[type="checkbox"]:focus-visible {
   font-size: 12px;
 }
 
+/* right clicking the empty desktop or taskbar opens this at the pointer */
+.context-menu {
+  position: fixed;
+  z-index: 100001;
+  width: 200px;
+  font-size: 12px;
+}
+
 /* the window's full name in a little title bar across the top of the menu */
 .task-menu-title {
   display: flex;
