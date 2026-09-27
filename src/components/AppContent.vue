@@ -59,6 +59,55 @@ const places = [
 ];
 const hoveredPlace = ref(null);
 
+// the projects folder shows its files as large icons or as a details list
+const projectViews = [
+  { id: 'icons', label: 'Large icons', glyph: 'M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9zM2 2v4h4V2zM10 2v4h4V2zM2 10v4h4v-4zM10 10v4h4v-4z' },
+  { id: 'details', label: 'Details', glyph: 'M1 2h3v3H1zM6 3h9v1H6zM1 7h3v3H1zM6 8h9v1H6zM1 12h3v3H1zM6 13h9v1H6z' },
+];
+const projectView = ref(read('projects-view', 'icons') === 'details' ? 'details' : 'icons');
+function setProjectView(view) {
+  projectView.value = view;
+  save('projects-view', view);
+}
+
+// the details view's columns can be dragged wider or narrower by their header edges.
+// until one is dragged they squeeze to fit the pane, after that every column keeps
+// its own width and the pane scrolls if it runs out. an empty last column holds the
+// row's open button so it never sits on top of the type
+let savedColumns = null;
+try { savedColumns = JSON.parse(read('projects-columns', 'null')); } catch { /* keep the defaults */ }
+const columns = ref(savedColumns?.name ? savedColumns : null);
+const detailsHeader = ref(null);
+function detailsColumns() {
+  const c = columns.value;
+  return c
+    ? `24px ${c.name}px ${c.date}px ${c.kind}px minmax(64px, 1fr)`
+    : '24px minmax(90px, 1fr) minmax(0, 112px) minmax(0, 100px) 64px';
+}
+function resizeColumn(key, event) {
+  // pin every column to its current width so dragging one doesn't reflow the others.
+  // the name header also spans the icon column
+  if (!columns.value) {
+    const [name, date, kind] = [...detailsHeader.value.children].map(el => el.getBoundingClientRect().width);
+    columns.value = { name: Math.round(name - 24), date: Math.round(date), kind: Math.round(kind) };
+  }
+  const start = columns.value[key];
+  const x = event.clientX;
+  const handle = event.currentTarget;
+  handle.setPointerCapture(event.pointerId);
+  const move = e => {
+    columns.value[key] = Math.max(40, Math.round(start + e.clientX - x));
+  };
+  const end = () => {
+    handle.removeEventListener('pointermove', move);
+    handle.removeEventListener('pointerup', end);
+    handle.removeEventListener('pointercancel', end);
+    save('projects-columns', JSON.stringify(columns.value));
+  };
+  handle.addEventListener('pointermove', move);
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+}
 const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
@@ -241,15 +290,34 @@ function setPortraitAscii(value) {
     </footer>
   </div>
 
-  <!-- projects folder, explorer style -->
+  <!-- projects folder, explorer style: the selected file's details on the left,
+       the files as big icons on the right like a my computer folder -->
   <div v-else-if="win.type === 'projects'" class="app-layout">
-    <div class="toolbar">
-      <button class="raised" @click="emit('open', selected.id)">Open selected</button>
-      <span class="toolbar-link">{{ projects.length }} projects</span>
+    <div class="toolbar explorer-toolbar">
+      <div class="explorer-folder inset" aria-hidden="true">
+        <RetroIcon name="folder" small/>
+        <span>Projects</span>
+      </div>
+      <span class="toolbar-separator" aria-hidden="true"/>
+      <!-- large icons or details, like the view buttons on a windows 95 folder -->
+      <div class="view-toggle" role="group" aria-label="View">
+        <button
+          v-for="v in projectViews"
+          :key="v.id"
+          class="raised view-button"
+          :class="{ pressed: projectView === v.id }"
+          :aria-pressed="projectView === v.id"
+          :aria-label="v.label"
+          :title="v.label"
+          @click="setProjectView(v.id)"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path :d="v.glyph" fill="currentColor" fill-rule="evenodd"/></svg>
+        </button>
+      </div>
     </div>
     <div class="address-bar">
       <span>Address</span>
-      <div class="inset">Portfolio:\Projects</div>
+      <div class="inset address-with-icon"><RetroIcon name="folder" small/>Portfolio:\Projects</div>
     </div>
     <div class="project-explorer content-scroll inset">
       <aside class="project-preview">
@@ -259,31 +327,55 @@ function setPortraitAscii(value) {
         <small><TechList :items="selected.tech" chips/></small>
         <button class="raised" @click="emit('open', selected.id)">View project →</button>
       </aside>
-      <div class="project-list">
-        <div class="list-header"><span>Name</span><span>Type</span></div>
-        <button
-          v-for="p in projects"
-          :key="p.id"
-          :class="['project-row', { selected: selected.id === p.id }]"
-          @click="selected = p"
-          @dblclick="emit('open', p.id)"
-          @keydown.enter.prevent="emit('open', p.id)"
-        >
-          <RetroIcon :name="p.icon" small/>
-          <span>{{ p.name }}</span>
-          <small>{{ p.kind }}</small>
-        </button>
-        <p class="list-help">Select a file to preview.<br>Double-click or press Enter to open.</p>
+      <div
+        :class="projectView === 'details' ? ['project-details', { 'fixed-columns': columns }] : 'project-icons'"
+        :style="projectView === 'details' ? { '--details-columns': detailsColumns() } : null"
+        role="group"
+        aria-label="Projects"
+      >
+        <div v-if="projectView === 'details'" ref="detailsHeader" class="list-header" aria-hidden="true">
+          <span>Name<i class="col-resize" @pointerdown.prevent="resizeColumn('name', $event)"/></span>
+          <span>Modified<i class="col-resize" @pointerdown.prevent="resizeColumn('date', $event)"/></span>
+          <span>Type<i class="col-resize" @pointerdown.prevent="resizeColumn('kind', $event)"/></span>
+          <span class="col-filler"/>
+        </div>
+        <!-- hovering a file (or selecting it) shows an open button under its name -->
+        <div v-for="p in projects" :key="p.id" :class="['project-item', { selected: selected.id === p.id }]">
+          <button
+            class="project-file"
+            :aria-pressed="selected.id === p.id"
+            :title="projectView === 'details' ? null : p.kind"
+            @click="selected = p"
+            @dblclick="emit('open', p.id)"
+            @keydown.enter.prevent="emit('open', p.id)"
+          >
+            <RetroIcon :name="p.icon" :small="projectView === 'details'"/>
+            <span>{{ p.name }}</span>
+            <template v-if="projectView === 'details'">
+              <small class="col-date">{{ p.date }}</small>
+              <small class="col-kind">{{ p.kind }}</small>
+            </template>
+          </button>
+          <button class="row-open raised" :title="`Open ${p.name} in its own window`" @click="emit('open', p.id)">
+            Open<span class="sr-only"> {{ p.name }}</span>
+          </button>
+        </div>
       </div>
     </div>
-    <footer class="status-bar"><span>{{ selected.name }}</span><span>1 object selected</span></footer>
+    <footer class="status-bar"><span>{{ selected.name }} · {{ selected.kind }}</span><span>{{ projects.length }} objects</span></footer>
   </div>
 
   <!-- a single project -->
   <div v-else-if="win.type === 'project'" class="app-layout">
-    <div class="toolbar">
-      <button class="raised" @click="emit('open', 'projects')">All projects</button>
-      <a v-if="win.project.demo" class="raised link-button" :href="win.project.demo" target="_blank" rel="noopener">Open demo ↗ <span class="sr-only">(new tab)</span></a>
+    <div class="toolbar ie-toolbar">
+      <button class="ie-button" title="Back to the projects folder" @click="emit('open', 'projects')">
+        <RetroIcon name="folder"/>
+        <span>All projects</span>
+      </button>
+      <a v-if="win.project.demo" class="ie-button icon-button" :href="win.project.demo" target="_blank" rel="noopener" title="Try the live demo in a new tab">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="page" d="M1 3h9v12H1z"/><path d="M1 3h9v1H1zM1 14h9v1H1zM1 3h1v12H1zM9 9h1v6H9zM3 6h4v1H3zM3 8h3v1H3zM3 10h4v1H3z"/><path class="accent" d="M9 1h6v6h-1V3h-1v1h-1v1h-1v1h-1v1H9V6h1V5h1V4h1V3h1V2H9z"/></svg>
+        <span>Open demo</span>
+      </a>
     </div>
     <article class="content-scroll document pixel-headings">
       <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
