@@ -1,18 +1,6 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue';
-const data = ref(null);
-const error = ref('');
-let timer;
-async function load() {
-  try {
-    const response = await fetch('/api/stats');
-    if (!response.ok) throw new Error();
-    data.value = await response.json();
-    error.value = '';
-  } catch { error.value = 'Live stats unavailable. Try again shortly.'; }
-}
-onMounted(() => { load(); timer = setInterval(load, 30000); });
-onBeforeUnmount(() => clearInterval(timer));
+import { useLiveStats } from '../live-stats.js';
+const { data, error } = useLiveStats();
 </script>
 <template>
   <section class="live-scoreboard">

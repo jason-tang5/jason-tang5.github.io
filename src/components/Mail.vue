@@ -98,7 +98,11 @@ async function send() {
     <div class="mail-fields">
       <label class="raised mail-label" for="mail-to">To:</label>
       <input id="mail-to" class="inset" :value="contact.email" aria-label="To" readonly>
-      <button class="raised tinted mail-send" type="submit" :disabled="sending">{{ sending ? 'Sending…' : 'Send' }}</button>
+      <button class="raised tinted mail-send" type="submit" :disabled="sending">
+        <!-- a pixel paper plane -->
+        <svg class="mail-send-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M13 1h2v1H13zM11 2h4v1H11zM9 3h2v1H9zM12 3h2v1H12zM7 4h2v1H7zM11 4h1v1H11zM13 4h1v1H13zM5 5h2v1H5zM10 5h1v1H10zM12 5h1v1H12zM3 6h2v1H3zM9 6h1v1H9zM12 6h1v1H12zM1 7h2v1H1zM8 7h1v1H8zM12 7h1v1H12zM3 8h2v1H3zM7 8h1v1H7zM11 8h1v1H11zM5 9h2v1H5zM11 9h1v1H11zM7 10h1v1H7zM11 10h1v1H11zM7 11h1v1H7zM10 11h1v1H10zM8 12h1v1H8zM10 12h1v1H10zM8 13h2v1H8zM9 14h1v1H9z"/></svg>
+        {{ sending ? 'Sending…' : 'Send' }}
+      </button>
 
       <label class="raised mail-label" for="mail-name">Name:</label>
       <input id="mail-name" :ref="fields.name" v-model="name" class="inset" placeholder="Your name…" autocomplete="name" maxlength="100" required>

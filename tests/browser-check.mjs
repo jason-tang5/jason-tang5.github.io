@@ -523,16 +523,15 @@ try {
   assert.ok(!mailPage.url().includes('app=mail'), 'mail never goes in the url');
   await mailPage.getByRole('button', { name: 'Close Mail', exact: true }).click();
 
-  // play again starts a new round but you keep the win. only restart takes it away
+  // play again and restart both start a new round, but you keep the win: go to mail
+  // stays, and a reopen after restart shows a fresh board with mail still unlocked
   await beaten.locator('#breakout-start').click();
   await expect(goToMail).toBeVisible();
   await beaten.locator('#breakout-restart').click();
-  await expect(goToMail).toHaveCount(0);
-  await mailPage.evaluate(() => { location.hash = 'app=mail'; });
-  await mailPage.waitForTimeout(300);
-  await expect(mailPage.locator('[data-window="mail"]')).toHaveCount(0);
+  await expect(goToMail).toBeVisible();
   await mailPage.goto(base + '#app=contact');
   await expect(mailPage.locator('[data-window="contact"] #breakout-start')).toHaveText('Play');
+  await expect(mailPage.locator('[data-window="contact"]').getByRole('button', { name: 'Go to Mail', exact: true })).toBeVisible();
   await mailPage.close();
 
   // ---- no webgl ----

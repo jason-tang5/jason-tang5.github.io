@@ -75,12 +75,11 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#492c1a" d="M9 7V5h11v6h-2V8h-6v2H9z"/>
         <path stroke="#111" d="M12 11h1m3 0h1"/>
       </g>
-      <g v-else-if="name === 'mail'">
-        <path fill="#999" d="M2 10h29v19H2z"/>
-        <path fill="#fff7db" d="M1 8h28v19H1z"/>
-        <path fill="none" d="m1 8 14 11L29 8M1 27l10-11m18 11L19 16"/>
-        <path stroke="#fff" d="M3 10h22"/>
-        <path fill="#c33" d="M23 3h7v6h-7z"/>
+      <!-- a flat envelope. mail has the red "new message" flag, contact doesn't -->
+      <g v-else-if="name === 'mail' || name === 'contact'">
+        <path fill="#fff7db" d="M2 8h27v19H2z"/>
+        <path fill="none" d="M2 8l13.5 11L29 8"/>
+        <path v-if="name === 'mail'" fill="#c33" d="M23 3h7v6h-7z"/>
       </g>
       <g v-else-if="name === 'chip'">
         <path stroke="#ddd" stroke-width="3" d="M2 8h28M2 15h28M2 22h28M9 1v30M16 1v30M23 1v30"/>

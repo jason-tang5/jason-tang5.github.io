@@ -2182,17 +2182,56 @@ fieldset {
 /* ---- contact (breakout) ---- */
 
 .contact-game .game-content {
+  --invite-height: 30px;
+  position: relative;
   padding: 12px;
-  background: var(--surface);
+  background: var(--d-backdrop, #cfcfc8);
   container-type: size;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-/* always square, as big as fits */
+:root[data-theme="dark"] .contact-game .game-content {
+  --d-backdrop: #0b0b10;
+}
+
+/* the drifting bricks and specks around the board, see ascii-backdrop.js */
+.contact-game .breakout-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* the invitation sits right on top of the board, as wide as it, like a marquee */
+.contact-game .contact-invitation {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100cqw, 100cqh - var(--invite-height));
+  height: var(--invite-height);
+  margin: 0;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: #fff;
+  font: bold 12px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* always square, as big as fits under the invitation */
 .contact-game .breakout-board {
   position: relative;
-  width: min(100cqw, 100cqh);
+  flex: none;
+  width: min(100cqw, 100cqh - var(--invite-height));
   aspect-ratio: 1;
   background: #eeeee7;
   container-type: inline-size;
@@ -2248,6 +2287,21 @@ fieldset {
 /* shows up once the game is beaten, pushed to the right end of the toolbar */
 .contact-game .go-to-mail {
   margin-left: auto;
+}
+
+.contact-game .go-to-mail:hover .retro-icon,
+.contact-game .go-to-mail:focus-visible .retro-icon {
+  animation: about-contact-wiggle 0.7s steps(7) infinite;
+}
+
+/* the play button shows a pause glyph while the ball is moving */
+#breakout-start .pause-glyph,
+#breakout-start[data-state="pause"] .play-glyph {
+  display: none;
+}
+
+#breakout-start[data-state="pause"] .pause-glyph {
+  display: inline;
 }
 
 /* the "press me" button: the same win95 bevel as the others, tinted periwinkle.
@@ -3046,13 +3100,6 @@ label.mail-label {
   pointer-events: none;
 }
 
-.contact-invitation {
-  margin: 0;
-  padding: 12px 10px 8px;
-  text-align: center;
-  font-weight: bold;
-}
-
 .games-folder {
   display: flex;
   align-items: flex-start;
@@ -3077,9 +3124,53 @@ label.mail-label {
 /* ---- snake, as a vertical handheld ----
    a light grey body with a big rounded bottom right corner, a dark bezel around the
    green screen, the arcade pad, and select / start pills tilted like a game boy's */
+.snake-app {
+  --gb-back: #b9b9b9;
+  --gb-body: #d6d3c9;
+  --gb-body-dark: #aaa69a;
+  --gb-body-light: #efece4;
+  --gb-drop: #555;
+  --gb-bezel: #5c5d6b;
+  --gb-bezel-text: #c9cad8;
+  --gb-ink: #26307f;
+  --gb-pill: #8d8b95;
+  --gb-pill-dark: #5f5d66;
+  --gb-slot: #a29e92;
+}
+
+/* dark mode swaps the grey handheld for a smoky black one, like the see-through
+   black game boys, with a paler blue for the lettering */
+:root[data-theme="dark"] .snake-app {
+  --gb-back: #1d1d21;
+  --gb-body: #3a3a42;
+  --gb-body-dark: #26262c;
+  --gb-body-light: #55555f;
+  --gb-drop: #000;
+  --gb-bezel: #1f2027;
+  --gb-bezel-text: #9a9bab;
+  --gb-ink: #a9b4ff;
+  --gb-pill: #5c5b64;
+  --gb-pill-dark: #37363d;
+  --gb-slot: #26262c;
+}
+
+.snake-app {
+  position: relative;
+  background: var(--gb-back);
+}
+
+/* the slithering ascii snakes behind everything, see ascii-backdrop.js */
+.snake-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 .snake-content {
+  position: relative;
   padding: 14px 12px;
-  background: #b9b9b9;
 }
 
 .snake-handheld {
@@ -3087,14 +3178,14 @@ label.mail-label {
   width: min(100%, 330px);
   margin: 0 auto;
   padding: 16px 16px 26px;
-  background: #d6d3c9;
+  background: var(--gb-body);
   border-radius: 10px 10px 46px 10px;
-  box-shadow: inset -3px -3px 0 #aaa69a, inset 3px 3px 0 #efece4, 3px 3px 0 #555;
+  box-shadow: inset -3px -3px 0 var(--gb-body-dark), inset 3px 3px 0 var(--gb-body-light), 3px 3px 0 var(--gb-drop);
 }
 
 .snake-bezel {
   padding: 8px 14px 14px;
-  background: #5c5d6b;
+  background: var(--gb-bezel);
   border-radius: 8px 8px 28px 8px;
 }
 
@@ -3103,13 +3194,13 @@ label.mail-label {
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
-  color: #c9cad8;
+  color: var(--gb-bezel-text);
   font: 10px 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
 }
 
-.snake-screen-top .snake-score:last-child {
-  margin-left: auto;
+.snake-screen-top .snake-score:first-of-type {
+  margin-right: auto;
 }
 
 /* the power light, lit while a game is running */
@@ -3148,7 +3239,7 @@ label.mail-label {
 
 .snake-brand {
   margin: 8px 0 0 4px;
-  color: #26307f;
+  color: var(--gb-ink);
   font: bold 14px 'Pixel MS Sans Serif', Tahoma, sans-serif;
   letter-spacing: 1px;
   -webkit-font-smoothing: none;
@@ -3175,7 +3266,7 @@ label.mail-label {
 }
 
 .snake-pill-wrap span {
-  color: #26307f;
+  color: var(--gb-ink);
   font: bold 9px Tahoma, sans-serif;
   letter-spacing: 1px;
 }
@@ -3186,8 +3277,8 @@ label.mail-label {
   padding: 0;
   border: 1px solid #333;
   border-radius: 6px;
-  background: #8d8b95;
-  box-shadow: inset 0 -2px 0 #5f5d66;
+  background: var(--gb-pill);
+  box-shadow: inset 0 -2px 0 var(--gb-pill-dark);
   cursor: var(--classic-pointer);
   touch-action: manipulation;
 }
@@ -3209,7 +3300,7 @@ label.mail-label {
   bottom: 20px;
   width: 46px;
   height: 30px;
-  background: repeating-linear-gradient(90deg, #a29e92 0 3px, transparent 3px 8px);
+  background: repeating-linear-gradient(90deg, var(--gb-slot) 0 3px, transparent 3px 8px);
   transform: rotate(-25deg);
   pointer-events: none;
 }
@@ -3256,6 +3347,33 @@ label.mail-label {
 }
 
 .snake-pad-up { grid-area: 1 / 2; }
+
+/* the all-time scoreboard under the handheld, dressed as the same plastic */
+.snake-app .snake-content .live-scoreboard {
+  width: min(100%, 330px);
+  box-sizing: border-box;
+  margin: 16px auto 0;
+  padding: 10px 14px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--gb-body);
+  color: var(--ink);
+  box-shadow: inset -3px -3px 0 var(--gb-body-dark), inset 3px 3px 0 var(--gb-body-light), 3px 3px 0 var(--gb-drop);
+}
+
+.snake-app .snake-content .live-scoreboard :is(h2, h3) {
+  color: var(--gb-ink);
+}
+
+.snake-app .snake-content .live-scoreboard table {
+  background: var(--gb-bezel);
+  color: #b2edaa;
+  font-family: 'Courier New', monospace;
+}
+
+.snake-app .snake-content .live-scoreboard :is(td, th) {
+  border-bottom-color: #ffffff1a;
+}
 .snake-pad-left { grid-area: 2 / 1; }
 .snake-pad-right { grid-area: 2 / 3; }
 .snake-pad-down { grid-area: 3 / 2; }
@@ -3472,7 +3590,8 @@ label.mail-label {
 .theme-choices .raised { display: flex; align-items: center; gap: 6px; }
 .mail-fields { grid-template-columns: 64px minmax(0, 1fr) auto; }
 .mail-fields input:not([readonly]) { grid-column: span 2; }
-.mail-send { height: 26px; padding: 0 16px; font-weight: bold; }
+.mail-send { height: 26px; padding: 0 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; }
+.mail-send-icon { width: 16px; height: 16px; flex: none; }
 .mail-fields input::placeholder, .mail-message::placeholder { color: var(--muted); font-style: italic; opacity: 1; }
 
 .video-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }

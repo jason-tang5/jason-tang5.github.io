@@ -1,11 +1,14 @@
 <script setup>
 import Leaderboard from './Leaderboard.vue';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { columns, rows, directions, newSnake, stepSnake } from '../snake.mjs';
 import { read, save } from '../storage.js';
 import { play } from '../sound.js';
 import { track } from '../analytics.js';
 import { buzz } from '../haptics.js';
+import { useLiveStats } from '../live-stats.js';
+import { createBackdrop, snakeScene } from '../ascii-backdrop.js';
+import { theme } from '../theme.js';
 
 const props = defineProps({ active: Boolean });
 const board = ref(null);
@@ -28,6 +31,13 @@ const title = String.raw`
 const blink = ref(true);
 const blinkTimer = setInterval(() => { blink.value = !blink.value; }, 530);
 
+// before a game the screen flips between the title and the world hi-scores every few
+// seconds, like an arcade machine waiting for someone to play
+const { data: stats } = useLiveStats();
+const showScores = ref(false);
+const attractTimer = setInterval(() => { showScores.value = !showScores.value; }, 4200);
+const worldBest = computed(() => stats.value?.snakeHighScore ?? null);
+
 const width = columns * 2;
 const center = (text, size = width) => {
   const left = Math.floor((size - text.length) / 2);
@@ -44,7 +54,15 @@ const box = lines => [
 const art = computed(() => {
   const g = game.value;
   let lines;
-  if (!started.value) {
+  if (!started.value && showScores.value && stats.value) {
+    const top = stats.value.leaderboard.slice(0, 8).map(r =>
+      `${String(r.rank).padStart(2)}. ${r.player.replace(/^Player /, '').padEnd(8)} ${String(r.score).padStart(3, '0')}`);
+    const rowWidth = Math.max(0, ...top.map(line => line.length));
+    lines = ['', center('WORLD HI-SCORES'), center('~~~~~~~~~~~~~~~'), '',
+      ...(top.length ? top.map(line => center(line.padEnd(rowWidth))) : [center('no scores yet'), '', center('be the first!')])];
+    while (lines.length < rows - 1) lines.push('');
+    lines.push(center(blink.value ? 'touch to play' : ''));
+  } else if (!started.value) {
     // centre the title as one block so the slanted letters stay lined up
     const titleWidth = Math.max(...title.map(line => line.length));
     lines = ['', ...box(title.map(line => center(line.padEnd(titleWidth), width - 2))), '', center(blink.value ? 'touch to play' : ''), '', center(`best ${best.value}`)];
@@ -167,13 +185,27 @@ function pill(action) {
 function screenTap() {
   if (!running.value) toggle();
 }
+// little ascii snakes slithering past behind the handheld, see ascii-backdrop.js
+const backdropCanvas = ref(null);
+let backdrop;
+onMounted(() => {
+  backdrop = createBackdrop(backdropCanvas.value, { running: () => running.value, scene: snakeScene });
+  backdrop.setActive(props.active);
+});
+watch(theme, () => backdrop?.redraw());
+
 function visibility() { if (document.hidden) pause(); }
-watch(() => props.active, active => { if (!active) pause(); });
+watch(() => props.active, active => {
+  backdrop?.setActive(active);
+  if (!active) pause();
+});
 window.addEventListener('blur', pause);
 document.addEventListener('visibilitychange', visibility);
 onBeforeUnmount(() => {
   pause();
   clearInterval(blinkTimer);
+  clearInterval(attractTimer);
+  backdrop?.destroy();
   window.removeEventListener('blur', pause);
   document.removeEventListener('visibilitychange', visibility);
 });
@@ -182,6 +214,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- a vertical handheld: the screen up top, the arcade pad and start / select below -->
   <div class="app-layout snake-app" @keydown="key">
+    <canvas ref="backdropCanvas" class="snake-backdrop" aria-hidden="true"/>
     <div class="content-scroll snake-content">
       <div class="snake-handheld">
         <div class="snake-bezel">
@@ -189,6 +222,7 @@ onBeforeUnmount(() => {
             <span class="snake-led" :class="{ on: running }" aria-hidden="true"/>
             <span class="snake-score">SCORE {{ String(game.score).padStart(3, '0') }}</span>
             <span class="snake-score">BEST {{ String(best).padStart(3, '0') }}</span>
+            <span v-if="worldBest !== null" class="snake-score" title="Highest score anyone has set">WORLD {{ String(worldBest).padStart(3, '0') }}</span>
           </div>
           <div
             ref="board"

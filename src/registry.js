@@ -17,7 +17,7 @@ export const apps = [
   app('projects', 'Projects', 'folder', 720, 480, 430, 310),
   app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('resume', 'Resume', 'document', 740, 650),
-  app('contact', 'Contact', 'mail', 440, 540, 340, 400),
+  app('contact', 'Contact', 'contact', 440, 540, 340, 400),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 420),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),

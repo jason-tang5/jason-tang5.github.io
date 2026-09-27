@@ -83,6 +83,12 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   const board = root.querySelector('.breakout-board');
   const emailBox = root.querySelector('.breakout-email');
   const startButton = root.querySelector('#breakout-start');
+  // the button's label sits under its icon, and data-state swaps play for pause
+  const startLabel = startButton.querySelector('span') || startButton;
+  const setStart = text => {
+    startLabel.textContent = text;
+    startButton.dataset.state = text === 'Pause' ? 'pause' : 'play';
+  };
   const status = root.querySelector('#breakout-status');
   const emailProgress = root.querySelector('#breakout-progress');
   const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
@@ -251,7 +257,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     balls = [newBall(150)];
     complete = false;
     fallingText = [];
-    startButton.textContent = 'Play';
+    setStart('Play');
 
     board.classList.remove('is-revealed');
     emailBox.setAttribute('aria-hidden', 'true');
@@ -338,7 +344,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   function finish(celebrate = true) {
     running = false;
     complete = true;
-    startButton.textContent = 'Play again';
+    setStart('Play again');
 
     bricks.forEach(brick => { brick.alive = false; });
     updateEmailProgress();
@@ -357,7 +363,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     running = !running;
     if (running) onStart?.();
     message = 'paused';
-    startButton.textContent = running ? 'Pause' : 'Resume';
+    setStart(running ? 'Pause' : 'Resume');
     schedule();
     draw();
   }
@@ -381,7 +387,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
       onRestart?.();
       onLose?.();
       message = 'try again';
-      startButton.textContent = 'Try again';
+      setStart('Try again');
       status.textContent = `Ball lost! Board reset. ${bricks.length} bricks to go.`;
     }
   }
@@ -492,7 +498,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     if (running) {
       running = false;
       message = 'paused';
-      startButton.textContent = 'Resume';
+      setStart('Resume');
     }
     draw();
   }
