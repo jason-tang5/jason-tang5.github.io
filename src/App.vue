@@ -316,27 +316,79 @@ watch(
 );
 
 // ---- desktop icon dragging ----
-// icon positions only last for this page load, refreshing puts them back on the grid
+// icon positions only last for this page load, refreshing puts them back on the grid.
+// once an icon has been dragged, every icon keeps the grid cell it's in (iconCells).
+// the cells actually used are worked out fresh whenever the desktop changes size: a
+// cell that no longer fits is swapped for the nearest free one that does, so a
+// smaller window never pushes an icon off the desktop, and making it bigger again
+// puts the icon back where it was left
 
-const iconOffsets = reactive({});
+const iconCells = reactive({});
 const dragging = ref(null);
+const dragShift = ref({ x: 0, y: 0 });
+// a dropped icon slides from where it was let go into its cell. { id, x, y, still }:
+// the offset from the cell, and still means no transition for that first frame
+const settling = ref(null);
 let iconDrag = null;
 let dragEndedAt = 0;
 
-// grid pitch matches .desktop-grid in theme.css: 86px columns + 12px gap, 83px rows + 5px gap
+// grid pitch matches .desktop-grid in theme.css: 86px columns + 12px gap, 83px rows + 5px
+// gap, inset 14px from the left and 16px from the top with 50px kept clear at the bottom
 const cellX = 98;
 const cellY = 88;
+
+const gridFits = () => ({
+  cols: Math.max(1, Math.floor((area.width - 14 - 86) / cellX) + 1),
+  rows: Math.max(1, Math.floor((area.height - 16 - 50 - 83) / cellY) + 1),
+});
+
+// the free cell closest to where an icon wants to be
+function nearestFree(taken, want, { cols, rows }) {
+  let best = null;
+  for (let col = 0; col < cols; col++) {
+    for (let row = 0; row < rows; row++) {
+      if (taken.has(`${col},${row}`)) continue;
+      const distance = (col - want.col) ** 2 + (row - want.row) ** 2;
+      if (!best || distance < best.distance) best = { col, row, distance };
+    }
+  }
+  // more icons than cells: let it overlap rather than vanish
+  return best ? { col: best.col, row: best.row } : { col: Math.min(want.col, cols - 1), row: Math.min(want.row, rows - 1) };
+}
+
+// where every icon goes right now. icons nobody has moved yet fill the grid in
+// order, top to bottom then left to right, like the css grid does
+const iconLayout = computed(() => {
+  const fits = gridFits();
+  const taken = new Set();
+  const out = {};
+  for (const app of shortcuts) {
+    const want = iconCells[app.id];
+    if (!want) continue;
+    const cell = nearestFree(taken, { col: Math.min(want.col, fits.cols - 1), row: Math.min(want.row, fits.rows - 1) }, fits);
+    taken.add(`${cell.col},${cell.row}`);
+    out[app.id] = cell;
+  }
+  let next = 0;
+  for (const app of shortcuts) {
+    if (out[app.id]) continue;
+    while (taken.has(`${Math.floor(next / fits.rows)},${next % fits.rows}`)) next++;
+    out[app.id] = { col: Math.floor(next / fits.rows), row: next % fits.rows };
+    next++;
+  }
+  return out;
+});
 
 function iconDown(event, id) {
   if (compact.value || event.button !== 0 || event.pointerType === 'touch') return;
   const el = event.currentTarget;
+  settling.value = null;
   iconDrag = {
     id,
     el,
     pointer: event.pointerId,
     x: event.clientX,
     y: event.clientY,
-    start: iconOffsets[id] || { x: 0, y: 0 },
     rect: el.getBoundingClientRect(),
     bounds: desktop.value.getBoundingClientRect(),
   };
@@ -347,7 +399,7 @@ function iconMove(event) {
   if (!iconDrag || event.pointerId !== iconDrag.pointer) return;
   if (!(event.buttons & 1)) return iconUp();
 
-  const { rect, bounds, start } = iconDrag;
+  const { rect, bounds } = iconDrag;
   let dx = event.clientX - iconDrag.x;
   let dy = event.clientY - iconDrag.y;
 
@@ -361,55 +413,60 @@ function iconMove(event) {
   // don't let icons leave the desktop
   dx = Math.max(bounds.left - rect.left, Math.min(bounds.right - rect.right, dx));
   dy = Math.max(bounds.top - rect.top, Math.min(bounds.bottom - rect.bottom, dy));
-  iconOffsets[iconDrag.id] = { x: start.x + dx, y: start.y + dy };
+  dragShift.value = { x: dx, y: dy };
 }
 
 // drops the icon into the nearest free grid cell
-function snapIcon({ id, el }) {
-  const grid = el.parentElement.getBoundingClientRect();
-  const rect = el.getBoundingClientRect();
-  const desktopRight = desktop.value.getBoundingClientRect().right;
-  const cols = Math.max(1, Math.floor((desktopRight - grid.left - el.offsetWidth) / cellX) + 1);
-  const rows = Math.max(1, Math.floor((grid.height - el.offsetHeight) / cellY) + 1);
-
-  const cellOf = r => [Math.round((r.left - grid.left) / cellX), Math.round((r.top - grid.top) / cellY)];
-  const taken = new Set(
-    [...el.parentElement.children]
-      .filter(other => other !== el)
-      .map(other => cellOf(other.getBoundingClientRect()).join()),
-  );
-  const [wantCol, wantRow] = cellOf(rect);
-
-  let best = null;
-  for (let col = 0; col < cols; col++) {
-    for (let row = 0; row < rows; row++) {
-      if (taken.has(`${col},${row}`)) continue;
-      const distance = (col - wantCol) ** 2 + (row - wantRow) ** 2;
-      if (!best || distance < best.distance) best = { col, row, distance };
-    }
-  }
-  if (!best) return;
-
-  const offset = iconOffsets[id];
-  iconOffsets[id] = {
-    x: offset.x + grid.left + best.col * cellX - rect.left,
-    y: offset.y + grid.top + best.row * cellY - rect.top,
+function snapIcon({ id }) {
+  // the first drag pins every icon where it is, so the others don't close the gap
+  for (const [other, cell] of Object.entries(iconLayout.value)) iconCells[other] ??= { ...cell };
+  const from = iconLayout.value[id];
+  const want = {
+    col: Math.max(0, Math.round((from.col * cellX + dragShift.value.x) / cellX)),
+    row: Math.max(0, Math.round((from.row * cellY + dragShift.value.y) / cellY)),
   };
+  const taken = new Set(
+    Object.entries(iconLayout.value).filter(([other]) => other !== id).map(([, c]) => `${c.col},${c.row}`),
+  );
+  iconCells[id] = nearestFree(taken, want, gridFits());
 }
 
 function iconUp() {
   if (dragging.value) {
+    const id = dragging.value;
+    const from = { ...iconLayout.value[id] };
     snapIcon(iconDrag);
+    const to = iconLayout.value[id];
+    // start the icon exactly where it was dropped, then let it slide into the cell
+    settling.value = {
+      id,
+      x: (from.col - to.col) * cellX + dragShift.value.x,
+      y: (from.row - to.row) * cellY + dragShift.value.y,
+      still: true,
+    };
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (settling.value?.id === id) settling.value = { id, x: 0, y: 0, still: false };
+    }));
     dragEndedAt = performance.now();
   }
   iconDrag = null;
   dragging.value = null;
+  dragShift.value = { x: 0, y: 0 };
 }
 
+// on a phone the css grid lays the icons out. on a desktop each one is placed in its cell
 function iconStyle(id) {
-  const offset = iconOffsets[id];
-  if (!offset || compact.value) return null;
-  return { transform: `translate(${offset.x}px, ${offset.y}px)` };
+  if (compact.value) return null;
+  const cell = iconLayout.value[id];
+  const settle = settling.value?.id === id ? settling.value : null;
+  const shift = dragging.value === id ? dragShift.value : settle || { x: 0, y: 0 };
+  return {
+    position: 'absolute',
+    left: `${cell.col * cellX}px`,
+    top: `${cell.row * cellY}px`,
+    transform: shift.x || shift.y ? `translate(${shift.x}px, ${shift.y}px)` : null,
+    transition: settle?.still ? 'none' : null,
+  };
 }
 
 function selectShortcut(event, id) {

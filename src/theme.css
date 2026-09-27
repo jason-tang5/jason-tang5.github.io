@@ -441,9 +441,12 @@ input[type="checkbox"]:focus-visible {
   grid-auto-columns: 86px;
   align-content: start;
   gap: 5px 12px;
+  /* the column itself lets clicks through to the wallpaper, only the icons catch them */
+  pointer-events: none;
 }
 
 .desktop-shortcut {
+  pointer-events: auto;
   background: transparent;
   border: 0;
   width: 86px;
