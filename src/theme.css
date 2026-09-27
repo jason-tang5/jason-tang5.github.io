@@ -390,6 +390,32 @@ input[type="checkbox"]:focus-visible {
   display: block;
 }
 
+/* the hammer button, only on touchscreens (KnockoffAscii.vue). until it's pressed in,
+   a drag over the letters scrolls the page and a tap knocks out one letter */
+.hammer-toggle.raised {
+  display: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+}
+
+.hammer-toggle.pressed {
+  background: repeating-conic-gradient(var(--d-pressed, #dedede) 0 25%, var(--d-check, #cacaca) 0 50%) 0 0 / 2px 2px;
+}
+
+@media (hover: none) {
+  .hammer-toggle.raised {
+    display: grid;
+  }
+
+  .ascii-knockoff:not(.armed) {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+}
+
 /* squeeze the controls on tiny images */
 @container (max-width: 260px) {
   .ascii-mode-controls .raised {
@@ -5744,6 +5770,15 @@ label.mail-label {
   .picture-subtitle {
     display: block !important;
     max-width: calc(100% - 20px);
+  }
+}
+
+/* the hammer button on a touchscreen makes the hammer box wider, so the reset moves over */
+@media (hover: none) {
+  @container stage (max-height: 340px) or (max-width: 620px) {
+    .ascii-reset.raised {
+      left: 166px;
+    }
   }
 }
 

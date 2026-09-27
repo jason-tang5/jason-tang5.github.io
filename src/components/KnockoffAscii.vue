@@ -27,6 +27,11 @@ const characters = ' .,:;i1tfLCG08@';
 const canvas = ref(null);
 const remaining = ref(0);
 const hammerSize = ref(2);
+// on a touchscreen a drag over the letters scrolls the page like anywhere else, and
+// a tap still knocks one letter out. the hammer button arms it so a drag smashes
+// instead. a mouse always smashes
+const armed = ref(false);
+let tap = null;
 const hammerSlider = ref(null);
 let hammerDragging = false;
 
@@ -359,6 +364,12 @@ function click(event) {
 }
 
 function startDrag(event) {
+  if (event.pointerType === 'touch' && !armed.value) {
+    tap = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    return;
+  }
+  // the press is the letters', not the window's or a swipe's
+  event.stopPropagation();
   if (event.button !== 0 || !event.isPrimary || drag || !props.visible || !cells.length) return;
   event.preventDefault();
   canvas.value.focus({ preventScroll: true });
@@ -390,6 +401,16 @@ function dragTo(x, y, finish = false) {
 }
 
 function pointerUp(event) {
+  // an unarmed tap that didn't turn into a scroll or a swipe knocks where it landed
+  if (tap?.id === event.pointerId) {
+    const still = Math.hypot(event.clientX - tap.x, event.clientY - tap.y) < 10;
+    tap = null;
+    if (still && props.visible && cells.length) {
+      const p = point(event);
+      knock(p.x, p.y);
+    }
+    return;
+  }
   if (drag?.id !== event.pointerId) return;
   const p = point(event);
   dragTo(p.x, p.y, true);
@@ -397,6 +418,7 @@ function pointerUp(event) {
 }
 
 function endDrag() {
+  tap = null;
   const id = drag?.id;
   drag = null;
   if (id !== undefined && canvas.value?.hasPointerCapture(id)) canvas.value.releasePointerCapture(id);
@@ -602,12 +624,13 @@ onBeforeUnmount(() => {
   <canvas
     ref="canvas"
     class="ascii-knockoff"
+    :class="{ armed }"
     role="button"
     :tabindex="visible ? 0 : -1"
     :aria-label="remaining
       ? `${description}. Click or drag, or press Enter or Space, to knock letters away and reveal the photo.`
       : `${description}. Photo fully revealed.`"
-    @pointerdown.stop="startDrag"
+    @pointerdown="startDrag"
     @pointermove="move"
     @pointerup="pointerUp"
     @pointercancel="endDrag"
@@ -649,5 +672,19 @@ onBeforeUnmount(() => {
     <svg width="5" height="5" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true">
       <path fill="#404040" d="M1 0h3v1H1zM0 1h5v3H0zM1 4h3v1H1z"/>
     </svg>
+    <!-- touchscreens only: pressed in, a drag over the photo smashes letters instead of scrolling -->
+    <button
+      class="hammer-toggle raised"
+      :class="{ pressed: armed }"
+      :aria-pressed="armed"
+      :title="armed ? 'Put the hammer down' : 'Pick up the hammer'"
+      aria-label="Hammer"
+      @click="armed = !armed"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+        <path fill="#404040" d="M3 1h7v1h2v1h1v4h-2V5H9v2H8v1H6V7H5V5H3V4H2V2h1z"/>
+        <path fill="#8a5a2b" d="M8 8h2v1h1v1h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H9V9H8z"/>
+      </svg>
+    </button>
   </div>
 </template>
