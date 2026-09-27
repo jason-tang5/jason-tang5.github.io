@@ -1438,6 +1438,12 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
+/* the clock lights up under the mouse, and stays lit while its calendar is open */
+.clock:hover,
+.clock[aria-expanded="true"] {
+  background: var(--hilite);
+}
+
 /* the clock's month calendar, like the win95 date/time properties one */
 .calendar {
   position: absolute;
@@ -2204,7 +2210,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .settings-content h1 {
-  font-size: 20px;
+  font: bold 20px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
   margin: 0 0 18px;
 }
 
