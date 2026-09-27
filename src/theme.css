@@ -3977,8 +3977,7 @@ label.mail-label {
   outline: none;
 }
 
-.stickies-search input::placeholder,
-.sticky-note textarea::placeholder {
+.stickies-search input::placeholder {
   color: var(--sticky-dim);
   font-style: italic;
 }
@@ -4219,18 +4218,67 @@ label.mail-label {
   color: #ff8a80;
 }
 
-.sticky-note textarea {
+.sticky-editor {
+  position: relative;
   flex: 1;
   min-height: 0;
-  width: 100%;
   padding: 14px;
-  border: 0;
-  resize: none;
-  background: transparent;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   color: var(--sticky-ink);
-  font: inherit;
   font-size: 14px;
   outline: none;
+  cursor: text;
+}
+
+/* a contenteditable has no placeholder, so an empty note draws one */
+.sticky-editor.empty::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  color: var(--sticky-dim);
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* the pixel font only comes in one weight, which every note already uses, so bold
+   is drawn the old bitmap way: the text smeared one pixel to the right */
+.sticky-editor b {
+  text-shadow: 1px 0 currentColor;
+}
+
+.sticky-editor ul {
+  margin: 0;
+  padding-left: 22px;
+  list-style: square;
+}
+
+/* the formatting bar along the bottom, only while the note has focus */
+.sticky-format {
+  display: none;
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--sticky-ink) 18%, transparent);
+}
+
+.sticky-note:focus-within .sticky-format {
+  display: flex;
+}
+
+.sticky-format .stickies-button {
+  width: 34px;
+  height: 30px;
+}
+
+.sticky-format svg {
+  width: 13px;
+  height: 13px;
+}
+
+.sticky-format .stickies-button.on {
+  background: rgb(0 0 0 / .18);
+}
+
+:root[data-theme="dark"] .sticky-format .stickies-button.on {
+  background: rgb(255 255 255 / .16);
 }
 
 /* ---- tooltips (tooltips.js) ----

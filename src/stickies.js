@@ -68,8 +68,11 @@ export function addNote(color = 'yellow') {
   return windowId(note.id);
 }
 
-export function editNote(note, text) {
+// text is the plain version for the list and search, html the formatted one the
+// note window shows (see note-format.js)
+export function editNote(note, text, html) {
   note.text = text;
+  note.html = html;
   note.updated = Date.now();
   // the note you're typing in floats to the top of the list, like the real thing
   notes.value = [note, ...notes.value.filter(n => n !== note)];
