@@ -19,6 +19,13 @@ const started = ref(false);
 const best = ref(Math.max(0, Number(read('snake-best', '0')) || 0));
 // the name for the leaderboard, typed under the handheld. only an allowed name is kept
 const playerName = ref(read('snake-name', ''));
+// one random player id per browser, so your scores stay one row on the leaderboard
+// across visits. a new one is only made when the site's storage is cleared
+let playerId = read('snake-player', '');
+if (!/^[a-z0-9]{8,24}$/.test(playerId)) {
+  playerId = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join('');
+  save('snake-player', playerId);
+}
 watch(playerName, value => { if (!value.trim() || cleanName(value)) save('snake-name', value.trim()); });
 const turns = [];
 let timer;
@@ -37,7 +44,7 @@ const blinkTimer = setInterval(() => { blink.value = !blink.value; }, 530);
 
 // before a game the screen flips between the title and the world hi-scores every few
 // seconds, like an arcade machine waiting for someone to play
-const { data: stats } = useLiveStats();
+const { data: stats, refresh: refreshStats } = useLiveStats();
 const showScores = ref(false);
 const attractTimer = setInterval(() => { showScores.value = !showScores.value; }, 4200);
 const worldBest = computed(() => stats.value?.snakeHighScore ?? null);
@@ -115,7 +122,7 @@ function tick() {
   const before = game.value.score;
   game.value = stepSnake(game.value, turns.shift() || game.value.direction);
   if (game.value.score > before) {
-    track('snake-score', '', game.value.score, { player: cleanName(playerName.value) });
+    track('snake-score', '', game.value.score, { player: cleanName(playerName.value), playerId });
     play('eat');
     buzz(25);
   }
@@ -124,6 +131,9 @@ function tick() {
     save('snake-best', String(best.value));
   }
   if (game.value.over) {
+    // update the leaderboard now instead of on the next 30s poll. the last score went
+    // out when the snake last ate, the short wait covers dying right after eating
+    setTimeout(refreshStats, 500);
     play(game.value.won ? 'chime' : 'error');
     buzz([60, 50, 90]);
     pause();
@@ -154,9 +164,12 @@ function turn(direction) {
   if (!running.value) toggle();
   board.value?.focus({ preventScroll: true });
 }
+const keyDirection = event => keyDirections[event.key] || keyDirections[event.key.toLowerCase()];
 function key(event) {
-  const direction = keyDirections[event.key] || keyDirections[event.key.toLowerCase()];
+  const direction = keyDirection(event);
   if (direction || event.code === 'Space') event.preventDefault();
+  // the arrow keys and wasd press the pad button down too, until the key comes up
+  if (direction) held.value = direction;
   if (event.repeat) return;
   if (direction) turn(direction);
   else if (event.code === 'Space') toggle();
@@ -175,6 +188,9 @@ function padDown(event, direction) {
 }
 function padUp() {
   held.value = null;
+}
+function keyUp(event) {
+  if (keyDirection(event) === held.value) held.value = null;
 }
 function padClick(event, direction) {
   if (event.detail === 0) turn(direction);
@@ -204,6 +220,7 @@ watch(() => props.active, active => {
   if (!active) pause();
 });
 window.addEventListener('blur', pause);
+window.addEventListener('blur', padUp);
 document.addEventListener('visibilitychange', visibility);
 onBeforeUnmount(() => {
   pause();
@@ -211,13 +228,14 @@ onBeforeUnmount(() => {
   clearInterval(attractTimer);
   backdrop?.destroy();
   window.removeEventListener('blur', pause);
+  window.removeEventListener('blur', padUp);
   document.removeEventListener('visibilitychange', visibility);
 });
 </script>
 
 <template>
   <!-- a vertical handheld: the screen up top, the arcade pad and start / select below -->
-  <div class="app-layout snake-app" @keydown="key">
+  <div class="app-layout snake-app" @keydown="key" @keyup="keyUp">
     <canvas ref="backdropCanvas" class="snake-backdrop" aria-hidden="true"/>
     <div class="content-scroll snake-content">
       <div class="snake-handheld">

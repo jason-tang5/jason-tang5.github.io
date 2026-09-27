@@ -58,3 +58,13 @@ test('an older scores table without names gets the column', async () => {
   const data = await get(new LiveStats(ctx));
   assert.equal(data.leaderboard[0].player, 'Player OLDPLA');
 });
+test('one player id keeps one row across visits', async () => {
+  const { stats } = setup();
+  const score = (visit, value, playerId) => stats.fetch(new Request('https://stats/', { method: 'POST', body: JSON.stringify({ name: 'snake-score', visit, value, playerId, player: 'Jason' }) }));
+  await score('visitaaaa1', 8, 'browserabc123');
+  await score('visitbbbb2', 15, 'browserabc123');
+  await score('visitcccc3', 4, 'browserabc123');
+  await score('visitdddd4', 9, 'bad id!');
+  const board = (await get(stats)).leaderboard;
+  assert.deepEqual(board.map(r => [r.player, r.score]), [['Jason', 15], ['Jason', 9]]);
+});

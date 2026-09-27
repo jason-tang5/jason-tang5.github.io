@@ -82,6 +82,8 @@ Client-reported game results are a casual scoreboard, not verified competition s
 Everything in the analytics window is public, from `/api/analytics`. It's all anonymous
 totals; contact form names, emails and messages are never recorded. Only jasontang.dev sends events, after
 the first interaction, using an in-memory visit identifier with no analytics cookies.
+The snake leaderboard is the one exception: it keeps a random player id (and the optional
+name) in localStorage, so a browser's scores stay one row across visits.
 
 Create a Cloudflare API token with Account / Account Analytics / Read for the account
 in wrangler.jsonc, then run `npx wrangler secret put ANALYTICS_TOKEN`. Deploy with

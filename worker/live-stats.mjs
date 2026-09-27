@@ -13,7 +13,7 @@ export class LiveStats {
   async fetch(request) {
     const now = Date.now();
     if (request.method === 'POST') {
-      const { visit, name, value, player } = await request.json();
+      const { visit, name, value, player, playerId } = await request.json();
       if (name === 'visit') {
         this.sql.exec(`INSERT INTO totals VALUES ('visitors', 1) ON CONFLICT(name) DO UPDATE SET value=value+1`);
       }
@@ -25,7 +25,9 @@ export class LiveStats {
       if (counter) this.sql.exec(`INSERT INTO totals VALUES (?, 1) ON CONFLICT(name) DO UPDATE SET value=value+1`, counter);
       if (name === 'snake-score' && Number.isInteger(value) && value > 0 && value <= 1000) {
         // names are checked again here, a blocked or missing one stays anonymous
-        this.sql.exec(`INSERT INTO scores (id, score, name) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, visit, value, cleanName(player) || null);
+        // a score belongs to the browser's saved player id, or to the visit for older pages
+        const id = typeof playerId === 'string' && /^[a-z0-9]{8,24}$/.test(playerId) ? playerId : visit;
+        this.sql.exec(`INSERT INTO scores (id, score, name) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, value, cleanName(player) || null);
         // Only the top 100 anonymous sessions need permanent storage.
         this.sql.exec(`DELETE FROM scores WHERE id NOT IN (SELECT id FROM scores ORDER BY score DESC, id LIMIT 100)`);
       }

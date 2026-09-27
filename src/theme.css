@@ -3913,6 +3913,18 @@ label.mail-label {
   touch-action: manipulation;
 }
 
+/* hovering lifts a pill a pixel and lightens it, pressing still pushes it in */
+.snake-pill {
+  transition: transform .08s, filter .08s;
+}
+
+@media (hover: hover) {
+  .snake-pill:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+  }
+}
+
 .snake-pill:active {
   transform: translateY(1px);
   box-shadow: none;
@@ -3958,6 +3970,22 @@ label.mail-label {
   display: block;
   width: 48px;
   height: 54px;
+}
+
+/* hovering raises the cap a pixel off its rim and brightens it, ready to press */
+.snake-pad-cap,
+.snake-pad-button svg {
+  transition: transform .08s, filter .08s;
+}
+
+@media (hover: hover) {
+  .snake-pad-button:hover .snake-pad-cap {
+    transform: translateY(-1px);
+  }
+
+  .snake-pad-button:hover svg {
+    filter: brightness(1.1);
+  }
 }
 
 /* pressing drops the cap onto its rim, like a real arcade button. .held is set from
