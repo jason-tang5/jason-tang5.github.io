@@ -6758,10 +6758,17 @@ label.mail-label {
   visibility: hidden;
 }
 
-.project-item:hover .row-open,
 .project-item:focus-within .row-open,
 .project-item.selected .row-open {
   visibility: visible;
+}
+
+/* only a real pointer shows it on hover. on a phone, safari treats a tap that makes
+   something appear on hover as just a hover, so picking a file took an extra tap */
+@media (hover: hover) {
+  .project-item:hover .row-open {
+    visibility: visible;
+  }
 }
 
 /* every tile is the same size, with room for a name two lines long */
