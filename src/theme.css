@@ -1885,7 +1885,7 @@ input[type="checkbox"]:focus-visible {
   position: relative;
   background: var(--d-page-alt, #eeeee7);
   border-right: 1px solid var(--d-rule, #bbb);
-  padding: 24px 18px;
+  padding: 12px 18px 16px;
 }
 
 /* the grab strip over the dividing line */
@@ -1902,7 +1902,7 @@ input[type="checkbox"]:focus-visible {
 
 /* the figure sits under the view project button, without its caption */
 .project-explorer .project-preview figure {
-  margin: 20px 0 0;
+  margin: 14px 0 0;
 }
 
 .project-preview figcaption {
@@ -1929,7 +1929,7 @@ input[type="checkbox"]:focus-visible {
   justify-content: space-between;
   gap: 6px;
   flex-shrink: 0;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-size: 11px;
   color: var(--d-muted, #4c4c4c);
 }
@@ -1953,7 +1953,7 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .preview-title > * {
@@ -1974,8 +1974,9 @@ input[type="checkbox"]:focus-visible {
 }
 
 .project-preview p {
+  margin: 0;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 /* the tech chips and the view project button share a row, the button on the right,
@@ -1985,8 +1986,8 @@ input[type="checkbox"]:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 16px;
-  margin-top: 16px;
+  gap: 8px 16px;
+  margin-top: 10px;
 }
 
 .preview-actions > small {
@@ -4669,20 +4670,13 @@ label.mail-label {
   .project-preview {
     border-right: 0;
     border-top: 1px solid var(--d-rule, #aaa);
-    padding: 20px;
-  }
-
-  .preview-title {
-    margin-bottom: 10px;
+    padding: 12px 20px 16px;
   }
 
   .preview-resize {
     display: none;
   }
 
-  .preview-actions {
-    margin-top: 10px;
-  }
 
 
   .document {
