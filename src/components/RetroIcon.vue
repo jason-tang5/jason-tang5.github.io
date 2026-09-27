@@ -1,7 +1,10 @@
 <script setup>
 // hand drawn 32x32 pixel icons for the desktop, menus and taskbar.
 // "small" shrinks it for the taskbar and title bars. anything unknown falls back to a document.
+import { balloonColors, balloonFrames, balloonString } from '../balloon-sprite.js';
+
 defineProps({ name: { type: String, default: 'document' }, small: Boolean });
+const [balloonBody, balloonEdge] = balloonColors[0];
 </script>
 <template>
   <svg :class="['retro-icon', { small }]" viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">
@@ -172,18 +175,19 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#f2b179" d="M18 17h12v1h1v12h-1v1H18v-1H17V18h1z"/>
         <path fill="#fff" d="M21 19h2v2h-2zM23 19h2v2h-2zM25 19h2v2h-2zM21 21h2v2h-2zM25 21h2v2h-2zM21 23h2v2h-2zM23 23h2v2h-2zM25 23h2v2h-2zM21 25h2v2h-2zM25 25h2v2h-2zM21 27h2v2h-2zM23 27h2v2h-2zM25 27h2v2h-2z"/>
       </g>
-      <!-- a red party balloon filling the whole icon like the other toolbar icons: a flat
-           teardrop with a crescent of shadow bottom right, a little shine, and a string
-           trailing off to the side from the knot. the string is drawn in two curls, so
-           on the about page it can wiggle while the balloon bobs -->
-      <g v-else-if="name === 'balloon'" stroke="none">
-        <path fill="#6e1210" d="M10 0h9v1h-9zM8 1h2v1h-2zM19 1h2v1h-2zM6 2h2v1h-2zM21 2h2v1h-2zM5 3h1v1h-1zM23 3h1v1h-1zM4 4h1v1h-1zM24 4h1v1h-1zM3 5h1v1h-1zM25 5h1v1h-1zM3 6h1v1h-1zM25 6h1v1h-1zM2 7h1v1h-1zM26 7h1v1h-1zM2 8h1v1h-1zM26 8h1v1h-1zM1 9h1v1h-1zM27 9h1v1h-1zM1 10h1v1h-1zM27 10h1v1h-1zM1 11h1v1h-1zM27 11h1v1h-1zM1 12h1v1h-1zM27 12h1v1h-1zM1 13h1v1h-1zM27 13h1v1h-1zM1 14h1v1h-1zM27 14h1v1h-1zM2 15h1v1h-1zM26 15h1v1h-1zM2 16h1v1h-1zM26 16h1v1h-1zM3 17h1v1h-1zM25 17h1v1h-1zM3 18h1v1h-1zM25 18h1v1h-1zM4 19h1v1h-1zM24 19h1v1h-1zM5 20h1v1h-1zM23 20h1v1h-1zM6 21h1v1h-1zM22 21h1v1h-1zM7 22h1v1h-1zM21 22h1v1h-1zM8 23h1v1h-1zM20 23h1v1h-1zM9 24h1v1h-1zM19 24h1v1h-1zM10 25h3v1h-3zM16 25h3v1h-3zM13 26h3v1h-3zM13 27h3v1h-3z"/>
-        <path fill="#e03a33" d="M10 1h9v1h-9zM8 2h13v1h-13zM6 3h2v1h-2zM10 3h13v1h-13zM5 4h1v1h-1zM8 4h16v1h-16zM4 5h1v1h-1zM7 5h18v1h-18zM6 6h19v1h-19zM3 7h1v1h-1zM5 7h21v1h-21zM3 8h1v1h-1zM5 8h21v1h-21zM2 9h25v1h-25zM2 10h25v1h-25zM2 11h25v1h-25zM2 12h25v1h-25zM2 13h24v1h-24zM2 14h23v1h-23zM3 15h22v1h-22zM3 16h21v1h-21zM4 17h20v1h-20zM4 18h19v1h-19zM5 19h17v1h-17zM6 20h15v1h-15zM7 21h13v1h-13zM8 22h11v1h-11zM9 23h9v1h-9zM10 24h5v1h-5zM13 25h1v1h-1z"/>
-        <path fill="#a8231e" d="M26 13h1v1h-1zM25 14h2v1h-2zM25 15h1v1h-1zM24 16h2v1h-2zM24 17h1v1h-1zM23 18h2v1h-2zM22 19h2v1h-2zM21 20h2v1h-2zM20 21h2v1h-2zM19 22h2v1h-2zM18 23h2v1h-2zM15 24h4v1h-4zM14 25h2v1h-2z"/>
-        <path fill="#fff" d="M8 3h2v1h-2zM6 4h2v1h-2zM5 5h2v1h-2zM4 6h2v1h-2zM4 7h1v1h-1zM4 8h1v1h-1z"/>
-        <path class="bl-string bl-a" fill="#555" d="M15 28h1v1h-1zM16 29h1v1h-1zM17 29h1v1h-1zM18 30h1v1h-1zM19 30h1v1h-1zM20 31h1v1h-1zM21 31h1v1h-1z"/>
-        <path class="bl-string bl-b" fill="#555" d="M15 28h1v1h-1zM15 29h1v1h-1zM16 30h1v1h-1zM17 30h1v1h-1zM18 31h1v1h-1zM19 31h1v1h-1zM20 31h1v1h-1z"/>
-      </g>
+      <!-- the same red pixel balloon that floats up over the about page, 24 sprite pixels
+           tall so it's pixel for pixel on a 24px toolbar button. it rests leaning left,
+           and on the about page it flips to leaning right and back, the way the real
+           ones bob -->
+      <svg v-else-if="name === 'balloon'" x="5.33" width="21.33" height="32" viewBox="-1 0 16 24" stroke="none">
+        <g v-for="(f, k) in [balloonFrames[0], balloonFrames[2]]" :key="k" :class="k ? 'bl-b' : 'bl-a'">
+          <path :d="f.outline" :fill="balloonEdge"/>
+          <path :d="f.fill" :fill="balloonBody"/>
+          <path :d="f.shine" fill="#fff" fill-opacity=".75"/>
+          <path :d="f.knot" :fill="balloonEdge"/>
+          <path :d="f.string" :fill="balloonString"/>
+        </g>
+      </svg>
       <!-- a green board with the four opening discs in the middle -->
       <g v-else-if="name === 'reversi'">
         <path fill="#6b3e1c" d="M2 2h28v28H2z"/>
