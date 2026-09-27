@@ -24,7 +24,10 @@ function pick(id) {
 </script>
 <template>
   <section class="snake-cart">
-    <div class="cart-grip" aria-hidden="true"/>
+    <div class="cart-controls cart-top">
+      <div class="cart-grip" aria-hidden="true"/>
+      <button class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
+    </div>
     <div class="cart-label">
       <div class="cart-label-top">
         <h2>SNAKE <span>HI-SCORES</span></h2>
@@ -45,7 +48,6 @@ function pick(id) {
       <div class="cart-periods" role="group" aria-label="Leaderboard period">
         <button v-for="p in periods" :key="p.id" :aria-pressed="period === p.id" :title="p.title" @click="pick(p.id)">{{ p.button }}</button>
       </div>
-      <button class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
     </div>
   </section>
 </template>
@@ -81,6 +83,9 @@ function pick(id) {
 .cart-message { min-height: 150px; margin: 0; padding-top: 50px; box-sizing: border-box; text-align: center; font-size: 13px; }
 /* the buttons, shaped like the handheld's select and start */
 .cart-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.cart-top { margin: 0 10px 10px 0; flex-wrap: nowrap; }
+.cart-top .cart-grip { flex: 1; margin: 0 0 0 4px; }
+.cart-tuck { flex: none; }
 .cart-periods { display: flex; gap: 6px; }
 .cart-controls button {
   padding: 3px 9px;

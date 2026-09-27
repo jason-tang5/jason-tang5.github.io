@@ -4115,6 +4115,7 @@ label.mail-label {
 /* the top of a tucked cartridge, poking just out of the back of the handheld with
    an arrow to pull it by. --pull is how far it's being dragged */
 .cart-peek {
+  --peek-grip: #8e8e98;
   position: absolute;
   top: -24px;
   right: 22px;
@@ -4127,10 +4128,7 @@ label.mail-label {
   border: 0;
   border-radius: 4px 0 12px 12px;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-  background:
-    repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) 10px 7px / 30px 10px no-repeat,
-    repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) calc(100% - 24px) 7px / 30px 10px no-repeat,
-    #bcbcc3;
+  background: #bcbcc3;
   box-shadow: inset 3px 3px 0 #dcdce2, inset -3px -3px 0 #8e8e98;
   color: #26307f;
   font: bold 11px/1.2 Tahoma, sans-serif;
@@ -4144,6 +4142,23 @@ label.mail-label {
 .cart-peek.pulling {
   cursor: grabbing;
   transition: none;
+}
+
+.cart-peek > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0 16px 0 8px;
+  white-space: nowrap;
+}
+
+.cart-peek > span::before {
+  content: '';
+  flex: 1;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, var(--peek-grip) 0 2px, transparent 2px 7px);
 }
 
 .cart-peek-art {
@@ -4180,10 +4195,8 @@ label.mail-label {
 }
 
 :root[data-theme="dark"] .cart-peek {
-  background:
-    repeating-linear-gradient(90deg, #3a3a42 0 2px, transparent 2px 7px) 10px 7px / 30px 10px no-repeat,
-    repeating-linear-gradient(90deg, #3a3a42 0 2px, transparent 2px 7px) calc(100% - 24px) 7px / 30px 10px no-repeat,
-    #5a5a64;
+  --peek-grip: #3a3a42;
+  background: #5a5a64;
   box-shadow: inset 3px 3px 0 #74747f;
   color: #c9cad8;
 }
