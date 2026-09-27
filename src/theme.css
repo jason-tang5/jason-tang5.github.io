@@ -408,7 +408,9 @@ input[type="checkbox"]:focus-visible {
   background: repeating-conic-gradient(var(--d-pressed, #dedede) 0 25%, var(--d-check, #cacaca) 0 50%) 0 0 / 2px 2px;
 }
 
-@media (hover: none) {
+/* any touchscreen, not just ones that can't hover: some android phones (samsungs with
+   a pen) say they can hover, which hid the hammer even though a finger still needs it */
+@media (hover: none), (any-pointer: coarse) {
   .hammer-toggle.raised {
     display: grid;
   }
