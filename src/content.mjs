@@ -73,7 +73,7 @@ export const projects = [
     // lead sits under the heading before the text, the rest after it. the projects
     // folder shows the lead figure in its preview too
     figures: { lead: 'desktop', built: 'apps', implementation: 'stack', results: 'live' },
-    summary: 'This site: a portfolio dressed up as a Windows 95 desktop, with games, a CD player, a blog and live analytics.',
+    summary: 'This site!',
     contribution: 'Designed and built a Windows 95 style desktop in Vue and Vite, with draggable, resizable windows, a taskbar and start menu, folders, a light and dark theme, and a separate touch layout for phones. Inside it are apps that go past a typical portfolio: Breakout in an arcade cabinet that reveals my email when you clear it, Snake on a handheld with a world leaderboard, Minesweeper, Reversi against a trash-talking Clippy, a Spotify CD player with a music visualizer, sticky notes and a blog.',
     implementation: [
       'The window manager keeps every window inside the screen at its minimum size, remembers where windows were left, and links to any window through the URL. The window geometry is plain JavaScript with no Vue in it, so it is unit tested in Node.',
