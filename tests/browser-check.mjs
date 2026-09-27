@@ -139,7 +139,7 @@ try {
 
   // Pulling down a maximized title bar restores its previous dimensions.
   const normalSize = await about.boundingBox();
-  await about.getByRole('button', { name: 'Maximize About Jason', exact: true }).click();
+  await about.getByRole('button', { name: 'Maximize About Me', exact: true }).click();
   await expect(about).toHaveClass(/maximized/);
   const title = await about.locator('.top-bar').boundingBox();
   await page.mouse.move(title.x + title.width / 2, title.y + 12);
@@ -167,7 +167,7 @@ try {
   await expect(page.locator('.portrait-ascii canvas')).toHaveCount(1);
   await page.setViewportSize({ width: 1100, height: 750 });
   await expect(page.locator('.desktop-wallpaper canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Close About Jason', exact: true }).click();
+  await page.getByRole('button', { name: 'Close About Me', exact: true }).click();
   await expect(page.locator('.portrait-ascii canvas')).toHaveCount(0);
 
   // ---- my pictures ----
@@ -457,7 +457,7 @@ try {
   await tool.scrollIntoViewIfNeeded();
   assert.ok(await soundsFrom(() => tool.hover()) > 0, 'hovering a tool ticks');
 
-  assert.ok(await soundsFrom(() => noisy.getByRole('button', { name: 'Close About Jason', exact: true }).click()) > 0, 'closing makes a sound');
+  assert.ok(await soundsFrom(() => noisy.getByRole('button', { name: 'Close About Me', exact: true }).click()) > 0, 'closing makes a sound');
 
   // play breakout until the first brick breaks, which should make a sound on its own
   await noisy.locator('.desktop-shortcut', { hasText: 'Contact' }).dblclick();

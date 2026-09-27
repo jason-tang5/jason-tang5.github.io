@@ -193,7 +193,7 @@ function setPortraitAscii(value) {
   <div v-if="win.type === 'about'" class="app-layout about-app">
     <div class="address-bar">
       <span>Address</span>
-      <div class="inset">{{ hoveredPlace?.path || 'Portfolio:\\About Jason' }}</div>
+      <div class="inset">{{ hoveredPlace?.path || 'Portfolio:\\About Me' }}</div>
     </div>
     <div class="about-explorer">
       <!-- the left pane of an explorer window, like browsing my computer to get to things -->
@@ -300,7 +300,7 @@ function setPortraitAscii(value) {
       </div>
     </div>
     <footer class="status-bar">
-      <span>{{ hoveredPlace ? registry[hoveredPlace.id].label : 'About Jason' }}</span>
+      <span>{{ hoveredPlace ? registry[hoveredPlace.id].label : 'About Me' }}</span>
       <span>{{ projects.length }} projects</span>
     </footer>
   </div>

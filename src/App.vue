@@ -584,7 +584,12 @@ const iconLayout = computed(() => {
   return out;
 });
 
+// what pressed the icon last. safari's clicks don't always say whether they came
+// from a finger, so a tap is recognised from this instead
+let iconPointer = 'mouse';
+
 function iconDown(event, id) {
+  iconPointer = event.pointerType;
   if (event.button !== 0) return;
   const el = event.currentTarget;
   settling.value = null;
@@ -597,7 +602,9 @@ function iconDown(event, id) {
     rect: el.getBoundingClientRect(),
     bounds: desktop.value.getBoundingClientRect(),
   };
-  el.setPointerCapture(event.pointerId);
+  // a finger stays with the icon it pressed anyway. capturing it here as well can
+  // stop safari sending the tap's click, so only the mouse is captured
+  if (event.pointerType === 'mouse') el.setPointerCapture(event.pointerId);
 }
 
 function iconMove(event) {
@@ -680,7 +687,7 @@ function selectShortcut(event, id) {
   if (performance.now() - dragEndedAt < 150) return;
   selected.value = id;
   // touch and pen open on a single tap, detail 0 means it came from the keyboard
-  if (event.pointerType === 'touch' || event.pointerType === 'pen' || event.detail === 0) open(id);
+  if (iconPointer === 'touch' || iconPointer === 'pen' || event.detail === 0) open(id);
 }
 
 // ---- settings ----

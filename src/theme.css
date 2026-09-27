@@ -3350,12 +3350,12 @@ label.mail-label {
     font-size: 13px;
   }
 
+  /* tucked in the bottom right corner, clear of the icon columns on the left */
   .first-tip {
-    left: 20px;
-    right: 20px;
-    bottom: 55px;
-    width: auto;
-    max-width: 340px;
+    left: auto;
+    right: 12px;
+    bottom: 32px;
+    width: 172px;
   }
 
   .tip-heading button {
