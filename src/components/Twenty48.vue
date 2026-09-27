@@ -457,8 +457,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout t48-app">
     <canvas ref="backdropCanvas" class="t48-backdrop" aria-hidden="true"/>
-    <!-- the writeup for the fpga project this game was rebuilt from -->
+    <!-- a new game, and the writeup for the fpga project this game was rebuilt from -->
     <div class="toolbar ie-toolbar t48-toolbar">
+      <!-- the same as pressing R: SW0 flips on the board and the game starts over -->
+      <button class="ie-button icon-button" title="Start over (flips SW0, or press R)" @click="flip(0)">
+        <svg class="spin-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
+        <span>New game</span>
+      </button>
       <button class="ie-button" title="Read how FPGA 2048 was built" @click="emit('open', 'fpga-2048')">
         <RetroIcon name="document"/>
         <span>Project</span>
