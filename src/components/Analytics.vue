@@ -3,11 +3,15 @@ import { computed, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 import PixelPie from './PixelPie.vue';
 import Leaderboard from './Leaderboard.vue';
-import { useLiveStats } from '../live-stats.js';
+import { boardKeys, useLiveStats } from '../live-stats.js';
 import { read, save } from '../storage.js';
 const { data: live, error: liveError, refresh } = useLiveStats();
+// one period for the whole window: the cards, the history, the pie and the snake
+// cartridge all follow it. cloudflare keeps about 90 days of history, so that's the
+// furthest back it goes
 const periods = [7, 30, 90];
-const days = ref(30);
+const savedDays = Number(read('analytics-period', '30'));
+const days = ref(periods.includes(savedDays) ? savedDays : 30);
 const data = ref(null);
 const busy = ref(false);
 const error = ref('');
@@ -31,16 +35,18 @@ function step(event, by) {
   pick(next.id);
   event.currentTarget.parentElement.querySelector(`[data-tab="${next.id}"]`)?.focus();
 }
-// the four all-time cards up top, from the live scoreboard
+// the four cards up top, for the chosen period. the counts come from the site history
+// (a dash while it loads or if it can't), the snake score from that period's leaderboard
 const cards = computed(() => {
-  const s = live.value;
-  if (!s) return [];
-  const games = s.clippyWins + s.clippyLosses;
+  if (!live.value) return [];
+  const s = data.value || {};
+  const games = (s.clippyWins || 0) + (s.clippyLosses || 0);
+  const count = value => data.value ? number(value) : '—';
   return [
-    { label: 'Minesweeper beaten', value: number(s.minesweeperWins), icon: 'mine' },
-    { label: 'Breakout finished', value: number(s.breakoutWins), icon: 'game' },
-    { label: 'Highest Snake score', value: number(s.snakeHighScore), icon: 'snake' },
-    { label: 'Clippy win-lose', value: `${number(s.clippyWins)}-${number(s.clippyLosses)}`, icon: 'reversi',
+    { label: 'Minesweeper beaten', value: count(s.minesweeperWins), icon: 'mine' },
+    { label: 'Breakout finished', value: count(s.breakoutWins), icon: 'game' },
+    { label: 'Highest Snake score', value: number(live.value[boardKeys[days.value]]?.[0]?.score), icon: 'snake' },
+    { label: 'Clippy win-lose', value: data.value ? `${number(s.clippyWins)}-${number(s.clippyLosses)}` : '—', icon: 'reversi',
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
   ];
 });
@@ -88,7 +94,9 @@ async function get(url) {
   return result;
 }
 function setDays(value) {
+  if (days.value === value) return;
   days.value = value;
+  save('analytics-period', String(value));
   load();
 }
 async function load() {
@@ -122,7 +130,7 @@ onMounted(load);
     </div>
     <main :id="`analytics-panel-${current}`" class="content-scroll document pixel-headings fancy-dividers analytics-page" role="tabpanel" :aria-labelledby="`analytics-tab-${current}`" :aria-busy="busy">
       <template v-if="current === 'scoreboard'">
-        <h1>All-time scoreboard</h1>
+        <h1>Scoreboard, last {{ days }} days</h1>
         <p v-if="liveError && !live" role="status">{{ liveError }}</p>
         <p v-else-if="!live" role="status">Loading scores...</p>
         <template v-else>
@@ -135,7 +143,7 @@ onMounted(load);
             </section>
           </div>
           <div class="visit-banner">
-            <section><RetroIcon name="person"/><div><strong>{{ number(live.visitors) }}</strong><span>total visits</span></div></section>
+            <section><RetroIcon name="person"/><div><strong>{{ data ? number(data.visitors) : '—' }}</strong><span>visits in {{ days }} days</span></div></section>
             <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
           </div>
           <h2>Your scores</h2>
@@ -151,7 +159,7 @@ onMounted(load);
             </section>
           </div>
           <h2>Snake leaderboard</h2>
-          <Leaderboard class="analytics-cart" :tuckable="false"/>
+          <Leaderboard class="analytics-cart" :tuckable="false" :period="days" :choices="periods" @update:period="setDays"/>
         </template>
         <p v-if="busy" role="status">Loading site history...</p>
         <p v-else-if="error" role="status">{{ error }}</p>

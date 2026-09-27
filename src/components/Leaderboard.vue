@@ -1,29 +1,38 @@
 <script setup>
-// the snake leaderboard as a game cartridge beside (or under) the handheld: the
-// scores are printed on its label, buttons flip between the last 7, 30 and 90 days,
-// the last year and all time, and it can be tucked back into the handheld (Snake.vue).
-// names are typed on the handheld's screen. analytics shows the same cartridge with
-// nothing to tuck it into, so it hides that button
+// the snake leaderboard as a game cartridge beside (or above) the handheld: the
+// scores are printed on its label, buttons flip between the last 7 and 30 days and
+// all time, and it can be tucked back into the handheld (Snake.vue). names are typed
+// on the handheld's screen. analytics shows the same cartridge with nothing to tuck
+// it into, so it hides that button, swaps all time for 90 days (as far back as the
+// page's history goes) and ties the period to its own, so the whole page changes together
 import { computed, ref } from 'vue';
-import { useLiveStats } from '../live-stats.js';
+import { boardKeys, useLiveStats } from '../live-stats.js';
 import { read, save } from '../storage.js';
-defineProps({ tuckable: { type: Boolean, default: true } });
-defineEmits(['tuck']);
+const props = defineProps({
+  tuckable: { type: Boolean, default: true },
+  // when given, the page owns the period: 7, 30 or 90
+  period: { type: [Number, String], default: null },
+  choices: { type: Array, default: () => [7, 30, 'all'] },
+});
+const emit = defineEmits(['tuck', 'update:period']);
 const { data, error } = useLiveStats();
-const periods = [
-  { id: 'week', button: '7D', title: 'Last 7 days', key: 'leaderboardWeek' },
-  { id: 'month', button: '30D', title: 'Last 30 days', key: 'leaderboardMonth' },
-  { id: 'quarter', button: '90D', title: 'Last 90 days', key: 'leaderboardQuarter' },
-  { id: 'year', button: '1Y', title: 'Last year', key: 'leaderboardYear' },
-  { id: 'all', button: 'ALL', title: 'All time', key: 'leaderboard' },
+const allPeriods = [
+  { id: 7, button: '7D', title: 'Last 7 days' },
+  { id: 30, button: '30D', title: 'Last 30 days' },
+  { id: 90, button: '90D', title: 'Last 90 days' },
+  { id: 'all', button: 'ALL', title: 'All time' },
 ];
-const saved = read('snake-board-period', 'all');
-const period = ref(periods.some(p => p.id === saved) ? saved : 'all');
-const current = computed(() => periods.find(p => p.id === period.value));
-const rows = computed(() => data.value?.[current.value.key] || []);
+const periods = computed(() => allPeriods.filter(p => props.choices.includes(p.id)));
+// on its own (the handheld) it remembers its period in this browser
+const saved = { week: 7, month: 30 }[read('snake-board-period', 'all')] || 'all';
+const own = ref(saved);
+const period = computed(() => props.period ?? own.value);
+const current = computed(() => allPeriods.find(p => p.id === period.value) || allPeriods.at(-1));
+const rows = computed(() => data.value?.[boardKeys[current.value.id]] || []);
 function pick(id) {
-  period.value = id;
-  save('snake-board-period', id);
+  if (props.period !== null) return emit('update:period', id);
+  own.value = id;
+  save('snake-board-period', { 7: 'week', 30: 'month' }[id] || 'all');
 }
 </script>
 <template>
@@ -90,7 +99,7 @@ function pick(id) {
 .cart-top { margin: 0 10px 10px 0; flex-wrap: nowrap; }
 .cart-top .cart-grip { flex: 1; margin: 0 0 0 4px; }
 .cart-tuck { flex: none; }
-/* five periods share the width, so they squeeze in without wrapping */
+/* the periods share the width, so they squeeze in without wrapping */
 .cart-periods { display: flex; flex: 1; gap: 4px; }
 .cart-periods button { flex: 1 1 0; padding-inline: 0; letter-spacing: 0; white-space: nowrap; }
 .cart-controls button {

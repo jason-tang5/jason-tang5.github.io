@@ -3,7 +3,7 @@ export const albumUrl = 'https://open.spotify.com/album/35I1NyorvFXQm14NSTQGY4';
 
 // Fill the empty sleeves with Jason's album links when he picks the next discs.
 export const musicDiscs = [
-  { title: 'Original mix', url: albumUrl, uri: 'spotify:album:35I1NyorvFXQm14NSTQGY4', color: '#96dfcf' },
+  { title: 'Jazzy but not too jazzy', url: albumUrl, uri: 'spotify:album:35I1NyorvFXQm14NSTQGY4', color: '#96dfcf' },
   { title: 'Empty disc 02', uri: null, color: '#b9a2e9' },
   { title: 'Empty disc 03', uri: null, color: '#efc57d' },
   { title: 'Empty disc 04', uri: null, color: '#e99bb7' },

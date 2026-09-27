@@ -343,7 +343,8 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        <p class="snake-brand" aria-hidden="true">JASON <em>boy</em></p>
+        <!-- the same red maker's badge as the contact cabinet's marquee -->
+        <p class="snake-brand" aria-hidden="true">JASON <em>boy</em><span class="arcade-badge snake-badge">TANGO</span></p>
         <p id="snake-help" class="sr-only">Arrow keys or WASD to move. Space to pause. Tap the screen to play.</p>
 
         <div class="snake-controls" role="group" aria-label="Direction controls">

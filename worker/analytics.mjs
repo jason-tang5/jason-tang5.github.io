@@ -85,6 +85,7 @@ async function record(request, env) {
 
 // ---- the summary ----
 
+// the analytics engine keeps about three months, so 90 days is as far back as it goes
 export const periods = [7, 30, 90];
 
 export function queries(days) {
@@ -149,6 +150,9 @@ export function summarize(rows, daily = []) {
     snakeHighScore: Math.max(0, ...rows.filter(row => row.name === 'snake-score').map(row => Number(row.maximum) || 0)),
     minesweeperWins: n('minesweeper-win'),
     breakoutWins: n('breakout-complete'),
+    // reversi-lose is clippy winning, reversi-win is clippy losing
+    clippyWins: n('reversi-lose'),
+    clippyLosses: n('reversi-win'),
     daily: daily.map(row => ({ day: String(row.day).slice(0, 10), visits: Math.round(Number(row.visits)) })),
     windows: sortedEntries(foldStickies(opens)),
     blogPosts: sortedEntries(by('blog-post', 'detail')),

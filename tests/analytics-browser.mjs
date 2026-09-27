@@ -9,7 +9,7 @@ try {
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  const sample = { visitors: 1234, snakeHighScore: 42, minesweeperWins: 19, breakoutWins: 31, daily: [{ day: new Date().toISOString().slice(0, 10), visits: 35 }],
+  const sample = { visitors: 1234, snakeHighScore: 42, minesweeperWins: 19, breakoutWins: 31, clippyWins: 3, clippyLosses: 1, daily: [{ day: new Date().toISOString().slice(0, 10), visits: 35 }],
     windows: [{ label: 'about', count: 9 }], blogPosts: [], funnel: [{ label: 'Visited the site', count: 1234 }], devices: [{ label: 'desktop', count: 800 }, { label: 'phone', count: 434 }],
     referrers: [{ label: 'direct', count: 1234 }], breakout: { losses: 3, averageWinSeconds: 40 }, mail: { errors: [], sent: 6, failed: 0 } };
   await page.route('**/api/analytics?*', route => route.fulfill({ json: sample }));
@@ -19,13 +19,17 @@ try {
     await page.goto('http://localhost:5188/#app=analytics');
     await page.getByRole('tab', { name: 'Scoreboard' }).click();
     await expect(page.locator('.score-card')).toHaveCount(7);
-    await expect(page.getByText('5,678', { exact: true })).toBeVisible();
     await expect(page.getByText('Your Snake best', { exact: true })).toBeVisible();
     await expect(page.getByText('3-1', { exact: true })).toBeVisible();
     await expect(page.getByText('Clippy wins 75%', { exact: true })).toBeVisible();
     await expect(page.locator('.pixel-pie')).toHaveCount(1);
-    await expect(page.getByText('1,234', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: '7 days' }).click();
+    await expect(page.locator('.visit-banner').getByText('1,234', { exact: true })).toBeVisible();
+    // the snake cartridge follows the page's period, and changes it too
+    await page.getByRole('button', { name: '90 days' }).click();
+    await expect(page.locator('.analytics-cart [aria-pressed="true"]')).toHaveText('90D');
+    await expect(page.locator('.analytics-cart').getByRole('button', { name: 'ALL' })).toHaveCount(0);
+    await page.locator('.analytics-cart').getByRole('button', { name: '7D' }).click();
+    await expect(page.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.analytics-column')).toHaveCount(7);
     await page.getByRole('tab', { name: 'Behind the scenes' }).click();
     await expect(page.locator('.score-card')).toHaveCount(3);

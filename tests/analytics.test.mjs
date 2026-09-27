@@ -55,6 +55,7 @@ test('the summary route returns everything and rejects invalid periods and metho
   assert.equal(result.mail.errors[0].count, 2);
   assert.equal(result.referrers[0].label, 'direct');
   assert.equal((await analytics(request('/api/analytics?days=0'), env, options)).status, 400);
+  assert.equal((await analytics(request('/api/analytics?days=all'), env, options)).status, 400);
   assert.equal((await analytics(request('/api/analytics', { method: 'POST' }), env, options)).status, 405);
   assert.equal((await analytics(request('/api/analytics'), {}, options)).status, 503);
   assert.throws(() => queries('30 OR 1=1'), RangeError);

@@ -17,6 +17,9 @@ async function load() {
   } catch { error.value = 'Live stats unavailable. Try again shortly.'; }
 }
 
+// which leaderboard in the stats goes with each period
+export const boardKeys = { 7: 'leaderboardWeek', 30: 'leaderboardMonth', 90: 'leaderboardQuarter', all: 'leaderboard' };
+
 export function useLiveStats() {
   onMounted(() => {
     if (users++ === 0) {

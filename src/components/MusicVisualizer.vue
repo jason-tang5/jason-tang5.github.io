@@ -149,7 +149,8 @@ onBeforeUnmount(() => {
   <section class="cd-visualizer raised" aria-label="TANGO stereo display">
     <div class="cd-visualizer-heading">
       <span class="cd-visualizer-screw" aria-hidden="true"/>
-      <strong>TANGO <span>STEREO DISPLAY</span></strong>
+      <!-- the same red maker's badge as the contact cabinet and the snake handheld -->
+      <strong><span class="arcade-badge cd-visualizer-badge">TANGO</span> <span class="cd-visualizer-model">STEREO DISPLAY</span></strong>
       <span class="cd-visualizer-state"><i :class="{ on: playing }" aria-hidden="true"/>{{ playing ? 'PLAY' : 'PAUSED' }}</span>
       <span class="cd-visualizer-screw" aria-hidden="true"/>
     </div>

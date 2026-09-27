@@ -4650,6 +4650,9 @@ label.mail-label {
 }
 
 .snake-brand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 8px 0 0 4px;
   color: var(--gb-ink);
   font: bold 14px 'Pixel MS Sans Serif', Tahoma, sans-serif;
@@ -4660,6 +4663,11 @@ label.mail-label {
 .snake-brand em {
   font-style: italic;
   font-weight: normal;
+}
+
+.snake-brand .snake-badge {
+  position: static;
+  margin: 0 4px 0 auto;
 }
 
 .snake-pills {
@@ -4885,6 +4893,12 @@ label.mail-label {
   margin-left: min(48px, 8%);
 }
 
+/* stacked, a pulled out cartridge sits above the handheld, up where it came out of
+   the slot. side by side it sits to the right */
+@container (max-width: 699.98px) {
+  .snake-stage .snake-cart { order: -1; }
+}
+
 @container (min-width: 700px) {
   .snake-stage .snake-cart { margin-left: 0; }
 }
@@ -4994,7 +5008,8 @@ label.mail-label {
   100% { transform: translateY(0); }
 }
 
-/* tucking slides the cartridge down into the slot, pulling it out slides it back up */
+/* tucking slides the cartridge down into the slot, pulling it out slides it back up.
+   stacked, the cartridge rises up out of the handheld below it and sinks back in */
 .cart-peek-enter-active,
 .cart-peek-leave-active,
 .cart-out-enter-active,
@@ -5019,6 +5034,12 @@ label.mail-label {
 .cart-out-leave-to {
   transform: translateY(24px);
   opacity: 0;
+}
+
+@container (max-width: 699.98px) {
+  .cart-out-enter-from {
+    transform: translateY(24px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5402,8 +5423,9 @@ label.mail-label {
 }
 
 .cd-visualizer-heading { display: flex; align-items: center; gap: 7px; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
-.cd-visualizer-heading strong { flex: 1; letter-spacing: 1px; }
-.cd-visualizer-heading strong span { font-size: 8px; letter-spacing: 0; color: var(--muted); }
+.cd-visualizer-heading strong { flex: 1; display: flex; align-items: center; gap: 5px; letter-spacing: 1px; }
+.cd-visualizer-heading .cd-visualizer-badge { position: static; }
+.cd-visualizer-model { font-size: 8px; letter-spacing: 0; color: var(--muted); }
 .cd-visualizer-screw { width: 5px; height: 5px; background: linear-gradient(135deg, var(--shadow) 40%, var(--light) 40% 60%, var(--shadow) 60%); box-shadow: 1px 1px var(--light); }
 .cd-visualizer-state { display: flex; align-items: center; gap: 4px; font-size: 8px; }
 .cd-visualizer-state i { width: 5px; height: 5px; background: #405247; box-shadow: inset 1px 1px #17261c; }
