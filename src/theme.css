@@ -6680,12 +6680,12 @@ label.mail-label {
 }
 
 /* ---- the projects folder's files, as big icons like a my computer window ----
-   click selects (the whole tile gets the navy highlight), double click opens, and
+   click selects (the name gets the navy highlight, like a desktop icon), double click opens, and
    hovering or selecting one shows an open button under it */
 
 .project-icons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 104px);
+  grid-template-columns: repeat(auto-fill, 92px);
   align-content: start;
   gap: 4px;
   padding: 10px 6px;
@@ -6694,7 +6694,7 @@ label.mail-label {
 
 .project-item {
   position: relative;
-  width: 104px;
+  width: 92px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6773,8 +6773,17 @@ label.mail-label {
 
 /* every tile is the same size, with room for a name two lines long */
 .project-icons .project-file {
-  height: 84px;
+  height: 80px;
   justify-content: flex-start;
+}
+
+/* in the icon view only the name is highlighted, not a big navy square */
+.project-icons .project-item.selected .project-file {
+  background: none;
+}
+
+.project-icons .project-item.selected .project-file span {
+  background: var(--navy);
 }
 
 .project-icons .project-file span {
