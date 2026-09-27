@@ -1,7 +1,7 @@
 <script setup>
 // picks what goes inside each window based on its type. the small apps live
 // right here, the bigger ones have their own components.
-import { defineAsyncComponent, onBeforeUnmount, ref } from 'vue';
+import { defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue';
 import { profile, projects, roles } from '../content.mjs';
 import { folders, registry } from '../registry.js';
 import AsciiImage from './AsciiImage.vue';
@@ -37,6 +37,34 @@ defineProps({
 const emit = defineEmits(['open', 'close', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
+const favoritesStrip = ref(null);
+const favoritesLeft = ref(false);
+const favoritesRight = ref(false);
+const favoritesScroll = ref(0);
+const favoritesScrollMax = ref(0);
+const favoritesThumb = ref(100);
+function updateFavoritesScroll() {
+  const strip = favoritesStrip.value;
+  if (!strip) return;
+  favoritesScroll.value = strip.scrollLeft;
+  favoritesScrollMax.value = Math.max(0, strip.scrollWidth - strip.clientWidth);
+  favoritesThumb.value = Math.max(20, strip.clientWidth / strip.scrollWidth * 100);
+  favoritesLeft.value = strip.scrollLeft > 1;
+  favoritesRight.value = strip.scrollLeft < strip.scrollWidth - strip.clientWidth - 1;
+}
+watch(favoritesStrip, (strip, _, onCleanup) => {
+  if (!strip) return;
+  const observer = new ResizeObserver(updateFavoritesScroll);
+  observer.observe(strip);
+  updateFavoritesScroll();
+  onCleanup(() => observer.disconnect());
+}, { flush: 'post' });
+function scrollFavorites(direction) {
+  favoritesStrip.value?.scrollBy({
+    left: direction * favoritesStrip.value.clientWidth * 0.75,
+    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+  });
+}
 
 // the volume in desktop settings, kept in step with the taskbar's speaker
 const sound = ref(soundEnabled());
@@ -197,7 +225,8 @@ function setPortraitAscii(value) {
     </div>
     <div class="about-explorer">
       <!-- the left pane of an explorer window, like browsing my computer to get to things -->
-      <nav class="about-favorites inset" aria-label="Favorites">
+      <div class="about-favorites-pane">
+      <nav ref="favoritesStrip" class="about-favorites inset" aria-label="Favorites" @scroll.passive="updateFavoritesScroll">
         <template v-for="group in places" :key="group.title">
           <p class="favorites-head" aria-hidden="true">
             <svg v-if="group.star" viewBox="0 0 16 16"><path d="M7 1h2v4h5v2h-1v1h-1v1h-1v2h1v4h-1v-1h-1v-1H9v-1H7v1H6v1H5v1H4v-4h1V9H4V8H3V7H2V5h5z"/></svg>
@@ -220,6 +249,15 @@ function setPortraitAscii(value) {
           </button>
         </template>
       </nav>
+      <div v-if="favoritesLeft || favoritesRight" class="favorites-scroll-cue">
+        <button class="raised" aria-label="Scroll shortcuts left" :disabled="!favoritesLeft" @click="scrollFavorites(-1)">&#9664;</button>
+        <input class="favorites-scroll-track" type="range" aria-label="Scroll shortcuts"
+          min="0" :max="favoritesScrollMax" :value="favoritesScroll"
+          :style="{ '--scroll-thumb': `${favoritesThumb}%` }"
+          @input="favoritesStrip.scrollLeft = Number($event.target.value)">
+        <button class="raised" aria-label="Scroll shortcuts right" :disabled="!favoritesRight" @click="scrollFavorites(1)">&#9654;</button>
+      </div>
+      </div>
       <div class="content-scroll about-content">
         <!-- linkedin, github, contact and the cd player as toolbar icons in the top right.
              each has its own hover: linkedin's letters bounce with a ping, the octocat wags

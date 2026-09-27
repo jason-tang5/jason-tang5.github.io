@@ -403,6 +403,10 @@ input[type="checkbox"]:focus-visible {
 /* ---- desktop ---- */
 
 .desktop-shell {
+  position: relative;
+  /* The hidden taskbar must not create scroll space in #app. Focusing one of
+     its buttons otherwise scrolls the whole desktop upward on mobile. */
+  overflow: clip;
   height: 100dvh;
   width: 100%;
   display: flex;
@@ -5327,10 +5331,20 @@ label.mail-label {
   min-width: 0;
 }
 
-.about-favorites {
+.about-favorites-pane {
   display: flex;
   flex-direction: column;
   flex: 0 0 158px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.favorites-scroll-cue { display: none; }
+
+.about-favorites {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   gap: 1px;
   padding: 6px 4px;
   overflow-y: auto;
@@ -5406,6 +5420,66 @@ label.mail-label {
     flex-direction: column;
   }
 
+  .about-favorites-pane { flex: none; }
+
+  .favorites-scroll-cue {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    padding: 0 2px 2px;
+    background: var(--surface);
+    color: var(--ink);
+    border-bottom: 1px solid var(--shadow);
+    font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  }
+
+  .favorites-scroll-cue button {
+    min-width: 18px;
+    min-height: 18px;
+    padding: 0;
+    color: var(--ink);
+    font-size: 10px;
+  }
+
+  .favorites-scroll-cue button:disabled {
+    color: var(--shadow);
+    cursor: default;
+  }
+
+  .favorites-scroll-track {
+    appearance: none;
+    flex: 1;
+    min-width: 0;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: repeating-conic-gradient(var(--surface) 0% 25%, var(--light) 0% 50%) 0 0 / 2px 2px;
+    cursor: var(--classic-pointer);
+  }
+
+  .favorites-scroll-track::-webkit-slider-thumb {
+    appearance: none;
+    width: var(--scroll-thumb);
+    height: 18px;
+    border-radius: 0;
+    background: var(--surface);
+    box-shadow: inset 1px 1px var(--light), inset -1px -1px var(--edge), inset -2px -2px var(--shadow);
+  }
+
+  .favorites-scroll-track::-moz-range-thumb {
+    width: var(--scroll-thumb);
+    height: 18px;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+    box-shadow: inset 1px 1px var(--light), inset -1px -1px var(--edge), inset -2px -2px var(--shadow);
+  }
+
+  .favorites-scroll-track:focus-visible { outline: 1px dotted var(--ink); outline-offset: -4px; }
+
   .about-favorites {
     flex: none;
     flex-direction: row;
@@ -5413,6 +5487,7 @@ label.mail-label {
     padding: 3px 4px;
     overflow-x: auto;
     overflow-y: hidden;
+    scrollbar-width: none;
     /* the inset's light bottom edge vanishes against the page, so the strip ends in a
        win98 etched line instead, a shadow pixel over a highlight pixel, to separate
        it from the page scrolling under it */
@@ -5421,6 +5496,8 @@ label.mail-label {
     position: relative;
     z-index: 1;
   }
+
+  .about-favorites::-webkit-scrollbar { display: none; }
 
   .favorites-head {
     display: none;
