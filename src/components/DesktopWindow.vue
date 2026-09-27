@@ -61,6 +61,12 @@ function start(event, edge = '') {
   event.preventDefault();
 }
 
+// windows without a normal title bar (sticky notes) mark their own drag handle
+function down(event) {
+  focus();
+  if (event.target.closest('[data-drag-handle]')) start(event);
+}
+
 function move(event) {
   if (!gesture) return;
   if (event.pointerId !== gesture.pointer) return;
@@ -203,7 +209,11 @@ onBeforeUnmount(() => {
     class="window window-style"
     :class="{ active, compact, maximized: win.maximized }"
     :style="style"
-    @pointerdown="focus"
+    @pointerdown="down"
+    @pointermove="move"
+    @pointerup="end"
+    @pointercancel="end"
+    @lostpointercapture="end"
     @focusin="focus"
     @keydown="key"
   >

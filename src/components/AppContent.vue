@@ -9,6 +9,8 @@ import Blog from './Blog.vue';
 import Music from './Music.vue';
 import Mail from './Mail.vue';
 import Pictures from './Pictures.vue';
+import Stickies from './Stickies.vue';
+import StickyNote from './StickyNote.vue';
 import RetroIcon from './RetroIcon.vue';
 import InlineText from './InlineText.vue';
 import TechList from './TechList.vue';
@@ -27,7 +29,7 @@ defineProps({
   wallpaper: String,
   visible: Boolean,
 });
-const emit = defineEmits(['open', 'unlock', 'wallpaper']);
+const emit = defineEmits(['open', 'close', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
 const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
@@ -96,25 +98,12 @@ function stopCd() {
 
 onBeforeUnmount(stopCd);
 
-const note = ref(read('note'));
-const noteStatus = ref('');
-
 function setPortraitAscii(value) {
   portraitHint.value = false;
   portraitAscii.value = value;
   save('portrait-ascii', value ? 'on' : 'off');
 }
 
-function saveNote() {
-  noteStatus.value = save('note', note.value)
-    ? 'saved!'
-    : 'Storage is unavailable. Your note is still here until this window closes.';
-}
-
-function clearSaved() {
-  remove('note');
-  noteStatus.value = 'Saved copy cleared. The text in this window is unchanged.';
-}
 </script>
 
 <template>
@@ -349,19 +338,6 @@ function clearSaved() {
     <footer class="status-bar"><span>Display properties</span></footer>
   </div>
 
-  <!-- notepad, saves to localstorage only if you ask it to -->
-  <div v-else-if="win.type === 'notepad'" class="app-layout">
-    <div class="toolbar">
-      <button class="raised" @click="saveNote">Save locally</button>
-      <button class="raised" @click="clearSaved">Clear saved copy</button>
-    </div>
-    <textarea
-      v-model="note"
-      class="notepad inset"
-      aria-label="Your local note"
-      placeholder="Write a note"
-      spellcheck="false"
-    />
-    <footer class="status-bar note-status" role="status"><span>{{ noteStatus }}</span></footer>
-  </div>
+  <Stickies v-else-if="win.type === 'stickies'" @open="id => emit('open', id)" @close="id => emit('close', id)"/>
+  <StickyNote v-else-if="win.type === 'sticky'" :win="win" @open="id => emit('open', id)" @close="id => emit('close', id)"/>
 </template>

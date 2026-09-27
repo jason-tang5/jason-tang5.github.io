@@ -20,7 +20,7 @@ export const apps = [
   app('contact', 'Contact', 'mail', 440, 540, 340, 400),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 420),
-  app('notepad', 'Notepad', 'notepad', 520, 420),
+  app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
   app('music', 'CD Player', 'music', 306, 264, 306, 264),
   app('blog', 'Blog', 'document', 720, 580),
   app('games', 'Games', 'folder', 440, 350, 300, 270),
@@ -32,7 +32,7 @@ export const apps = [
 ];
 
 for (const a of apps) {
-  a.desktop = !['settings', 'notepad', 'mail', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
+  a.desktop = !['settings', 'mail', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
   a.menu = !['settings', 'mail', 'minesweeper', 'snake'].includes(a.id); // shows up in the start menu
   a.fixedSize = ['minesweeper', 'music'].includes(a.id);
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it

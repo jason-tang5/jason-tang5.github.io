@@ -106,14 +106,14 @@ try {
   const before = await blogIcon.boundingBox();
   await page.mouse.move(before.x + 40, before.y + 30);
   await page.mouse.down();
-  await page.mouse.move(before.x + 240, before.y + 130, { steps: 8 });
+  await page.mouse.move(before.x + 240, before.y - 70, { steps: 8 });
   await page.mouse.up();
 
-  // a 200x100 drag snaps two columns right and one row down (98x88 grid)
+  // a 200x-100 drag snaps two columns right and one row up (98x88 grid)
   await expect.poll(async () => {
     const b = await blogIcon.boundingBox();
     return [Math.round(b.x - before.x), Math.round(b.y - before.y)];
-  }).toEqual([196, 88]);
+  }).toEqual([196, -88]);
   await expect(page.locator('[data-window="blog"]')).toHaveCount(0);
 
   await page.reload();

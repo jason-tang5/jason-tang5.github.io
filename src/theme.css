@@ -1686,29 +1686,34 @@ fieldset {
   padding: 0;
   color: #fff;
   font-size: 20px;
+  text-shadow: 1px 1px 0 #000;
 }
 
-
-/* ---- notepad ---- */
-
-.notepad {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  resize: none;
-  background: white;
-  color: black;
-  border-radius: 0;
-  padding: 12px;
-  font: 15px/1.6 'Courier New', monospace;
+/* the real ascii sunset (captured from the desktop) in each colour tone, layered
+   like the desktop is: the colour underneath, the tinted wallpaper at .88 on top */
+.wallpaper-tone {
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  overflow: hidden;
 }
 
-.note-status {
-  height: auto;
+.wallpaper-tone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url(../assets/wallpaper-preview.png) center / cover no-repeat;
+  opacity: .88;
+  filter: var(--tone-filter, none);
 }
 
-.note-status span {
-  line-height: 1.4;
+.swatch > span:not(.wallpaper-tone),
+.monitor-preview > :not(.wallpaper-tone) {
+  position: relative;
+}
+
+.monitor-preview {
+  position: relative;
 }
 
 
@@ -3275,3 +3280,367 @@ label.mail-label {
 .mail-fields input::placeholder, .mail-message::placeholder { color: #666; font-style: italic; opacity: 1; }
 
 .video-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+/* ---- sticky notes ----
+   the list (Stickies.vue) and each note window (StickyNote.vue), windows 10
+   sticky notes redrawn in pixels. light by default, dark with the site theme */
+
+:root {
+  --sticky-panel: #f4f4f4;
+  --sticky-bar: #e4e4e4;
+  --sticky-ink: #1a1a1a;
+  --sticky-dim: #5f5f5f;
+  --sticky-field: #fff;
+  --sticky-menu: #fff;
+  --sticky-hover: #e2e2e2;
+  --sticky-card-mix: #fff;
+  --sticky-card-amount: 24%;
+  --sticky-date-mix: #000;
+}
+
+:root[data-theme="dark"] {
+  --sticky-panel: #202020;
+  --sticky-bar: #191919;
+  --sticky-ink: #e8e8e8;
+  --sticky-dim: #a0a0a0;
+  --sticky-field: #3a3a3a;
+  --sticky-menu: #2b2b2b;
+  --sticky-hover: #3c3c3c;
+  --sticky-card-mix: #323232;
+  --sticky-card-amount: 0%;
+  --sticky-date-mix: #fff;
+}
+
+.stickies,
+.sticky-note {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  color: var(--sticky-ink);
+  font: 13px/1.45 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+}
+
+.stickies {
+  background: var(--sticky-panel);
+}
+
+.stickies svg,
+.sticky-note svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+  flex-shrink: 0;
+}
+
+.stickies-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stickies-button:hover,
+.stickies-button:focus-visible,
+.stickies-button[aria-expanded="true"] {
+  background: rgb(0 0 0 / .12);
+  outline: none;
+}
+
+.stickies-bar {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--sticky-bar);
+}
+
+.stickies h2 {
+  margin: 6px 12px 8px;
+  font: bold 18px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+}
+
+.stickies-search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  margin: 0 12px 10px;
+  padding: 0 8px;
+  background: var(--sticky-field);
+  border: 2px solid;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  color: var(--sticky-dim);
+}
+
+.stickies-search input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--sticky-ink);
+  font: inherit;
+  outline: none;
+}
+
+.stickies-search input::placeholder,
+.sticky-note textarea::placeholder {
+  color: var(--sticky-dim);
+  font-style: italic;
+}
+
+.stickies-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.stickies ul {
+  flex: 1;
+  margin: 0;
+  padding: 0 12px 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.stickies li + li {
+  margin-top: 8px;
+}
+
+.sticky-card {
+  --card: color-mix(in srgb, var(--note) var(--sticky-card-amount), var(--sticky-card-mix));
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 26px 14px 18px;
+  border: 0;
+  border-top: 4px solid var(--note);
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  box-shadow: 3px 3px 0 var(--edge);
+  cursor: pointer;
+}
+
+.sticky-card:hover,
+.sticky-card:focus-visible {
+  background: color-mix(in srgb, var(--card) 88%, var(--sticky-date-mix));
+  outline: none;
+}
+
+.sticky-card:focus-visible {
+  outline: 2px dotted var(--sticky-ink);
+  outline-offset: -4px;
+}
+
+/* a stepped, pixel dog-ear in the bottom corner */
+.sticky-card::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--card) 70%, var(--sticky-date-mix));
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 75%, 25% 75%, 25% 50%, 50% 50%, 50% 25%, 75% 25%, 75% 0);
+}
+
+.sticky-card-wrap {
+  position: relative;
+}
+
+.sticky-card-wrap.menu-open {
+  z-index: 2;
+}
+
+.sticky-card-wrap time {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: color-mix(in srgb, var(--note) 65%, var(--sticky-date-mix));
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* hovering a card swaps its date for a ... menu, like windows 10 */
+.sticky-card-menu {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  opacity: 0;
+}
+
+.sticky-card-menu .stickies-button {
+  width: 32px;
+  height: 22px;
+}
+
+.sticky-card-wrap:hover .sticky-card-menu,
+.sticky-card-wrap:focus-within .sticky-card-menu,
+.sticky-card-wrap.menu-open .sticky-card-menu {
+  opacity: 1;
+}
+
+.sticky-card-wrap:hover time,
+.sticky-card-wrap:focus-within time,
+.sticky-card-wrap.menu-open time {
+  visibility: hidden;
+}
+
+.sticky-card-menu .sticky-menu {
+  right: 0;
+  width: 190px;
+}
+
+/* touch screens have no hover, so the ... stays put and the date moves over */
+@media (hover: none) {
+  .sticky-card-menu {
+    opacity: 1;
+  }
+  .sticky-card-wrap time {
+    right: 36px;
+    visibility: visible !important;
+  }
+}
+
+.sticky-card span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sticky-card .empty,
+.stickies-empty {
+  color: var(--sticky-dim);
+  font-style: italic;
+}
+
+.stickies-empty {
+  margin: 4px 12px;
+}
+
+.stickies-privacy {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--shadow);
+  color: var(--sticky-dim);
+  font-size: 11px;
+}
+
+/* ---- one note in its own window. the coloured bar replaces the title bar ---- */
+
+.window[data-window^="sticky-"] .top-bar {
+  display: none;
+}
+
+.sticky-note {
+  background: color-mix(in srgb, var(--note) 30%, var(--sticky-card-mix));
+}
+
+:root[data-theme="dark"] .sticky-note {
+  background: #2b2b2b;
+}
+
+.sticky-bar {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--note);
+  color: #111;
+  cursor: move;
+  touch-action: none;
+}
+
+.sticky-menu-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.sticky-menu {
+  position: absolute;
+  right: -36px;
+  top: 100%;
+  z-index: 3;
+  width: 260px;
+  background: var(--sticky-menu);
+  color: var(--sticky-ink);
+  border: 2px solid var(--edge);
+  box-shadow: 4px 4px 0 var(--edge);
+  cursor: default;
+}
+
+.sticky-colors {
+  display: flex;
+}
+
+.sticky-colors button {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  color: #111;
+  cursor: pointer;
+}
+
+.sticky-colors button:hover,
+.sticky-colors button:focus-visible {
+  outline: 2px solid var(--sticky-ink);
+  outline-offset: -2px;
+}
+
+.sticky-note .sticky-colors svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sticky-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sticky-menu-item:hover,
+.sticky-menu-item:focus-visible {
+  background: var(--sticky-hover);
+  outline: none;
+}
+
+.sticky-menu-item.confirm {
+  color: #d02020;
+}
+
+:root[data-theme="dark"] .sticky-menu-item.confirm {
+  color: #ff8a80;
+}
+
+.sticky-note textarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: var(--sticky-ink);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}

@@ -100,3 +100,6 @@ and game totals, online tabs (90-second expiry), and the top ten anonymous Snake
 session scores. Totals start with this deployment; earlier Analytics Engine history
 is still available in the period charts and is not backfilled. Scores are reported
 by browsers, so this is a casual scoreboard, not a cheat-proof competition.
+
+Sticky Notes saves every note as you type, only in this browser's localStorage. It does not sync or send
+notes to the worker. Clearing browser storage removes saved notes.

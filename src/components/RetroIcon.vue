@@ -120,8 +120,7 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#999" d="M8 3h15l6 6v22H8z"/>
         <path fill="#fff" d="M5 1h15l6 6v22H5z"/>
         <path fill="#ddd" d="M20 1v6h6"/>
-        <path :stroke="name === 'notepad' ? '#589ab8' : '#888'" d="M9 12h13M9 16h13M9 20h13M9 24h8"/>
-        <path v-if="name === 'notepad'" stroke="#000080" stroke-width="2" d="M4 4h4M4 8h4M4 12h4M4 16h4M4 20h4M4 24h4"/>
+        <path stroke="#888" d="M9 12h13M9 16h13M9 20h13M9 24h8"/>
       </g>
     </g>
   </svg>

@@ -652,6 +652,7 @@ onBeforeUnmount(() => {
           :wallpaper="wallpaper"
           :visible="visible(win)"
           @open="open"
+          @close="close"
           @unlock="unlock"
           @wallpaper="setWallpaper"
         />

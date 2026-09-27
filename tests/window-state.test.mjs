@@ -120,6 +120,6 @@ test('projects, experience and contact pop out left to right, about opens center
     for (const w of [projects, experience, contact, about]) assert.ok(inside(w, viewport));
     assert.ok(Math.abs(about.x * 2 + about.width - viewport.width) <= 1);
     assert.ok(about.width < viewport.width * 0.7 && about.height < viewport.height * 0.7);
-    assert.equal(presetBounds('notepad', viewport), null);
+    assert.equal(presetBounds('stickies', viewport), null);
   }
 });
