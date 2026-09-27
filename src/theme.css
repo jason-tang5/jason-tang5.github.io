@@ -4621,6 +4621,12 @@ label.mail-label {
     flex-shrink: 0;
   }
 
+  /* a folder's icons sit in the middle of a phone instead of hugging the left */
+  .games-folder,
+  .project-icons {
+    justify-content: center;
+  }
+
   .project-preview {
     border-right: 0;
     border-top: 1px solid var(--d-rule, #aaa);
