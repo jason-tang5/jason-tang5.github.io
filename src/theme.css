@@ -331,6 +331,7 @@ input[type="checkbox"]:focus-visible {
   min-height: 0;
   padding: 0;
   background: var(--surface);
+  color: var(--ink);
 }
 
 .ascii-reset svg {
@@ -383,6 +384,7 @@ input[type="checkbox"]:focus-visible {
   box-sizing: border-box;
   padding: 5px 0;
   background: var(--surface);
+  color: var(--ink);
 }
 
 .ascii-hammer svg,

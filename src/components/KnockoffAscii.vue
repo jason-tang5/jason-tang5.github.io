@@ -647,7 +647,7 @@ onBeforeUnmount(() => {
   <Teleport :to="controlsTo || 'body'" :disabled="!controlsTo">
   <div v-show="visible" class="ascii-hammer raised" title="Hammer size" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
     <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
-      <path fill="#404040" d="M3 0h5v1H3zM1 1h9v2H1zM0 3h11v5H0zM1 8h9v2H1zM3 10h5v1H3z"/>
+      <path fill="currentColor" d="M3 0h5v1H3zM1 1h9v2H1zM0 3h11v5H0zM1 8h9v2H1zM3 10h5v1H3z"/>
     </svg>
     <div
       ref="hammerSlider"
@@ -672,7 +672,7 @@ onBeforeUnmount(() => {
       <span class="volume-thumb" />
     </div>
     <svg width="5" height="5" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true">
-      <path fill="#404040" d="M1 0h3v1H1zM0 1h5v3H0zM1 4h3v1H1z"/>
+      <path fill="currentColor" d="M1 0h3v1H1zM0 1h5v3H0zM1 4h3v1H1z"/>
     </svg>
     <!-- touchscreens only: pressed in, a drag over the photo smashes letters instead of scrolling -->
     <button
@@ -684,7 +684,7 @@ onBeforeUnmount(() => {
       @click="armed = !armed"
     >
       <svg width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
-        <path fill="#404040" d="M3 1h7v1h2v1h1v4h-2V5H9v2H8v1H6V7H5V5H3V4H2V2h1z"/>
+        <path fill="currentColor" d="M3 1h7v1h2v1h1v4h-2V5H9v2H8v1H6V7H5V5H3V4H2V2h1z"/>
         <path fill="#8a5a2b" d="M8 8h2v1h1v1h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H9V9H8z"/>
       </svg>
     </button>

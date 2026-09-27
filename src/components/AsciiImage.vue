@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
       @animationend="spinning = false"
     >
       <svg class="spin-icon" width="24" height="24" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
-        <path fill="#404040" d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/>
+        <path fill="currentColor" d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/>
       </svg>
     </button>
     </Teleport>
@@ -349,7 +349,7 @@ onBeforeUnmount(() => {
       <!-- the detail slider stays up the whole time ascii is on -->
       <div v-if="enabled" class="ascii-density raised" title="ASCII detail">
         <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
-          <path fill="#404040" d="M0 0h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 4h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 8h3v3H0zm4 0h3v3H4zm4 0h3v3H8z"/>
+          <path fill="currentColor" d="M0 0h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 4h3v3H0zm4 0h3v3H4zm4 0h3v3H8zM0 8h3v3H0zm4 0h3v3H4zm4 0h3v3H8z"/>
         </svg>
         <div
           ref="densitySlider"
@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
           <span class="volume-thumb" />
         </div>
         <svg width="7" height="7" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true">
-          <path fill="#404040" d="M0 0h3v3H0zm4 0h3v3H4zM0 4h3v3H0zm4 0h3v3H4z"/>
+          <path fill="currentColor" d="M0 0h3v3H0zm4 0h3v3H4zM0 4h3v3H0zm4 0h3v3H4z"/>
         </svg>
       </div>
     </div>
