@@ -1,14 +1,83 @@
 <script setup>
-// the figures in the portfolio project's writeup (content.mjs, figures), one per
-// section: a table of the apps on this desktop that opens each one, a diagram of
+// the figures in the portfolio project's writeup (content.mjs, figures): this
+// desktop in miniature, left idle so a cursor wanders around opening things, a table of the apps on this desktop that opens each one, a diagram of
 // how the site is wired up on cloudflare that you click through, and tiles with
 // the live scoreboard from /api/stats. each is a small win95 panel
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 import { useLiveStats } from '../live-stats.js';
 import { registry } from '../registry.js';
 defineProps({ figure: { type: String, required: true } });
 const emit = defineEmits(['open']);
+
+// ---- desktop: the site in miniature. a cursor opens a window, drags it, closes
+// it and moves on, only while the figure is on screen ----
+const deskIcons = ['about', 'resume', 'experience', 'projects', 'blog', 'contact', 'games', 'funstuff'];
+// every position is a percentage of the little screen
+const iconAt = k => ({ x: 3 + Math.floor(k / 4) * 12, y: 4 + (k % 4) * 21 });
+const scenes = [
+  { id: 'contact', kind: 'arcade', x: 36, y: 10, w: 36, h: 66 },
+  { id: 'games', kind: 'folder', x: 34, y: 16, w: 46, h: 48, items: ['snake', 'minesweeper', 'reversi', '2048'] },
+  { id: 'blog', kind: 'text', x: 32, y: 8, w: 50, h: 64 },
+  { id: 'about', kind: 'about', x: 38, y: 14, w: 46, h: 56 },
+];
+const mini = ref({ cursor: { x: 60, y: 60 }, selected: null, win: null, grab: false, click: false });
+const deskStage = ref(null);
+const clock = ref('');
+const tick = () => { clock.value = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); };
+let deskTimers = [], sceneIndex = 0, running = false, observer, clockTimer;
+const later = (ms, fn) => deskTimers.push(setTimeout(fn, ms));
+function click() {
+  mini.value.click = true;
+  later(160, () => { mini.value.click = false; });
+}
+function playScene() {
+  const scene = scenes[sceneIndex++ % scenes.length];
+  const icon = iconAt(deskIcons.indexOf(scene.id));
+  const m = mini.value;
+  m.cursor = { x: icon.x + 5, y: icon.y + 7 };
+  later(900, () => { click(); m.selected = scene.id; });
+  later(1150, () => { click(); m.win = { ...scene }; });
+  // over to the title bar, then drag the window a little way
+  later(2300, () => { m.cursor = { x: m.win.x + m.win.w * 0.4, y: m.win.y + 3 }; });
+  later(3100, () => { m.grab = true; });
+  later(3250, () => {
+    const dx = scene.x > 35 ? -8 : 8, dy = 6;
+    m.win = { ...m.win, x: m.win.x + dx, y: m.win.y + dy };
+    m.cursor = { x: m.cursor.x + dx, y: m.cursor.y + dy };
+  });
+  later(4100, () => { m.grab = false; });
+  later(5000, () => { m.cursor = { x: m.win.x + m.win.w - 2.5, y: m.win.y + 3 }; });
+  later(5800, () => { click(); m.win = null; m.selected = null; });
+  later(6400, () => { m.cursor = { x: m.cursor.x - 6, y: m.cursor.y + 10 }; });
+  later(7200, playScene);
+}
+function start() {
+  if (running) return;
+  running = true;
+  playScene();
+}
+function stop() {
+  running = false;
+  deskTimers.forEach(clearTimeout);
+  deskTimers = [];
+  mini.value.grab = false;
+}
+onMounted(() => {
+  tick();
+  clockTimer = setInterval(tick, 15000);
+  // held still with reduced motion: one window left open where the cursor put it
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || !deskStage.value) {
+    mini.value.win = { ...scenes[0] };
+    mini.value.cursor = { x: 50, y: 50 };
+    return;
+  }
+  if (!('IntersectionObserver' in window)) return start();
+  observer = new IntersectionObserver(([entry]) => (entry.isIntersecting ? start() : stop()));
+  observer.observe(deskStage.value);
+});
+onBeforeUnmount(() => { stop(); observer?.disconnect(); clearInterval(clockTimer); });
+const pct = ({ x, y, w, h }) => ({ left: `${x}%`, top: `${y}%`, ...(w && { width: `${w}%`, height: `${h}%` }) });
 
 // ---- apps: what's on the desktop ----
 const apps = [
@@ -63,8 +132,47 @@ const tiles = computed(() => {
 </script>
 
 <template>
-  <figure v-if="figure === 'apps'" class="pf-figure">
-    <figcaption><strong>Fig. 1</strong> What’s on the desktop. Pick one to open it.</figcaption>
+  <figure v-if="figure === 'desktop'" class="pf-figure">
+    <figcaption><strong>Fig. 1</strong> This desktop in miniature, left to idle. Click an icon to open the real one.</figcaption>
+    <div ref="deskStage" class="pf-mini pf-frame">
+      <div class="pf-mini-desk">
+        <button v-for="(id, k) in deskIcons" :key="id" class="pf-mini-icon" :class="{ picked: mini.selected === id }" :style="pct(iconAt(k))"
+          :title="`Open ${registry[id].label}`" @click="emit('open', id)">
+          <RetroIcon :name="registry[id].icon"/><span>{{ registry[id].label }}</span>
+        </button>
+        <div v-if="mini.win" :key="mini.win.id" class="pf-mini-win" :class="{ grab: mini.grab }" :style="pct(mini.win)" aria-hidden="true">
+          <div class="pf-mini-title"><RetroIcon :name="registry[mini.win.id].icon"/><span>{{ registry[mini.win.id].label }}</span><i>×</i></div>
+          <div class="pf-mini-body" :class="mini.win.kind">
+            <template v-if="mini.win.kind === 'arcade'">
+              <div class="pf-mini-crt">
+                <b v-for="n in 24" :key="n" :style="{ background: ['#ff5c5c', '#ffb13b', '#ffe066', '#5ccf7a'][Math.floor((n - 1) / 6)] }"/>
+                <em class="ball"/><em class="paddle"/>
+              </div>
+            </template>
+            <template v-else-if="mini.win.kind === 'folder'">
+              <span v-for="id in mini.win.items" :key="id"><RetroIcon :name="registry[id].icon"/>{{ registry[id].label }}</span>
+            </template>
+            <template v-else-if="mini.win.kind === 'about'">
+              <RetroIcon name="person"/><div><i/><i/><i/><i class="short"/></div>
+            </template>
+            <template v-else><i class="head"/><i/><i/><i/><i class="short"/><i/><i/><i class="short"/></template>
+          </div>
+        </div>
+        <svg class="pf-mini-cursor" :class="{ click: mini.click }" :style="pct(mini.cursor)" viewBox="0 0 12 19" shape-rendering="crispEdges" aria-hidden="true">
+          <path d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H7v1h1v2h1v2H8v1H6v-1H5v-2H4v-2H3v1H2v1H1v1H0z" fill="#000"/>
+          <path d="M1 2h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H6v1h1v2h1v2H6v-2H5v-2H4v-1H3v1H2v1H1z" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="pf-mini-bar" aria-hidden="true">
+        <span class="pf-mini-start raised"><RetroIcon name="computer"/>Start</span>
+        <span v-if="mini.win" class="pf-mini-task"><RetroIcon :name="registry[mini.win.id].icon"/>{{ registry[mini.win.id].label }}</span>
+        <span class="pf-mini-clock">{{ clock }}</span>
+      </div>
+    </div>
+  </figure>
+
+  <figure v-else-if="figure === 'apps'" class="pf-figure">
+    <figcaption><strong>Fig. 2</strong> What’s on the desktop. Pick one to open it.</figcaption>
     <div class="pf-table-wrap pf-frame">
       <table class="pf-table">
         <thead><tr><th scope="col">App</th><th scope="col">What it does</th><th scope="col">Under the hood</th></tr></thead>
@@ -84,7 +192,7 @@ const tiles = computed(() => {
   </figure>
 
   <figure v-else-if="figure === 'stack'" class="pf-figure">
-    <figcaption><strong>Fig. 2</strong> How a click travels. Pick a box to see what it handles.</figcaption>
+    <figcaption><strong>Fig. 3</strong> How a click travels. Pick a box to see what it handles.</figcaption>
     <div class="pf-stack pf-frame">
       <button class="pf-node raised" :class="{ pressed: picked === 'browser' }" :aria-pressed="picked === 'browser'" @click="picked = 'browser'">
         <RetroIcon :name="nodes.browser.icon"/><span>{{ nodes.browser.name }}</span>
@@ -110,7 +218,7 @@ const tiles = computed(() => {
 
   <figure v-else-if="figure === 'live'" class="pf-figure">
     <figcaption>
-      <strong>Fig. 3</strong> This site, right now.
+      <strong>Fig. 4</strong> This site, right now.
       <span class="pf-live"><i aria-hidden="true"/>{{ error && !live ? 'No signal' : 'Live, every 30 seconds' }}</span>
     </figcaption>
     <div class="pf-tiles">
@@ -132,7 +240,57 @@ const tiles = computed(() => {
 .pf-frame { --sunk-edge: var(--shadow); border: 2px solid; border-color: var(--edge) var(--sunk-edge) var(--sunk-edge) var(--edge); box-shadow: inset 1px 1px var(--shadow); }
 :root[data-theme="dark"] .pf-frame { --sunk-edge: var(--light); }
 
-/* fig 1: a win95 list view */
+/* fig 1: the desktop shrunk into a 16:10 screen, sized off the figure's width */
+.pf-mini { display: flex; flex-direction: column; aspect-ratio: 16 / 10; overflow: hidden; background: var(--desktop, #008080); user-select: none; }
+.pf-mini-desk { position: relative; flex: 1; }
+.pf-mini-icon {
+  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 10%; padding: 2px 0; border: 0; background: none;
+  font: max(7px, 1.6cqw)/1.1 'Pixel MS Sans Serif', Tahoma, sans-serif; color: #fff; text-shadow: 1px 1px 0 #000; cursor: var(--classic-pointer, pointer);
+}
+.pf-mini-icon svg { width: max(16px, 4.6cqw); height: max(16px, 4.6cqw); }
+.pf-mini-icon span { padding: 0 2px; white-space: nowrap; }
+.pf-mini-icon.picked span { background: var(--navy, #000080); outline: 1px dotted #fff; }
+.pf-mini-icon:focus-visible span { outline: 1px dotted #fff; }
+.pf-mini-win {
+  position: absolute; display: flex; flex-direction: column; background: #c0c0c0; border: 2px solid; border-color: #dfdfdf #000 #000 #dfdfdf;
+  box-shadow: inset 1px 1px #fff, inset -1px -1px #808080; transition: left .7s, top .7s; animation: pf-open .25s steps(4);
+}
+.pf-mini-win.grab { box-shadow: inset 1px 1px #fff, inset -1px -1px #808080, 0 0 0 1px #000; }
+@keyframes pf-open { from { transform: scale(.2); opacity: 0; } }
+.pf-mini-title { display: flex; align-items: center; gap: 3px; margin: 2px; padding: 1px 2px; background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font: bold max(7px, 1.5cqw) 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.pf-mini-title svg { width: max(9px, 2cqw); height: max(9px, 2cqw); }
+.pf-mini-title span { flex: 1; overflow: hidden; white-space: nowrap; }
+.pf-mini-title i { display: grid; place-items: center; width: max(9px, 2cqw); height: max(8px, 1.8cqw); background: #c0c0c0; color: #000; font: bold max(7px, 1.4cqw)/1 sans-serif; font-style: normal; box-shadow: inset -1px -1px #000, inset 1px 1px #fff; }
+.pf-mini-body { flex: 1; min-height: 0; margin: 0 2px 2px; padding: 5%; overflow: hidden; background: #fff; box-shadow: inset 1px 1px #808080; }
+.pf-mini-body i { display: block; height: max(3px, .8cqw); margin-bottom: max(3px, .9cqw); background: #c8c8c8; }
+.pf-mini-body i.short { width: 60%; }
+.pf-mini-body i.head { width: 45%; height: max(5px, 1.4cqw); background: #000080; }
+.pf-mini-body.about { display: flex; gap: 6%; align-items: flex-start; }
+.pf-mini-body.about svg { width: 28%; height: auto; flex: none; }
+.pf-mini-body.about div { flex: 1; }
+.pf-mini-body.folder { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4%; font: max(7px, 1.4cqw) 'Pixel MS Sans Serif', Tahoma, sans-serif; color: #000; }
+.pf-mini-body.folder span { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 21%; }
+.pf-mini-body.folder svg { width: 70%; height: auto; }
+.pf-mini-body.arcade { padding: 3px; background: #1a1a1f; }
+.pf-mini-crt { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); align-content: start; gap: 2px; height: 100%; padding: 6%; box-sizing: border-box; background: #000; border-radius: 6%; }
+.pf-mini-crt b { height: max(3px, .9cqw); }
+.pf-mini-crt em { position: absolute; background: #fff; }
+.pf-mini-crt .paddle { bottom: 8%; left: 30%; width: 26%; height: max(3px, .8cqw); animation: pf-paddle 2.4s steps(12) infinite alternate; }
+.pf-mini-crt .ball { width: max(3px, .9cqw); aspect-ratio: 1; animation: pf-ball 2.4s steps(24) infinite alternate; }
+@keyframes pf-paddle { from { left: 8%; } to { left: 64%; } }
+@keyframes pf-ball { 0% { left: 20%; top: 80%; } 50% { left: 55%; top: 45%; } 100% { left: 78%; top: 82%; } }
+.pf-mini-cursor { position: absolute; z-index: 2; width: max(8px, 1.9cqw); height: auto; margin: -1px 0 0 -1px; pointer-events: none; transition: left .7s ease-in-out, top .7s ease-in-out; }
+.pf-mini-cursor.click { transform: scale(.85); transform-origin: 0 0; }
+.pf-mini-bar {
+  display: flex; align-items: center; gap: 4px; height: max(16px, 5.4cqw); padding: 2px; box-sizing: border-box; background: #c0c0c0; border-top: 1px solid #fff;
+  font: max(7px, 1.5cqw) 'Pixel MS Sans Serif', Tahoma, sans-serif; color: #000;
+}
+.pf-mini-bar svg { width: max(9px, 2.4cqw); height: max(9px, 2.4cqw); }
+.pf-mini-start, .pf-mini-task { display: flex; align-items: center; gap: 3px; height: 100%; padding: 0 4px; box-sizing: border-box; font-weight: bold; box-shadow: inset -1px -1px #000, inset 1px 1px #fff; }
+.pf-mini-task { width: 26%; font-weight: normal; overflow: hidden; white-space: nowrap; box-shadow: inset 1px 1px #000, inset -1px -1px #fff; background: #dfdfdf; }
+.pf-mini-clock { margin-left: auto; height: 100%; display: flex; align-items: center; padding: 0 6px; box-shadow: inset 1px 1px #808080, inset -1px -1px #fff; }
+
+/* fig 2: a win95 list view */
 .pf-table-wrap { overflow-x: auto; background: var(--paper); }
 .pf-table { width: 100%; min-width: 460px; table-layout: auto; border-collapse: collapse; font-size: 12px; }
 .pf-table thead th {
@@ -157,7 +315,7 @@ const tiles = computed(() => {
 .pf-open svg { width: 20px; height: 20px; flex: none; }
 .pf-open:focus-visible { outline: 1px dotted currentColor; outline-offset: 2px; }
 
-/* fig 2: boxes joined by wires, the path to the picked box lit up */
+/* fig 3: boxes joined by wires, the path to the picked box lit up */
 .pf-stack { display: flex; flex-direction: column; align-items: center; padding: 14px 12px; background: var(--paper); }
 .pf-node {
   display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 120px; padding: 8px 10px;
@@ -181,7 +339,7 @@ const tiles = computed(() => {
 .pf-detail code { font: 11px 'Courier New', monospace; color: var(--d-link, #000080); }
 .pf-detail p { margin: 6px 0 0; font: 13px/1.5 inherit; }
 
-/* fig 3: score cards like the analytics window's */
+/* fig 4: score cards like the analytics window's */
 .pf-live { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
 .pf-live i, .pf-dot { display: inline-block; width: 8px; height: 8px; background: #1baf7a; border: 1px solid var(--d-line, #000); animation: pf-blink 1.2s steps(1) infinite; }
 .pf-dot { margin-right: 6px; vertical-align: middle; }
@@ -201,7 +359,7 @@ const tiles = computed(() => {
 .pf-tile:focus-visible { outline: 1px dotted var(--ink); outline-offset: 3px; }
 @media (max-width: 560px) { .pf-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) {
-  .pf-wire.lit i, .pf-live i, .pf-dot { animation: none; }
+  .pf-wire.lit i, .pf-live i, .pf-dot, .pf-mini-win, .pf-mini-crt em { animation: none; }
   .pf-wire.lit i { top: 9px; }
 }
 </style>

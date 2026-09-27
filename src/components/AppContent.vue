@@ -37,7 +37,7 @@ const Minesweeper = defineAsyncComponent(() => import('./Minesweeper.vue'));
 const Reversi = defineAsyncComponent(() => import('./Reversi.vue'));
 const Twenty48 = defineAsyncComponent(() => import('./Twenty48.vue'));
 // the interactive figures in a project's writeup, by name (content.mjs, figures)
-const figureFor = { apps: PortfolioFigures, stack: PortfolioFigures, live: PortfolioFigures, register: FpgaFigures, datapath: FpgaFigures, slide: FpgaFigures, fsm: FpgaFigures, weights: ReversiFigures, eval: ReversiFigures, lookahead: ReversiFigures };
+const figureFor = { desktop: PortfolioFigures, apps: PortfolioFigures, stack: PortfolioFigures, live: PortfolioFigures, register: FpgaFigures, datapath: FpgaFigures, slide: FpgaFigures, fsm: FpgaFigures, board: ReversiFigures, weights: ReversiFigures, eval: ReversiFigures, lookahead: ReversiFigures };
 
 defineProps({
   win: Object,

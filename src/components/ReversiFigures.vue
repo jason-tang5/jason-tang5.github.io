@@ -1,9 +1,10 @@
 <script setup>
 // the figures in the reversi writeup (content.mjs, figures), all driven by the same
-// bot as the games folder (reversi.mjs): the table of square weights, one move
-// scored part by part, and the look-ahead that catches a move that only looks good
+// game as the games folder (reversi.mjs): the board the way the c version kept and
+// printed it, the table of square weights, one move scored part by part, and the
+// look-ahead that catches a move that only looks good
 import { computed, ref } from 'vue';
-import { black, white, other, newBoard, legalMoves, flipsFor, play, gameOver, evaluate, evaluateParts, weights, corners, nextToCorner } from '../reversi.mjs';
+import { black, white, other, newBoard, legalMoves, flipsFor, play, gameOver, count, evaluate, evaluateParts, weights, corners, nextToCorner } from '../reversi.mjs';
 defineProps({ figure: { type: String, required: true } });
 
 // ---- shared: seeded positions, square names, discs ----
@@ -31,6 +32,63 @@ const discShape = {
   face: rowsOf([4, 6, 6, 6, 6, 4], 1),
 };
 const discColors = { [black]: { face: '#34343c', edge: '#000' }, [white]: { face: '#f2f2ea', edge: '#8a8a84' } };
+
+// ---- board: the c version's char board of U, B and W, printed with a letter per
+// row and column, and a move checked one direction at a time ----
+const letters = 'abcdefgh';
+const charOf = { 0: 'U', [black]: 'B', [white]: 'W' };
+const rc = i => `${letters[Math.floor(i / 8)]}${letters[i % 8]}`;
+// the 3 × 3 compass of directions as (deltaRow, deltaCol), the middle is the square itself
+const compass = [[-1, -1], [-1, 0], [-1, 1], [0, -1], null, [0, 1], [1, -1], [1, 0], [1, 1]];
+const arrowOf = { '-1,-1': '↖', '-1,0': '↑', '-1,1': '↗', '0,-1': '←', '0,1': '→', '1,-1': '↙', '1,0': '↓', '1,1': '↘' };
+// the discs one direction would flip: a run of the other colour closed off by your own
+function rayFlips(board, i, player, dr, dc) {
+  const line = [];
+  let r = Math.floor(i / 8) + dr, c = (i % 8) + dc;
+  while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r * 8 + c] === other(player)) { line.push(r * 8 + c); r += dr; c += dc; }
+  return line.length && r >= 0 && r < 8 && c >= 0 && c < 8 && board[r * 8 + c] === player ? line : [];
+}
+const cBoard = ref(newBoard());
+const cTurn = ref(black);
+const cSquare = ref(19);
+const cLog = ref('');
+const cChecks = computed(() => compass.map(d => {
+  if (!d) return null;
+  const empty = !cBoard.value[cSquare.value];
+  return { d, arrow: arrowOf[d.join()], flips: empty ? rayFlips(cBoard.value, cSquare.value, cTurn.value, ...d) : [] };
+}));
+const cFlips = computed(() => cChecks.value.flatMap(c => c?.flips ?? []));
+const cLegal = computed(() => legalMoves(cBoard.value, cTurn.value));
+const cReadout = computed(() => {
+  const i = cSquare.value, at = charOf[cBoard.value[i]];
+  if (at !== 'U') return `${rc(i)} already holds ${at}, so it can’t be played.`;
+  const ways = cChecks.value.filter(c => c?.flips.length);
+  if (!ways.length) return `${rc(i)} is empty, but no direction closes off a line of ${charOf[other(cTurn.value)]}. Invalid move.`;
+  return `${rc(i)} is valid for ${charOf[cTurn.value]}: it flips ${cFlips.value.length} going ${ways.map(c => c.arrow).join(' ')}.`;
+});
+// the board as the terminal printed it, one row per line
+const cRows = computed(() => letters.split('').map((l, r) => ({ l, cells: cBoard.value.slice(r * 8, r * 8 + 8).map((v, c) => ({ i: r * 8 + c, ch: charOf[v] })) })));
+function cPlay(i) {
+  cSquare.value = i;
+  if (!cLegal.value.includes(i)) return;
+  const mover = cTurn.value;
+  cBoard.value = play(cBoard.value, i, mover);
+  cTurn.value = other(mover);
+  cLog.value = `${charOf[mover]} played ${rc(i)}.`;
+  if (gameOver(cBoard.value)) {
+    const { [black]: b, [white]: w } = count(cBoard.value);
+    cLog.value += ` Game over, ${b > w ? 'B wins' : w > b ? 'W wins' : 'a draw'} ${b} to ${w}.`;
+  } else if (!legalMoves(cBoard.value, cTurn.value).length) {
+    cLog.value += ` ${charOf[cTurn.value]} has no valid move and passes.`;
+    cTurn.value = mover;
+  }
+}
+function cReset() {
+  cBoard.value = newBoard();
+  cTurn.value = black;
+  cSquare.value = 19;
+  cLog.value = '';
+}
 
 // ---- weights: the positional table, with the corner rule ----
 const taken = ref([]);
@@ -180,8 +238,43 @@ function newTree() {
 </script>
 
 <template>
-  <figure v-if="figure === 'weights'" class="rx-figure">
-    <figcaption><strong>Fig. 1</strong> The weight of every square. Point at one to see why, and click a corner to take it.</figcaption>
+  <figure v-if="figure === 'board'" class="rx-figure">
+    <figcaption><strong>Fig. 1</strong> The board is a grid of chars, U, B or W, printed to the terminal with a letter for each row and column. Point at a square to check it in all 8 directions, and click to play it.</figcaption>
+    <div class="rx-panel rx-split">
+      <div class="rx-board" role="group" aria-label="Board">
+        <button v-for="(cell, i) in cBoard" :key="i"
+          :class="['rx-cell', 'felt', { picked: cSquare === i, flip: cFlips.includes(i) }]"
+          :aria-label="`${rc(i)}: ${charOf[cell]}${cLegal.includes(i) ? ', valid move' : ''}`"
+          @mouseenter="cSquare = i" @focus="cSquare = i" @click="cPlay(i)">
+          <svg v-if="cell" class="rx-disc" viewBox="0 0 8 9" shape-rendering="crispEdges" aria-hidden="true">
+            <path :d="discShape.outline" fill="#000"/><path :d="discShape.edge" :fill="discColors[cell].edge"/><path :d="discShape.face" :fill="discColors[cell].face"/>
+          </svg>
+          <i v-else-if="cLegal.includes(i)" class="rx-hint" aria-hidden="true"/>
+        </button>
+      </div>
+      <div>
+        <pre class="rx-term" aria-hidden="true"><span class="rx-term-head">  {{ letters }}</span>
+<template v-for="r in cRows" :key="r.l"><span class="rx-term-head">{{ r.l }} </span><span v-for="c in r.cells" :key="c.i" :class="{ on: cSquare === c.i, flip: cFlips.includes(c.i) }">{{ c.ch }}</span>
+</template><span class="rx-term-head">Enter move for colour {{ charOf[cTurn] }} (RowCol): </span>{{ rc(cSquare) }}</pre>
+        <div class="rx-check">
+          <div class="rx-compass" aria-hidden="true">
+            <span v-for="(c, k) in cChecks" :key="k" :class="{ mid: !c, hit: c?.flips.length }">{{ c ? (c.flips.length || c.arrow) : charOf[cTurn] }}</span>
+          </div>
+          <p class="rx-readout" aria-live="polite">
+            <code>board[{{ Math.floor(cSquare / 8) }}][{{ cSquare % 8 }}] = '{{ charOf[cBoard[cSquare]] }}'</code>
+            <span>{{ cReadout }}</span>
+            <span v-if="cLog" class="rx-log">{{ cLog }}</span>
+          </p>
+        </div>
+        <div class="rx-buttons">
+          <button class="raised rx-button" @click="cReset">New game</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure v-else-if="figure === 'weights'" class="rx-figure">
+    <figcaption><strong>Fig. 2</strong> The weight of every square. Point at one to see why, and click a corner to take it.</figcaption>
     <div class="rx-panel rx-split">
       <div class="rx-board rx-weights" role="group" aria-label="Square weights">
         <button v-for="(w, i) in weights" :key="i" :class="['rx-cell', `w-${tint(i)}`, { picked: pickedSquare === i, corner: corners.includes(i) }]"
@@ -204,7 +297,7 @@ function newTree() {
   </figure>
 
   <figure v-else-if="figure === 'eval'" class="rx-figure">
-    <figcaption><strong>Fig. 2</strong> Clippy (white) scoring its moves. Each number is a legal move and its score. Pick one to see what goes into it.</figcaption>
+    <figcaption><strong>Fig. 3</strong> Clippy (white) scoring its moves. Each number is a legal move and its score. Pick one to see what goes into it.</figcaption>
     <div class="rx-panel rx-split">
       <div class="rx-board" role="group" aria-label="Clippy's legal moves">
         <button v-for="(cell, i) in evalBoard" :key="i" :disabled="scoreAt[i] === undefined"
@@ -235,7 +328,7 @@ function newTree() {
   </figure>
 
   <figure v-else-if="figure === 'lookahead'" class="rx-figure">
-    <figcaption><strong>Fig. 3</strong> Looking ahead. Each of Clippy’s moves, your replies to it, and the score for Clippy after each. Pick any of them to see the board.</figcaption>
+    <figcaption><strong>Fig. 4</strong> Looking ahead. Each of Clippy’s moves, your replies to it, and the score for Clippy after each. Pick any of them to see the board.</figcaption>
     <div class="rx-panel">
       <div class="rx-buttons">
         <span class="rx-toggle" role="group" aria-label="How far ahead">
@@ -310,7 +403,24 @@ button.rx-cell:not(:disabled) { cursor: var(--classic-pointer, pointer); }
 .rx-cell.felt { background: var(--felt-cell); box-shadow: inset 2px 2px 0 var(--felt-light), inset -2px -2px 0 var(--felt-shade); }
 .rx-disc { display: block; width: 72%; height: auto; aspect-ratio: 8 / 9; }
 
-/* fig 1: each square tinted by its weight */
+/* fig 1: valid squares get a faint dot, and the terminal printout beside the
+   board follows the square being checked */
+.rx-hint { display: block; width: 22%; aspect-ratio: 1; background: #0005; }
+.rx-term { margin: 0; padding: 8px 10px; background: #000; color: #c0c0c0; font: 13px/1.25 'Courier New', monospace; overflow-x: auto; }
+.rx-term-head { color: #808080; white-space: pre; }
+.rx-term span:not(.rx-term-head) { display: inline-block; width: 1.4ch; text-align: center; }
+.rx-term span.on { background: #c0c0c0; color: #000; }
+.rx-term span.flip { color: #ffe066; font-weight: bold; }
+.rx-check { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
+.rx-compass { display: grid; grid-template-columns: repeat(3, 20px); gap: 2px; flex: none; }
+.rx-compass span { display: grid; place-items: center; height: 20px; background: var(--d-page-alt, #fffdf2); border: 1px solid var(--d-line, #999); font: bold 11px 'Courier New', monospace; color: var(--muted); }
+.rx-compass span.hit { background: #1baf7a; border-color: #0d7a52; color: #fff; }
+.rx-compass span.mid { background: var(--navy, #000080); border-color: var(--navy, #000080); color: #fff; }
+.rx-readout { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 13px; line-height: 1.4; }
+.rx-readout code { font: bold 12px 'Courier New', monospace; color: var(--d-link, #000080); }
+.rx-log { color: var(--muted); }
+
+/* fig 2: each square tinted by its weight */
 .w-corner { background: #e8b830; }
 .w-a { background: #58b368; }
 .w-inner { background: #7cc47f; }
@@ -326,7 +436,7 @@ button.rx-cell:not(:disabled) { cursor: var(--classic-pointer, pointer); }
 .rx-key li { display: flex; align-items: center; gap: 4px; }
 .rx-key i { display: block; width: 10px; height: 10px; border: 1px solid #000; }
 
-/* fig 2: the legal moves carry their score, the best one is ringed in gold */
+/* fig 3: the legal moves carry their score, the best one is ringed in gold */
 .rx-cell.legal .rx-score { color: #fff; font-size: 9px; letter-spacing: -.5px; text-shadow: 1px 1px 0 #0008; }
 .rx-cell.best { box-shadow: inset 0 0 0 2px #e8b830, inset 2px 2px 0 var(--felt-light); }
 .rx-cell.felt.picked { background: #2a8c52; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #000; }
@@ -343,7 +453,7 @@ button.rx-cell:not(:disabled) { cursor: var(--classic-pointer, pointer); }
 .rx-bar b { position: absolute; top: 0; bottom: 0; background: #1baf7a; }
 .rx-bar b.neg { background: #c0392b; }
 
-/* fig 3: the tree scrolls sideways on a phone rather than shrinking unreadably */
+/* fig 4: the tree scrolls sideways on a phone rather than shrinking unreadably */
 .rx-tree { overflow-x: auto; }
 .rx-tree svg { display: block; width: 100%; min-width: 520px; max-width: 720px; margin: 0 auto; }
 /* wide: the board sits beside the tree at a readable size instead of under it */
