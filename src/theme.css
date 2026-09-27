@@ -1219,6 +1219,70 @@ input[type="checkbox"]:focus-visible {
   }
 }
 
+/* a hidden taskbar has a little tab sticking out from the middle of its inner edge,
+   with an arrow bobbing the way the taskbar will move (App.vue turns it) */
+.taskbar-tab.raised {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0;
+}
+
+.taskbar-bottom .taskbar-tab.raised,
+.taskbar-top .taskbar-tab.raised {
+  left: 50%;
+  translate: -50% 0;
+  width: 54px;
+  height: 18px;
+}
+
+.taskbar-bottom .taskbar-tab.raised {
+  bottom: 100%;
+  border-bottom: 0;
+}
+
+.taskbar-top .taskbar-tab.raised {
+  top: 100%;
+  border-top: 0;
+}
+
+.taskbar-left .taskbar-tab.raised,
+.taskbar-right .taskbar-tab.raised {
+  top: 50%;
+  translate: 0 -50%;
+  width: 18px;
+  height: 54px;
+}
+
+.taskbar-left .taskbar-tab.raised {
+  left: 100%;
+  border-left: 0;
+}
+
+.taskbar-right .taskbar-tab.raised {
+  right: 100%;
+  border-right: 0;
+}
+
+.taskbar-tab svg {
+  width: 14px;
+  height: 8px;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+  animation: taskbar-tab-bob 0.9s steps(1) infinite;
+}
+
+@keyframes taskbar-tab-bob {
+  50% { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taskbar-tab svg {
+    animation: none;
+  }
+}
+
 /* auto-hide: the taskbar floats over the desktop and slides off its edge, leaving a
    few pixels showing, until the mouse gets close (App.vue) or it has focus */
 .taskbar-autohide .taskbar {
@@ -1255,7 +1319,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .taskbar-autohide.taskbar-shown .taskbar,
-.taskbar-autohide .taskbar:focus-within {
+.taskbar-autohide .taskbar:has(:focus-visible) {
   transform: none;
 }
 

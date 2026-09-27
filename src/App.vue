@@ -268,9 +268,31 @@ function hideTaskbarSoon(delay = 400) {
   }, delay);
 }
 
+// the tab's arrow points where the taskbar will move: out of its edge while hidden,
+// back into it while shown. the arrow is drawn pointing up
+const tabArrow = computed(() => {
+  const out = { bottom: 0, top: 180, left: 90, right: 270 }[edge.value];
+  return taskbarShown.value ? out + 180 : out;
+});
+
+// clicking the tab to put the taskbar away keeps it away until the mouse has left the
+// edge, or hovering there would just bring it straight back
+let tabDismissed = false;
+function toggleTaskbar() {
+  if (!taskbarShown.value) return showTaskbar();
+  clearTimeout(hideTimer);
+  taskbarShown.value = false;
+  tabDismissed = true;
+}
+
 function taskbarPointerMove(event) {
   if (!autoHide.value || event.pointerType === 'touch') return;
-  if (nearEdge(event.clientX, event.clientY, 6) || (taskbarShown.value && overTaskbar(event.clientX, event.clientY))) showTaskbar();
+  const near = nearEdge(event.clientX, event.clientY, 6) || (taskbarShown.value && overTaskbar(event.clientX, event.clientY));
+  if (tabDismissed) {
+    if (!nearEdge(event.clientX, event.clientY, 60)) tabDismissed = false;
+    return;
+  }
+  if (near) showTaskbar();
   else if (taskbarShown.value) hideTaskbarSoon();
 }
 
@@ -1028,7 +1050,18 @@ onBeforeUnmount(() => {
       </DesktopWindow>
     </main>
 
-    <nav ref="taskbarEl" class="taskbar" aria-label="Taskbar" @contextmenu="taskbarContext" @focusin="autoHide && showTaskbar()" @focusout="autoHide && hideTaskbarSoon()">
+    <nav ref="taskbarEl" class="taskbar" aria-label="Taskbar" @contextmenu="taskbarContext" @focusin="autoHide && $event.target.matches(':focus-visible') && showTaskbar()" @focusout="autoHide && hideTaskbarSoon()">
+      <!-- a hidden taskbar has a tab sticking out of its edge to tap (or swipe on a
+           phone), with an arrow that bobs toward where the taskbar will go -->
+      <button
+        v-if="autoHide"
+        class="taskbar-tab raised"
+        :aria-label="taskbarShown ? 'Hide the taskbar' : 'Show the taskbar'"
+        :aria-expanded="taskbarShown"
+        @click="toggleTaskbar"
+      >
+        <svg viewBox="0 0 7 4" aria-hidden="true" :style="{ rotate: `${tabArrow}deg` }"><path d="M3 0h1v1h1v1h1v1h1v1H0V3h1V2h1V1h1z"/></svg>
+      </button>
       <button
         ref="start"
         class="start-button raised"
