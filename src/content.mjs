@@ -70,7 +70,8 @@ export const projects = [
     icon: 'computer',
     tech: ['Vue', 'JavaScript', 'Cloudflare Workers', 'Durable Objects', 'Workers KV', 'Vite', 'Playwright'],
     // interactive figures under these sections, see PortfolioFigures.vue
-    figures: { built: ['desktop', 'apps'], implementation: 'stack', results: 'live' },
+    // lead sits under the heading before the text, the rest after it
+    figures: { lead: 'desktop', built: 'apps', implementation: 'stack', results: 'live' },
     summary: 'This site: a portfolio dressed up as a Windows 95 desktop, with games, a CD player, a blog and live analytics.',
     contribution: 'Designed and built a Windows 95 style desktop in Vue and Vite, with draggable, resizable windows, a taskbar and start menu, folders, a light and dark theme, and a separate touch layout for phones. Inside it are apps that go past a typical portfolio: Breakout in an arcade cabinet that reveals my email when you clear it, Snake on a handheld with a world leaderboard, Minesweeper, Reversi against a trash-talking Clippy, a Spotify CD player with a music visualizer, sticky notes and a blog.',
     implementation: [

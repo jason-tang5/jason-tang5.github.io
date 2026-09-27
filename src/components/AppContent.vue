@@ -592,6 +592,7 @@ function balloonDone(event, id) {
       <p class="tech-line"><TechList :items="win.project.tech" chips/></p>
       <template v-if="win.project.contribution">
         <h2>What I built</h2>
+        <component :is="figureFor[f]" v-for="f in [win.project.figures?.lead ?? []].flat()" :key="f" :figure="f" @open="id => emit('open', id)"/>
         <p>{{ win.project.contribution }}</p>
         <component :is="figureFor[f]" v-for="f in [win.project.figures?.built ?? []].flat()" :key="f" :figure="f" @open="id => emit('open', id)"/>
       </template>
