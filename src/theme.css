@@ -1848,10 +1848,37 @@ input[type="checkbox"]:focus-visible {
   background: var(--paper);
 }
 
+/* once the dividing line is dragged, the preview keeps that width while it fits */
+.project-explorer[style*="--preview-width"] {
+  grid-template-columns: max(180px, min(var(--preview-width), calc(100% - 160px))) minmax(0, 1fr);
+}
+
 .project-preview {
+  position: relative;
   background: var(--d-page-alt, #eeeee7);
   border-right: 1px solid var(--d-rule, #bbb);
   padding: 24px 18px;
+}
+
+/* the grab strip over the dividing line */
+.preview-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 7px;
+  z-index: 1;
+  cursor: var(--classic-ew);
+  touch-action: none;
+}
+
+/* the figure sits under the view project button, without its caption */
+.project-explorer .project-preview figure {
+  margin: 20px 0 0;
+}
+
+.project-preview figcaption {
+  display: none;
 }
 
 /* the selected project's name, in the blog's pixel heading font */
@@ -1867,7 +1894,7 @@ input[type="checkbox"]:focus-visible {
   line-height: 1.6;
 }
 
-.project-preview small {
+.project-preview > small {
   display: block;
   line-height: 1.65;
   font-size: 11px;
@@ -1875,7 +1902,7 @@ input[type="checkbox"]:focus-visible {
   margin: 16px 0 24px;
 }
 
-.project-preview button {
+.project-preview > button {
   font-size: 12px;
 }
 
@@ -4530,7 +4557,11 @@ label.mail-label {
     margin: 10px 0;
   }
 
-  .project-preview small {
+  .preview-resize {
+    display: none;
+  }
+
+  .project-preview > small {
     margin: 10px 0 14px;
   }
 
@@ -4543,7 +4574,7 @@ label.mail-label {
   .toolbar button,
   .toolbar a,
   .settings-reset,
-  .project-preview button {
+  .project-preview > button {
     min-height: 44px;
     display: inline-flex;
     align-items: center;

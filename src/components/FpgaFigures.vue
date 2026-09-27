@@ -162,12 +162,12 @@ const lit = name => edge.value === name;
           :aria-label="`Cell ${i}: ${p ? value(p) : 'empty'}, bits ${bits[i]}`"
           @click="bump(i)" @focus="focus = i" @mouseenter="focus = i">{{ p ? value(p) : '' }}</button>
       </div>
+      <div class="fx-nibbles" aria-hidden="true">
+        <span v-for="n in nibbles" :key="n.i" :class="{ picked: focus === n.i }" @mouseenter="focus = n.i">
+          <b>{{ n.b }}</b><small>{{ n.i * 4 + 3 }}</small>
+        </span>
+      </div>
       <div class="fx-reg">
-        <div class="fx-nibbles" aria-hidden="true">
-          <span v-for="n in nibbles" :key="n.i" :class="{ picked: focus === n.i }" @mouseenter="focus = n.i">
-            <b>{{ n.b }}</b><small>{{ n.i * 4 + 3 }}</small>
-          </span>
-        </div>
         <p class="fx-readout" aria-live="polite">
           <code>board{{ focusRange }} = {{ bits[focus] }}</code>
           <span>cell {{ focus }} → {{ board[focus] ? `2^${board[focus]} = ${value(board[focus])}` : 'empty' }}</span>
@@ -269,7 +269,13 @@ const lit = name => edge.value === name;
 .fx-tile:focus-visible { outline: 2px dotted #fff; outline-offset: -4px; }
 
 /* fig 1 */
-.fx-register { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr); gap: 16px; align-items: start; }
+/* the board beside its register, the readout under the register. in a narrow figure
+   the register folds into 4 nibbles a row so it still fits beside the board, and the
+   readout drops under both */
+.fx-register { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr); grid-template-areas: 'board nibbles' 'board reg'; gap: 10px 16px; align-items: start; }
+.fx-register .fx-board { grid-area: board; }
+.fx-register .fx-nibbles { grid-area: nibbles; }
+.fx-register .fx-reg { grid-area: reg; }
 .fx-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px; background: #e6eeff; border: 2px solid #000; }
 .fx-board .fx-tile.picked { box-shadow: inset 0 0 0 2px #000, inset 0 0 0 4px #fff; }
 .fx-nibbles { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
@@ -277,10 +283,16 @@ const lit = name => edge.value === name;
 .fx-nibbles span.picked { background: var(--navy, #000080); color: #fff; border-color: var(--navy, #000080); }
 .fx-nibbles b { font: 11px 'Courier New', monospace; letter-spacing: -.5px; }
 .fx-nibbles small { font: 8px 'Courier New', monospace; opacity: .7; }
-.fx-readout { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 10px 0 4px; font-size: 13px; }
+.fx-readout { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 4px; font-size: 13px; }
 .fx-readout code, .fx-hex code { font: bold 12px 'Courier New', monospace; color: var(--d-link, #000080); }
 .fx-hex { margin: 0 0 10px; overflow-wrap: anywhere; }
-@container (max-width: 480px) { .fx-register { grid-template-columns: minmax(0, 1fr); } .fx-board { max-width: 200px; } }
+@container (max-width: 480px) {
+  .fx-register { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'board nibbles' 'reg reg'; gap: 12px; }
+  .fx-nibbles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .fx-nibbles b { font-size: 10px; }
+  .fx-board .fx-tile { font-size: clamp(8px, 4cqi, 12px); }
+}
+@container (max-width: 220px) { .fx-register { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'board' 'nibbles' 'reg'; } }
 .fx-figure { container-type: inline-size; }
 
 /* fig 3 */

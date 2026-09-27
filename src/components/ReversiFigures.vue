@@ -240,7 +240,7 @@ function newTree() {
 <template>
   <figure v-if="figure === 'board'" class="rx-figure">
     <figcaption><strong>Fig. 1</strong> The board is a grid of chars, U, B or W, printed to the terminal with a letter for each row and column. Point at a square to check it in all 8 directions, and click to play it.</figcaption>
-    <div class="rx-panel rx-split">
+    <div class="rx-panel rx-split rx-c">
       <div class="rx-board" role="group" aria-label="Board">
         <button v-for="(cell, i) in cBoard" :key="i"
           :class="['rx-cell', 'felt', { picked: cSquare === i, flip: cFlips.includes(i) }]"
@@ -252,10 +252,10 @@ function newTree() {
           <i v-else-if="cLegal.includes(i)" class="rx-hint" aria-hidden="true"/>
         </button>
       </div>
-      <div>
-        <pre class="rx-term" aria-hidden="true"><span class="rx-term-head">  {{ letters }}</span>
+      <pre class="rx-term" aria-hidden="true"><span class="rx-term-head">  {{ letters }}</span>
 <template v-for="r in cRows" :key="r.l"><span class="rx-term-head">{{ r.l }} </span><span v-for="c in r.cells" :key="c.i" :class="{ on: cSquare === c.i, flip: cFlips.includes(c.i) }">{{ c.ch }}</span>
-</template><span class="rx-term-head">Enter move for colour {{ charOf[cTurn] }} (RowCol): </span>{{ rc(cSquare) }}</pre>
+</template><span class="rx-term-prompt"><span class="rx-term-head">Enter move for colour {{ charOf[cTurn] }} (RowCol): </span>{{ rc(cSquare) }}</span></pre>
+      <div class="rx-c-under">
         <div class="rx-check">
           <div class="rx-compass" aria-hidden="true">
             <span v-for="(c, k) in cChecks" :key="k" :class="{ mid: !c, hit: c?.flips.length }">{{ c ? (c.flips.length || c.arrow) : charOf[cTurn] }}</span>
@@ -408,7 +408,24 @@ button.rx-cell:not(:disabled) { cursor: var(--classic-pointer, pointer); }
 .rx-hint { display: block; width: 22%; aspect-ratio: 1; background: #0005; }
 .rx-term { margin: 0; padding: 8px 10px; background: #000; color: #c0c0c0; font: 13px/1.25 'Courier New', monospace; overflow-x: auto; }
 .rx-term-head { color: #808080; white-space: pre; }
-.rx-term span:not(.rx-term-head) { display: inline-block; width: 1.4ch; text-align: center; }
+.rx-term span:not(.rx-term-head, .rx-term-prompt) { display: inline-block; width: 1.4ch; text-align: center; }
+/* the prompt wraps rather than widening the terminal past the board's rows */
+.rx-term-prompt, .rx-term-prompt .rx-term-head { white-space: pre-wrap; }
+/* no width of its own, so the terminal is only as wide as the board's rows */
+.rx-term-prompt { display: block; width: 0; min-width: 100%; }
+/* the board beside the terminal, the direction check and buttons under the terminal,
+   or under both once the figure is narrow */
+.rx-c { grid-template-areas: 'board term' 'board under'; row-gap: 10px; }
+.rx-c > .rx-board { grid-area: board; }
+.rx-c > .rx-term { grid-area: term; }
+.rx-c > .rx-c-under { grid-area: under; }
+.rx-c .rx-check { margin-top: 0; }
+@container (max-width: 480px) {
+  .rx-c { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'board term' 'under under'; column-gap: 12px; }
+  .rx-c > .rx-board { max-width: none; }
+  .rx-c > .rx-term { padding: 6px 8px; font-size: 11px; }
+}
+@container (max-width: 220px) { .rx-c { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'board' 'term' 'under'; } }
 .rx-term span.on { background: #c0c0c0; color: #000; }
 .rx-term span.flip { color: #ffe066; font-weight: bold; }
 .rx-check { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }

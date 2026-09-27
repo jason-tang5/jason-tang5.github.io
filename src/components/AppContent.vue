@@ -160,7 +160,30 @@ function resizeColumn(key, event) {
   handle.addEventListener('pointerup', end);
   handle.addEventListener('pointercancel', end);
 }
-const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
+// the line between the preview and the files drags like the details columns, and
+// the width it's left at is remembered
+const explorer = ref(null);
+const previewWidth = ref(Number(read('projects-preview', '0')) || null);
+function resizePreview(event) {
+  const start = event.currentTarget.parentElement.getBoundingClientRect().width;
+  const x = event.clientX;
+  const handle = event.currentTarget;
+  handle.setPointerCapture(event.pointerId);
+  const move = e => {
+    const room = explorer.value.clientWidth - 160;
+    previewWidth.value = Math.round(Math.max(180, Math.min(room, start + e.clientX - x)));
+  };
+  const end = () => {
+    handle.removeEventListener('pointermove', move);
+    handle.removeEventListener('pointerup', end);
+    handle.removeEventListener('pointercancel', end);
+    save('projects-preview', String(previewWidth.value));
+  };
+  handle.addEventListener('pointermove', move);
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
+}
+const resumeUrl =`${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
 const portraitAscii = ref(read('portrait-ascii', 'on') !== 'off');
@@ -522,15 +545,16 @@ function balloonDone(event, id) {
       <span>Address</span>
       <div class="inset address-with-icon"><RetroIcon name="folder" small/>Portfolio:\Projects</div>
     </div>
-    <div class="project-explorer content-scroll inset">
+    <div ref="explorer" class="project-explorer content-scroll inset" :style="previewWidth ? { '--preview-width': `${previewWidth}px` } : null">
       <aside class="project-preview">
         <RetroIcon :name="selected.icon"/>
         <h2>{{ selected.name }}</h2>
         <p>{{ selected.summary }}</p>
-        <!-- the project's first figure, the same one that opens its what i built -->
-        <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
         <small><TechList :items="selected.tech" chips/></small>
         <button class="raised" @click="emit('open', selected.id)">View project →</button>
+        <!-- the project's first figure, the same one that opens its what i built -->
+        <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
+        <i class="preview-resize" aria-hidden="true" @pointerdown.prevent="resizePreview"/>
       </aside>
       <div
         :class="projectView === 'details' ? ['project-details', { 'fixed-columns': columns }] : 'project-icons'"
