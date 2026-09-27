@@ -527,6 +527,8 @@ function balloonDone(event, id) {
         <RetroIcon :name="selected.icon"/>
         <h2>{{ selected.name }}</h2>
         <p>{{ selected.summary }}</p>
+        <!-- the project's first figure, the same one that opens its what i built -->
+        <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
         <small><TechList :items="selected.tech" chips/></small>
         <button class="raised" @click="emit('open', selected.id)">View project →</button>
       </aside>

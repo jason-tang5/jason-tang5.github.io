@@ -70,7 +70,8 @@ export const projects = [
     icon: 'computer',
     tech: ['Vue', 'JavaScript', 'Cloudflare Workers', 'Durable Objects', 'Workers KV', 'Vite', 'Playwright'],
     // interactive figures under these sections, see PortfolioFigures.vue
-    // lead sits under the heading before the text, the rest after it
+    // lead sits under the heading before the text, the rest after it. the projects
+    // folder shows the lead figure in its preview too
     figures: { lead: 'desktop', built: 'apps', implementation: 'stack', results: 'live' },
     summary: 'This site: a portfolio dressed up as a Windows 95 desktop, with games, a CD player, a blog and live analytics.',
     contribution: 'Designed and built a Windows 95 style desktop in Vue and Vite, with draggable, resizable windows, a taskbar and start menu, folders, a light and dark theme, and a separate touch layout for phones. Inside it are apps that go past a typical portfolio: Breakout in an arcade cabinet that reveals my email when you clear it, Snake on a handheld with a world leaderboard, Minesweeper, Reversi against a trash-talking Clippy, a Spotify CD player with a music visualizer, sticky notes and a blog.',
@@ -113,7 +114,7 @@ export const projects = [
     game: '2048',
     // interactive figures under these sections, see FpgaFigures.vue
     // the implementation list can drop them in between its paragraphs too
-    figures: { built: 'register' },
+    figures: { lead: 'register' },
     summary: 'The tile-merging game, implemented in hardware on a DE1-SoC.',
     contribution: 'Built an FPGA implementation of 2048 in Verilog, rendered to a 160 × 120 VGA display at 60 Hz through a custom VGA adapter.',
     implementation: [
@@ -139,8 +140,8 @@ export const projects = [
     tech: ['C'],
     // opens the playable version in the games folder
     game: 'reversi',
-    // the figure under what i built, see ReversiFigures.vue
-    figures: { built: 'board' },
+    // the figure under the what i built heading, see ReversiFigures.vue
+    figures: { lead: 'board' },
     summary: 'A reversi clone in the terminal built in C with an AI opponent for my computer fundamentals (aps105) course.',
     contribution: 'Created a reversi clone in C with core game logic and responsive user input handling, then developed an opponent using heuristic-based algorithms to evaluate potential game states each move.',
     // a list is shown as separate paragraphs, with { figure } entries from ReversiFigures.vue between them
