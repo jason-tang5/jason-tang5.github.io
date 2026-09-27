@@ -9,6 +9,8 @@ export class LiveStats {
     // the leaderboard name came later, so older tables get the column added. it
     // throws once the column is there, which is fine
     try { this.sql.exec(`ALTER TABLE scores ADD COLUMN name TEXT`); } catch { /* already added */ }
+    // each player's best per day, for the 7 and 30 day boards. kept for 31 days
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS daily_scores (id TEXT NOT NULL, day TEXT NOT NULL, score INTEGER NOT NULL, name TEXT, PRIMARY KEY (id, day))`);
   }
   async fetch(request) {
     const now = Date.now();
@@ -27,18 +29,28 @@ export class LiveStats {
         // names are checked again here, a blocked or missing one stays anonymous
         // a score belongs to the browser's saved player id, or to the visit for older pages
         const id = typeof playerId === 'string' && /^[a-z0-9]{8,24}$/.test(playerId) ? playerId : visit;
-        this.sql.exec(`INSERT INTO scores (id, score, name) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, value, cleanName(player) || null);
+        const playerName = cleanName(player) || null;
+        this.sql.exec(`INSERT INTO scores (id, score, name) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, value, playerName);
+        this.sql.exec(`INSERT INTO daily_scores (id, day, score, name) VALUES (?, ?, ?, ?) ON CONFLICT(id, day) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, dayOf(now), value, playerName);
+        this.sql.exec(`DELETE FROM daily_scores WHERE day < ?`, dayOf(now - 31 * day));
         // Only the top 100 anonymous sessions need permanent storage.
         this.sql.exec(`DELETE FROM scores WHERE id NOT IN (SELECT id FROM scores ORDER BY score DESC, id LIMIT 100)`);
       }
     }
     this.sql.exec(`DELETE FROM sessions WHERE seen < ?`, now - 90000);
     const totals = Object.fromEntries([...this.sql.exec('SELECT * FROM totals')].map(r => [r.name, r.value]));
-    const leaderboard = [...this.sql.exec('SELECT id, score, name FROM scores ORDER BY score DESC, id LIMIT 10')].map((r, i) => ({ rank: i + 1, player: r.name || 'Player ' + r.id.slice(0, 6).toUpperCase(), score: r.score }));
+    const leaderboard = board(this.sql.exec('SELECT id, score, name FROM scores ORDER BY score DESC, id LIMIT 10'));
+    // sqlite hands back the name from the row with the max score
+    const since = days => board(this.sql.exec(`SELECT id, MAX(score) AS score, name FROM daily_scores WHERE day > ? GROUP BY id ORDER BY score DESC, id LIMIT 10`, dayOf(now - days * day)));
     const online = [...this.sql.exec('SELECT COUNT(*) AS count FROM sessions')][0].count;
-    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard }, { headers: { 'Cache-Control': 'no-store' } });
+    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard, leaderboardWeek: since(7), leaderboardMonth: since(30) }, { headers: { 'Cache-Control': 'no-store' } });
   }
 }
+const day = 86400000;
+const dayOf = time => new Date(time).toISOString().slice(0, 10);
+// names are shown in capitals, older ones were stored as typed
+const board = rows => [...rows].map((r, i) => ({ rank: i + 1, player: cleanName(r.name) || 'Player ' + r.id.slice(0, 6).toUpperCase(), score: r.score }));
+
 export function liveStats(env) {
   return env.LIVE_STATS.get(env.LIVE_STATS.idFromName('site'));
 }

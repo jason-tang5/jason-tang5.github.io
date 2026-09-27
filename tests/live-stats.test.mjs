@@ -47,7 +47,7 @@ test('snake names show on the leaderboard, blocked ones stay anonymous', async (
   await score('visitor001', 30, 'Jason');
   await score('visitor002', 20, 'sh1tface');
   await score('visitor003', 10);
-  assert.deepEqual((await get(stats)).leaderboard.map(r => r.player), ['Jason', 'Player VISITO', 'Player VISITO']);
+  assert.deepEqual((await get(stats)).leaderboard.map(r => r.player), ['JASON', 'Player VISITO', 'Player VISITO']);
 });
 test('an older scores table without names gets the column', async () => {
   const db = new DatabaseSync(':memory:');
@@ -66,5 +66,16 @@ test('one player id keeps one row across visits', async () => {
   await score('visitcccc3', 4, 'browserabc123');
   await score('visitdddd4', 9, 'bad id!');
   const board = (await get(stats)).leaderboard;
-  assert.deepEqual(board.map(r => [r.player, r.score]), [['Jason', 15], ['Jason', 9]]);
+  assert.deepEqual(board.map(r => [r.player, r.score]), [['JASON', 15], ['JASON', 9]]);
+});
+test('the 7 and 30 day boards only count recent days', async () => {
+  const { stats, ctx } = setup();
+  const day = offset => new Date(Date.now() - offset * 86400000).toISOString().slice(0, 10);
+  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'oldplayer1', day(20), 50, 'OLDIE');
+  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'ancient001', day(40), 90, 'GONE');
+  await stats.fetch(new Request('https://stats/', { method: 'POST', body: JSON.stringify({ name: 'snake-score', visit: 'visitnew01', value: 12, playerId: 'newplayer1', player: 'newbie' }) }));
+  const data = await get(stats);
+  assert.deepEqual(data.leaderboardWeek.map(r => [r.player, r.score]), [['NEWBIE', 12]]);
+  assert.deepEqual(data.leaderboardMonth.map(r => [r.player, r.score]), [['OLDIE', 50], ['NEWBIE', 12]]);
+  assert.equal([...ctx.storage.sql.exec("SELECT COUNT(*) AS n FROM daily_scores WHERE id = 'ancient001'")][0].n, 0);
 });

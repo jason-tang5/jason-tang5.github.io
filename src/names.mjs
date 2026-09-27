@@ -14,20 +14,22 @@ const words = new DataSet()
   .addPhrase(phrase => phrase.addPattern(pattern`hitler`));
 const matcher = new RegExpMatcher({ ...words.build(), ...englishRecommendedTransformers });
 
-const tidy = input => String(input ?? '').trim().replace(/\s+/g, ' ');
+// names are capital letters only, like an arcade. lowercase is turned into capitals
+export const tidyName = input => String(input ?? '').toUpperCase().replace(/[^A-Z]/g, '');
 
 // why a name can't be used, or '' if it's fine. an empty name is fine: it's anonymous
 export function nameProblem(input) {
-  const name = tidy(input);
-  if (!name) return '';
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  if (!/^[A-Za-z]+$/.test(raw)) return 'Capital letters only.';
+  const name = raw.toUpperCase();
   if (name.length > maxNameLength) return `Keep it to ${maxNameLength} characters.`;
-  if (!/^[A-Za-z0-9 _.-]+$/.test(name)) return 'Letters, numbers, spaces, dots, dashes and underscores only.';
   if (matcher.hasMatch(name)) return 'Pick a friendlier name.';
   return '';
 }
 
 // the name to store, or '' when it's blank or not allowed
 export function cleanName(input) {
-  const name = tidy(input);
-  return name && !nameProblem(name) ? name : '';
+  const name = String(input ?? '').trim();
+  return name && !nameProblem(name) ? name.toUpperCase() : '';
 }

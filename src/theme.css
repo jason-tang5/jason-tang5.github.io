@@ -4006,84 +4006,89 @@ label.mail-label {
 
 .snake-pad-up { grid-area: 1 / 2; }
 
-/* the all-time scoreboard under the handheld, dressed as the same plastic */
-.snake-app .snake-content .live-scoreboard {
-  width: min(100%, 330px);
-  box-sizing: border-box;
-  margin: 16px auto 0;
-  padding: 10px 14px 12px;
+
+/* the name line at the bottom of the screen, in the screen's own green type. it's
+   hidden while the snake is moving but keeps its space */
+.snake-name-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0 .6em;
+  margin-top: .3em;
+  font: bold min(4.3cqw, 14px)/1.4 'Courier New', monospace;
+  cursor: auto;
+}
+
+.snake-name-entry.playing {
+  visibility: hidden;
+}
+
+.snake-name-entry label {
+  cursor: inherit;
+}
+
+.snake-name-entry input {
+  width: 13ch;
+  padding: 0 .3em;
   border: 0;
-  border-radius: 10px;
-  background: var(--gb-body);
-  color: var(--ink);
-  box-shadow: inset -3px -3px 0 var(--gb-body-dark), inset 3px 3px 0 var(--gb-body-light), 3px 3px 0 var(--gb-drop);
-}
-
-.snake-app .snake-content .live-scoreboard :is(h2, h3) {
-  color: var(--gb-ink);
-}
-
-.snake-app .snake-content .live-scoreboard table {
-  background: var(--gb-bezel);
-  color: #b2edaa;
-  font-family: 'Courier New', monospace;
-}
-
-.snake-app .snake-content .live-scoreboard :is(td, th) {
-  border-bottom-color: #ffffff1a;
-}
-
-/* the name field is a little lcd like the handheld's screen, set in the bezel, with
-   the label lettered like select and start */
-.snake-app .snake-content .leaderboard-name > span {
-  color: var(--gb-ink);
-  font: bold 10px Tahoma, sans-serif;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.snake-app .snake-content .leaderboard-name input {
-  width: 16ch;
-  padding: 5px 8px;
-  border: 3px solid var(--gb-bezel);
-  border-radius: 4px;
-  background: #101d17;
+  border-bottom: 2px dashed #b2edaa66;
+  background: transparent;
   color: #b2edaa;
   caret-color: #b2edaa;
-  font: bold 14px 'Courier New', monospace;
-  letter-spacing: 1px;
-  box-shadow: inset 2px 2px 0 #000a, 1px 1px 0 var(--gb-body-light);
-  transition: box-shadow .1s;
+  font: inherit;
+  letter-spacing: .05em;
 }
 
-.snake-app .snake-content .leaderboard-name input::placeholder {
-  color: #b2edaa66;
-  font-style: normal;
+.snake-name-entry input::placeholder {
+  color: #b2edaa55;
 }
 
-.snake-app .snake-content .leaderboard-name input:focus {
+.snake-name-entry input:focus {
   outline: none;
-  box-shadow: inset 2px 2px 0 #000a, 0 0 0 2px #b2edaa88, 1px 1px 0 var(--gb-body-light);
+  border-bottom-color: #b2edaa;
+  background: #b2edaa14;
 }
 
-.snake-app .snake-content .leaderboard-name input[aria-invalid="true"] {
+.snake-name-entry input[aria-invalid="true"] {
   color: #ff9d8f;
   caret-color: #ff9d8f;
-  box-shadow: inset 2px 2px 0 #000a, 0 0 0 2px #ff9d8f88;
+  border-bottom-color: #ff9d8f;
 }
 
-.snake-app .snake-content .leaderboard-note {
-  color: var(--gb-ink);
-  opacity: .8;
-}
-
-.snake-app .snake-content .leaderboard-note.bad {
-  color: #b3261e;
-  opacity: 1;
-}
-
-:root[data-theme="dark"] .snake-app .snake-content .leaderboard-note.bad {
+.snake-name-issue {
+  flex-basis: 100%;
+  text-align: center;
   color: #ff9d8f;
+  font-size: .85em;
+}
+
+.snake-name-issue:empty {
+  display: none;
+}
+
+/* with room to spare, the leaderboard stands to the right of the handheld */
+.snake-content {
+  container-type: inline-size;
+}
+
+@container (min-width: 720px) {
+  .snake-stage {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .snake-stage .snake-handheld {
+    margin: 0;
+    flex: none;
+  }
+
+  .snake-stage .snake-pager {
+    margin: 26px 0 0;
+    flex: 0 1 300px;
+  }
 }
 .snake-pad-left { grid-area: 2 / 1; }
 .snake-pad-right { grid-area: 2 / 3; }

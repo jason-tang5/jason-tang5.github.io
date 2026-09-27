@@ -9,7 +9,7 @@ import { buzz } from '../haptics.js';
 import { useLiveStats } from '../live-stats.js';
 import { createBackdrop, snakeScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
-import { cleanName } from '../names.mjs';
+import { cleanName, maxNameLength, nameProblem, tidyName } from '../names.mjs';
 
 const props = defineProps({ active: Boolean });
 const board = ref(null);
@@ -18,7 +18,7 @@ const running = ref(false);
 const started = ref(false);
 const best = ref(Math.max(0, Number(read('snake-best', '0')) || 0));
 // the name for the leaderboard, typed under the handheld. only an allowed name is kept
-const playerName = ref(read('snake-name', ''));
+const playerName = ref(tidyName(read('snake-name', '')));
 // one random player id per browser, so your scores stay one row on the leaderboard
 // across visits. a new one is only made when the site's storage is cleared
 let playerId = read('snake-player', '');
@@ -26,7 +26,20 @@ if (!/^[a-z0-9]{8,24}$/.test(playerId)) {
   playerId = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join('');
   save('snake-player', playerId);
 }
-watch(playerName, value => { if (!value.trim() || cleanName(value)) save('snake-name', value.trim()); });
+watch(playerName, value => {
+  // capital letters only: lowercase becomes capitals and anything else is dropped as you type
+  const tidy = tidyName(value);
+  if (tidy !== value) { playerName.value = tidy; return; }
+  if (!tidy || cleanName(tidy)) save('snake-name', tidy);
+});
+const nameIssue = computed(() => nameProblem(playerName.value));
+// enter or escape in the name line hands the keys back to the game
+function nameKey(event) {
+  if (event.key === 'Enter' || event.key === 'Escape') {
+    event.preventDefault();
+    board.value?.focus({ preventScroll: true });
+  }
+}
 const turns = [];
 let timer;
 const keyDirections = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
@@ -238,6 +251,7 @@ onBeforeUnmount(() => {
   <div class="app-layout snake-app" @keydown="key" @keyup="keyUp">
     <canvas ref="backdropCanvas" class="snake-backdrop" aria-hidden="true"/>
     <div class="content-scroll snake-content">
+      <div class="snake-stage">
       <div class="snake-handheld">
         <div class="snake-bezel">
           <div class="snake-screen-top">
@@ -256,6 +270,14 @@ onBeforeUnmount(() => {
             @click="screenTap"
           >
             <pre aria-hidden="true">{{ art }}</pre>
+            <!-- the leaderboard name, typed on the screen between games. it keeps its
+                 space while playing so the screen doesn't jump -->
+            <div class="snake-name-entry" :class="{ playing: running }" @click.stop>
+              <label for="snake-name">NAME &#9656;</label>
+              <input id="snake-name" v-model="playerName" type="text" :maxlength="maxNameLength" placeholder="ANONYMOUS" autocomplete="nickname" spellcheck="false"
+                :tabindex="running ? -1 : 0" :aria-invalid="Boolean(nameIssue)" aria-describedby="snake-name-issue" @keydown.stop="nameKey">
+              <span id="snake-name-issue" class="snake-name-issue" role="status">{{ nameIssue ? 'Pick a friendlier name' : '' }}</span>
+            </div>
           </div>
         </div>
         <p class="snake-brand" aria-hidden="true">JASON <em>boy</em></p>
@@ -298,7 +320,8 @@ onBeforeUnmount(() => {
         </div>
         <div class="snake-speaker" aria-hidden="true"/>
       </div>
-      <Leaderboard v-model:name="playerName"/>
+      <Leaderboard/>
+      </div>
     </div>
     <span class="sr-only" role="status">{{ status }}</span>
   </div>

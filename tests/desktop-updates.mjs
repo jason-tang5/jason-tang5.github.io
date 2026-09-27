@@ -92,9 +92,9 @@ try {
   await expect(page.locator('.desktop-wallpaper')).toHaveCSS('filter', /hue-rotate\(-35deg\)/);
   await page.route('**/api/stats', r => r.fulfill({ json: { visitors: 123, online: 2, minesweeperWins: 4, breakoutWins: 8, snakeHighScore: 9, leaderboard: [{ rank: 1, player: 'Player ABC123', score: 9 }] } }));
   await page.goto('http://localhost:5192/#app=snake');
-  await expect(page.getByText('Player ABC123')).toHaveCount(1);
+  await expect(page.getByText('#ABC123')).toHaveCount(1);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.live-scoreboard').scrollIntoViewIfNeeded();
-  await expect(page.getByText('Player ABC123')).toBeVisible();
+  await page.locator('.snake-pager').scrollIntoViewIfNeeded();
+  await expect(page.getByText('#ABC123')).toBeVisible();
   console.log('Desktop updates passed: sticky note windows, list menu, dragging, light/dark theme, desktop color persistence, leaderboard on mobile.');
 } finally { await browser.close(); await server.close(); }
