@@ -3,6 +3,7 @@
 // window-state.mjs, this file just wires it up to pointer and keyboard events.
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import RetroIcon from './RetroIcon.vue';
+import MenuGlyph from './MenuGlyph.vue';
 import { bounds, clampBounds, resizeBounds } from '../window-state.mjs';
 
 const props = defineProps({
@@ -254,14 +255,14 @@ onBeforeUnmount(() => {
     </header>
 
     <div v-if="menu" class="system-menu raised" role="menu" @keydown="menuKey">
-      <button role="menuitem" :disabled="compact || win.maximized" @click="keyboardStart('Move')">Move</button>
-      <button role="menuitem" :disabled="compact || win.maximized || win.fixedSize" @click="keyboardStart('Resize')">Resize</button>
-      <button role="menuitem" @click="closeMenuAnd('minimize')">Minimize</button>
+      <button role="menuitem" :disabled="compact || win.maximized" @click="keyboardStart('Move')"><MenuGlyph/>Move</button>
+      <button role="menuitem" :disabled="compact || win.maximized || win.fixedSize" @click="keyboardStart('Resize')"><MenuGlyph/>Resize</button>
+      <button role="menuitem" @click="closeMenuAnd('minimize')"><MenuGlyph name="minimize"/>Minimize</button>
       <button role="menuitem" :disabled="compact || win.fixedSize" @click="closeMenuAnd('maximize')">
-        {{ win.maximized ? 'Restore' : 'Maximize' }}
+        <MenuGlyph :name="win.maximized ? 'restore' : 'maximize'"/>{{ win.maximized ? 'Restore' : 'Maximize' }}
       </button>
       <hr>
-      <button role="menuitem" data-sound="none" @click="emit('close', win.id)">Close</button>
+      <button role="menuitem" data-sound="none" @click="emit('close', win.id)"><MenuGlyph name="close"/><strong>Close</strong></button>
     </div>
 
     <div v-if="keyboard" class="keyboard-hint" role="status">

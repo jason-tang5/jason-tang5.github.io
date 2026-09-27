@@ -9,6 +9,7 @@ import AppContent from './components/AppContent.vue';
 import RetroIcon from './components/RetroIcon.vue';
 import VolumeControl from './components/VolumeControl.vue';
 import Calendar from './components/Calendar.vue';
+import MenuGlyph from './components/MenuGlyph.vue';
 import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
 import {
   clampBounds,
@@ -205,6 +206,47 @@ function maximize(id) {
 function taskClick(id) {
   if (active.value === id && !get(id).minimized) minimize(id);
   else open(id);
+}
+
+// the taskbar text is a size bigger until the buttons overflow and it has to scroll
+const taskItems = ref(null);
+const taskbarCrowded = ref(false);
+function measureTaskbar() {
+  const el = taskItems.value;
+  if (el) taskbarCrowded.value = el.scrollWidth > el.clientWidth + 1;
+}
+watch(() => windows.length, () => nextTick(measureTaskbar));
+
+// right clicking a taskbar button opens its window menu just above the taskbar.
+// { id, x } where x is the pointer's left edge, kept on screen
+const taskMenu = ref(null);
+const taskMenuEl = ref(null);
+async function openTaskMenu(event, id) {
+  startOpen.value = false;
+  calendar.value = false;
+  taskMenu.value = { id, x: Math.min(event.clientX, innerWidth - 176) };
+  await nextTick();
+  taskMenuEl.value?.querySelector('button:not(:disabled)')?.focus();
+}
+function taskMenuAction(action) {
+  const { id } = taskMenu.value;
+  taskMenu.value = null;
+  if (action === 'restore') open(id);
+  else if (action === 'minimize') minimize(id);
+  else if (action === 'maximize') { open(id); maximize(id); }
+  else close(id);
+}
+function taskMenuKeys(event) {
+  if (event.key === 'Escape') {
+    taskMenu.value = null;
+    event.stopPropagation();
+    return;
+  }
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+  event.preventDefault();
+  const items = [...taskMenuEl.value.querySelectorAll('button:not(:disabled)')];
+  const i = items.indexOf(document.activeElement);
+  items[(i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
 }
 
 // ---- remembering window positions ----
@@ -437,6 +479,7 @@ function menuKeys(event) {
 function outside(event) {
   const inMenu = startMenu.value?.contains(event.target) || start.value?.contains(event.target);
   if (startOpen.value && !inMenu) dismissStart(false);
+  if (!taskMenuEl.value?.contains(event.target)) taskMenu.value = null;
   if (!event.target.closest('.tray')) {
     calendar.value = false;
     volumeOpen.value = false;
@@ -540,7 +583,10 @@ function showDesktop() {
 
 onMounted(() => {
   measure();
-  resizeObserver = new ResizeObserver(measure);
+  resizeObserver = new ResizeObserver(() => {
+    measure();
+    measureTaskbar();
+  });
   resizeObserver.observe(desktop.value);
 
   // bring back the windows from last time, then put whatever the url asks for on
@@ -681,7 +727,7 @@ onBeforeUnmount(() => {
         <RetroIcon name="computer" small/>
       </button>
 
-      <div class="task-items" aria-label="Running applications">
+      <div ref="taskItems" class="task-items" :class="{ crowded: taskbarCrowded }" aria-label="Running applications">
         <button
           v-for="win in windows"
           :key="win.id"
@@ -690,6 +736,7 @@ onBeforeUnmount(() => {
           :aria-label="`${win.label}${win.minimized ? ' (minimized)' : ''}`"
           :aria-pressed="active === win.id && !win.minimized"
           @click="taskClick(win.id)"
+          @contextmenu.prevent="openTaskMenu($event, win.id)"
         >
           <RetroIcon :name="win.icon" small/>
           <span>{{ win.label }}</span>
@@ -761,6 +808,27 @@ onBeforeUnmount(() => {
           <span>Reset Desktop</span>
         </button>
       </div>
+    </div>
+
+    <div
+      v-if="taskMenu && get(taskMenu.id)"
+      ref="taskMenuEl"
+      class="system-menu task-menu raised"
+      role="menu"
+      :aria-label="`${get(taskMenu.id).label} window menu`"
+      :style="{ left: `${taskMenu.x}px` }"
+      @keydown="taskMenuKeys"
+    >
+      <!-- the app's full name up top, since the taskbar button often cuts it off -->
+      <div class="task-menu-title" aria-hidden="true">
+        <RetroIcon :name="get(taskMenu.id).icon" small/>
+        <span>{{ get(taskMenu.id).label }}</span>
+      </div>
+      <button role="menuitem" :disabled="!get(taskMenu.id).minimized && active === taskMenu.id" @click="taskMenuAction('restore')"><MenuGlyph name="restore"/>Restore</button>
+      <button role="menuitem" :disabled="get(taskMenu.id).minimized" @click="taskMenuAction('minimize')"><MenuGlyph name="minimize"/>Minimize</button>
+      <button role="menuitem" :disabled="compact || get(taskMenu.id).fixedSize || get(taskMenu.id).maximized" @click="taskMenuAction('maximize')"><MenuGlyph name="maximize"/>Maximize</button>
+      <hr>
+      <button role="menuitem" data-sound="none" @click="taskMenuAction('close')"><MenuGlyph name="close"/><strong>Close</strong></button>
     </div>
 
     <div class="sr-only" role="status">{{ announcement }}</div>
