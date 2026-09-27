@@ -314,12 +314,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout cd-app">
     <div class="cd-face">
-      <button class="cd-disc-slot" :class="{ ejected: discEjected, clicked: discClicked }"
+      <button class="cd-disc-slot" :class="{ ejected: discEjected, clicked: discClicked, playing: !paused && !discEjected }"
         :aria-label="discEjected ? 'Insert CD' : 'Eject CD'" :aria-pressed="discEjected" :disabled="discEjected && !discs[browsing].uri" @click="toggleDisc">
-        <span class="cd-disc-carriage" @transitionend="discSeated">
+        <span class="cd-disc-carriage" @transitionend="discSeated" @animationend="discClicked = false">
           <span ref="disc" class="cd-disc" :class="[`disc-${inserted + 1}`, { spinning: !paused && !discEjected }]" aria-hidden="true"/>
         </span>
-        <span class="cd-slot-front" aria-hidden="true" @animationend="discClicked = false">
+        <span class="cd-slot-led" aria-hidden="true"/>
+        <span class="cd-slot-front" aria-hidden="true">
           <svg viewBox="0 0 7 9" shape-rendering="crispEdges"><path d="M3 0h1v1H3zM2 1h3v1H2zM1 2h5v1H1zM0 3h7v1H0zM0 6h7v2H0z"/></svg>
           {{ discEjected ? 'INSERT' : 'EJECT' }}
         </span>

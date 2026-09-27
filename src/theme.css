@@ -2447,6 +2447,8 @@ fieldset {
 }
 
 /* the disc is a 12 frame sprite sheet, stepped through to fake a spin */
+/* the slot is a little top-down discman, drawn at the same chunky 4px pixels as the
+   disc sprites. the disc sits in its well to play and lifts out of the top to eject */
 .cd-disc-slot {
   position: relative;
   width: 100px;
@@ -2454,46 +2456,63 @@ fieldset {
   overflow: hidden;
   padding: 0;
   border: 0;
-  background: var(--surface);
+  background: url(../assets/cd-player-body.png) 0 0 / 100px 100px no-repeat;
+  image-rendering: pixelated;
 }
 .cd-disc-carriage {
   position: absolute;
   top: 0;
   left: 0;
-  transform: translateY(34px);
+  transform: translateY(7px);
   transition: transform .38s cubic-bezier(.22, 1, .36, 1);
 }
-.cd-disc-slot.ejected .cd-disc-carriage { transform: translateY(0); }
-.cd-disc-slot .cd-disc { transform: scale(.78); transform-origin: top center; }
+.cd-disc-slot.ejected .cd-disc-carriage { transform: translateY(-84px); }
+.cd-disc-slot .cd-disc { transform: scale(.72); transform-origin: top center; }
+/* the eject / insert label is lit on the discman's little lcd */
 .cd-slot-front {
   position: absolute;
   z-index: 1;
-  inset: 80px 0 0;
+  top: 84px;
+  left: 12px;
+  width: 48px;
+  height: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  border-top: 3px solid var(--edge);
-  box-shadow: inset 0 1px var(--light);
-  background: var(--surface);
-  font: bold 8px 'Pixel MS Sans Serif', Tahoma, sans-serif;
-  letter-spacing: 1px;
+  gap: 3px;
+  color: #83e5ac;
+  background: #17261c;
+  box-shadow: inset 1px 1px #000;
+  font: bold 7px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  letter-spacing: .5px;
 }
-.cd-slot-front svg { width: 7px; height: 9px; fill: currentColor; }
-/* when the disc seats it knocks down onto the spindle and springs back, and the
-   front panel jolts with it */
+.cd-slot-front svg { width: 5px; height: 6px; fill: currentColor; }
+/* a little led in the discman's top right corner: dim while paused, blinking mint while
+   it plays, and blinking amber while the disc is out waiting for one */
+.cd-slot-led {
+  position: absolute;
+  top: 8px;
+  left: 80px;
+  width: 8px;
+  height: 4px;
+  background: #3c4a44;
+  box-shadow: inset -1px -1px #0006;
+}
+.cd-disc-slot.playing .cd-slot-led { --led: #83e5ac; animation: cd-led 1s steps(1) infinite; }
+.cd-disc-slot.ejected .cd-slot-led { --led: #ffc36c; animation: cd-led 1.6s steps(1) infinite; }
+@keyframes cd-led {
+  0% { background: var(--led); box-shadow: 0 0 4px var(--led); }
+  50% { background: #3c4a44; box-shadow: inset -1px -1px #0006; }
+}
+/* when the disc seats it knocks down onto the spindle and springs back */
 .cd-disc-slot.clicked .cd-disc-carriage { animation: cd-seat .24s steps(6); }
-.cd-disc-slot.clicked .cd-slot-front { animation: cd-seat-front .24s steps(6); }
 @keyframes cd-seat {
-  0% { transform: translateY(34px); }
-  30% { transform: translateY(37px); }
-  60% { transform: translateY(33px); }
-  100% { transform: translateY(34px); }
+  0% { transform: translateY(7px); }
+  30% { transform: translateY(10px); }
+  60% { transform: translateY(6px); }
+  100% { transform: translateY(7px); }
 }
-@keyframes cd-seat-front {
-  0%, 100% { transform: none; }
-  30% { transform: translateY(1px); }
-}
+
 .cd-disc-slot:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
 /* the disc slot grows in steps with the window too, its column widening to fit */
 /* the disc slot grows in steps with the window too, its column widening to fit. it's
@@ -2562,7 +2581,8 @@ fieldset {
 .cd-rack-enter-from, .cd-rack-leave-to { opacity: 0; transform: translateY(-12px); }
 @media (prefers-reduced-motion: reduce) {
   .cd-disc-carriage { transition: none; }
-  .cd-disc-slot.clicked :is(.cd-disc-carriage, .cd-slot-front) { animation: none; }
+  .cd-disc-slot.clicked .cd-disc-carriage { animation: none; }
+  .cd-disc-slot:is(.playing, .ejected) .cd-slot-led { animation: none; background: var(--led); }
   .cd-rack-disc, .cd-rack-enter-active, .cd-rack-leave-active { transition: none; }
   .cd-rack-disc .cd-disc { animation: none; }
 }
@@ -3991,8 +4011,9 @@ label.mail-label {
   grid-template-columns: repeat(auto-fill, 100px);
   grid-auto-rows: 84px;
   align-content: start;
-  gap: 16px;
-  padding: 22px;
+  /* packed close, so three still fit across a phone */
+  gap: 8px 4px;
+  padding: 12px 8px;
   background: var(--paper);
 }
 .game-shortcut {
@@ -5804,8 +5825,8 @@ label.mail-label {
   display: grid;
   grid-template-columns: repeat(auto-fill, 104px);
   align-content: start;
-  gap: 6px;
-  padding: 14px 10px;
+  gap: 4px;
+  padding: 10px 6px;
   min-width: 0;
 }
 
