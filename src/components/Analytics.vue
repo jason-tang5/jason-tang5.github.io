@@ -1,10 +1,12 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 import PixelPie from './PixelPie.vue';
 import Leaderboard from './Leaderboard.vue';
 import { boardKeys, useLiveStats } from '../live-stats.js';
-import { read, save } from '../storage.js';
+import { read, save, storageRevision } from '../storage.js';
+import { onLocalAnalytics } from '../local-analytics.js';
+import { historySnapshots as snapshots } from '../analytics-history.js';
 const { data: live, error: liveError, refresh } = useLiveStats();
 // one period for the whole window: the cards, the history, the pie and the snake
 // cartridge all follow it. cloudflare keeps about 90 days of history, so that's the
@@ -12,9 +14,19 @@ const { data: live, error: liveError, refresh } = useLiveStats();
 const periods = [7, 30, 90];
 const savedDays = Number(read('analytics-period', '30'));
 const days = ref(periods.includes(savedDays) ? savedDays : 30);
-const data = ref(null);
+const data = ref(snapshots.get(days.value).value());
 const busy = ref(false);
 const error = ref('');
+let request = 0;
+let pollTimer;
+let reconcileTimer;
+const stopLocal = onLocalAnalytics(() => {
+  data.value = snapshots.get(days.value).value();
+  if (!reconcileTimer) reconcileTimer = setTimeout(() => {
+    reconcileTimer = null;
+    load(true);
+  }, 1000);
+});
 const number = value => Number(value || 0).toLocaleString();
 // the window is split into win95 tabs
 const tabs = [
@@ -35,17 +47,17 @@ function step(event, by) {
   pick(next.id);
   event.currentTarget.parentElement.querySelector(`[data-tab="${next.id}"]`)?.focus();
 }
-// the four cards up top, for the chosen period. the counts come from the site history
+// the cards up top, for the chosen period. the counts come from the site history
 // (a dash while it loads or if it can't), the snake score from that period's leaderboard
 const cards = computed(() => {
-  if (!live.value) return [];
+  if (!live.value && !data.value) return [];
   const s = data.value || {};
   const games = (s.clippyWins || 0) + (s.clippyLosses || 0);
   const count = value => data.value ? number(value) : '—';
   return [
     { label: 'Minesweeper beaten', value: count(s.minesweeperWins), icon: 'mine' },
     { label: 'Breakout finished', value: count(s.breakoutWins), icon: 'game' },
-    { label: 'Highest Snake score', value: number(live.value[boardKeys[days.value]]?.[0]?.score), icon: 'snake' },
+    { label: 'Highest Snake score', value: number(Math.max(live.value?.[boardKeys[days.value]]?.[0]?.score || 0, s.snakeHighScore || 0)), icon: 'snake' },
     { label: 'Clippy win-lose', value: data.value ? `${number(s.clippyWins)}-${number(s.clippyLosses)}` : '—', icon: 'reversi',
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
     { label: 'Highest 2048 score', value: count(s.twenty48HighScore), icon: '2048' },
@@ -53,13 +65,16 @@ const cards = computed(() => {
   ];
 });
 // your own scores, kept in this browser by each game
-// storage isn't reactive, so bumping this re-reads it (on refresh and tab changes)
+// Storage writes in this tab and storage events from other tabs invalidate these
+// immediately. Refresh/tab changes also reread values written outside the wrapper.
 const reread = ref(0);
 const yourMines = computed(() => {
+  storageRevision.value;
   reread.value;
   return ['Beginner', 'Intermediate', 'Expert'].map(level => ({ level, wins: Number(read(`minesweeper-wins-${level.toLowerCase()}`, '0')) || 0 }));
 });
 const yourCards = computed(() => {
+  storageRevision.value;
   reread.value;
   const you = Number(read('reversi-you', '0')) || 0, clippy = Number(read('reversi-clippy', '0')) || 0;
   return [
@@ -92,7 +107,7 @@ const sections = computed(() => data.value ? [
   ['Breakout funnel', data.value.funnel, 7], ['Mail errors', data.value.mail.errors, 2],
 ] : []);
 async function get(url) {
-  const response = await fetch(url, { redirect: 'error' });
+  const response = await fetch(url, { redirect: 'error', cache: 'no-store' });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Could not load analytics.');
   return result;
@@ -101,18 +116,35 @@ function setDays(value) {
   if (days.value === value) return;
   days.value = value;
   save('analytics-period', String(value));
+  data.value = snapshots.get(value).value();
   load();
 }
-async function load() {
+async function load(background = false) {
+  if (background && busy.value) return;
+  const id = ++request;
+  const period = days.value;
+  const snapshot = snapshots.get(period);
+  const revision = snapshot.revision;
   reread.value++;
-  busy.value = true;
+  if (!background) busy.value = true;
   error.value = '';
-  data.value = null;
-  try { data.value = await get(`/api/analytics?days=${days.value}`); }
-  catch { error.value = 'Site history is unavailable right now. Please try again later.'; }
-  busy.value = false;
+  try {
+    const result = await get(`/api/analytics?days=${period}`);
+    if (id === request) data.value = snapshot.accept(result, revision);
+  }
+  catch { if (id === request) error.value = 'Site history is unavailable right now. Please try again later.'; }
+  if (id === request) busy.value = false;
 }
-onMounted(load);
+onMounted(() => {
+  load();
+  pollTimer = setInterval(() => { if (!document.hidden) load(true); }, 30000);
+});
+onBeforeUnmount(() => {
+  request++;
+  stopLocal();
+  clearInterval(pollTimer);
+  clearTimeout(reconcileTimer);
+});
 </script>
 
 <template>
@@ -137,7 +169,7 @@ onMounted(load);
         <h1>Scoreboard, last {{ days }} days</h1>
         <p v-if="liveError && !live" role="status">{{ liveError }}</p>
         <p v-else-if="!live" role="status">Loading scores...</p>
-        <template v-else>
+        <template v-if="cards.length">
           <div class="score-cards three">
             <section v-for="card in cards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
@@ -148,8 +180,9 @@ onMounted(load);
           </div>
           <div class="visit-banner">
             <section><RetroIcon name="person"/><div><strong>{{ data ? number(data.visitors) : '—' }}</strong><span>visits in {{ days }} days</span></div></section>
-            <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
+            <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ live ? number(live.online) : '—' }}</strong><span>online now</span></div></section>
           </div>
+        </template>
           <h2>Your scores</h2>
           <div class="score-cards three-two">
             <section v-for="card in yourCards" :key="card.label" class="score-card">
@@ -162,14 +195,10 @@ onMounted(load);
               </ul>
             </section>
           </div>
-          <h2>Snake leaderboard</h2>
-          <Leaderboard class="analytics-cart" :tuckable="false" :period="days" :choices="periods" @update:period="setDays"/>
-        </template>
         <p v-if="busy" role="status">Loading site history...</p>
         <p v-else-if="error" role="status">{{ error }}</p>
         <template v-if="data">
-          <div class="history-row">
-          <section>
+          <section class="visitor-history">
           <h2>Visitors by day</h2>
           <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days</p>
           <p v-if="!data.visitors">No visits recorded yet. The next adventure starts with a click.</p>
@@ -180,13 +209,18 @@ onMounted(load);
           </div>
           <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
           </section>
+        </template>
+          <div class="history-row">
           <section>
           <h2>Boards cleared</h2>
           <p class="analytics-note">Last {{ days }} days, replays included.</p>
-          <PixelPie :rows="[{ label: 'Minesweeper', count: data.minesweeperWins }, { label: 'Breakout', count: data.breakoutWins }]" label="Boards cleared"/>
+          <PixelPie v-if="data" :rows="[{ label: 'Minesweeper', count: data.minesweeperWins }, { label: 'Breakout', count: data.breakoutWins }]" label="Boards cleared"/>
+          </section>
+          <section>
+          <h2>Snake leaderboard</h2>
+          <Leaderboard class="analytics-cart" :tuckable="false" :period="days" :choices="periods" @update:period="setDays"/>
           </section>
           </div>
-        </template>
       </template>
       <template v-else>
         <h1>Behind the scenes</h1>
@@ -255,7 +289,7 @@ onMounted(load);
 .level-counts { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; max-width: 150px; font-size: 11px; }
 .level-counts li { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; border-top: 1px dotted var(--d-line, #999); }
 /* visitors by day and boards cleared side by side, stacked on a phone */
-.history-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 24px; align-items: start; margin-top: 12px; }
+.history-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; margin-top: 12px; }
 .history-row .pixel-pie { flex-direction: column; align-items: flex-start; }
 @media (max-width: 700px) { .history-row { grid-template-columns: minmax(0, 1fr); } }
 .analytics-refresh { display: inline-flex; align-items: center; gap: 6px; }

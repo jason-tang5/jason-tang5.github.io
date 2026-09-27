@@ -288,7 +288,9 @@ const lit = name => edge.value === name;
 .fx-hex { margin: 0 0 10px; overflow-wrap: anywhere; }
 @container (max-width: 480px) {
   .fx-register { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'board nibbles' 'reg reg'; gap: 12px; }
-  .fx-nibbles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* a square the size of the board, a nibble for each of its tiles */
+  .fx-nibbles { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); aspect-ratio: 1; }
+  .fx-nibbles span { justify-content: center; }
   .fx-nibbles b { font-size: 10px; }
   .fx-board .fx-tile { font-size: clamp(8px, 4cqi, 12px); }
 }

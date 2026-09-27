@@ -1889,7 +1889,7 @@ input[type="checkbox"]:focus-visible {
   margin: 0;
 }
 
-/* back and next along the bottom of the preview, pushed down when it's short */
+/* Navigation sits above the selected project's details in the sidebar. */
 .project-preview {
   display: flex;
   flex-direction: column;
@@ -1899,15 +1899,25 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 20px;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
   font-size: 11px;
   color: var(--d-muted, #4c4c4c);
 }
 
 .preview-steps button {
-  font-size: 12px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.preview-steps button:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 /* the project's icon on the same line as its name */
@@ -4631,8 +4641,7 @@ label.mail-label {
   .toolbar button,
   .toolbar a,
   .settings-reset,
-  .preview-actions > button,
-  .preview-steps button {
+  .preview-actions > button {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
@@ -5782,6 +5791,7 @@ label.mail-label {
 :root {
   --track-a: #fff;
   --track-b: #a8a8a8;
+  --scrollbar-track: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Cpath fill='%23a8a8a8' d='M0 0h2v2H0z'/%3E%3Cpath fill='%23fff' d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/svg%3E");
   --arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v1h1v1h1v1h1v1H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
   --arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h7v1H6v1H5v1H4v1H3V3H2V2H1V1H0z'/%3E%3C/svg%3E");
   --arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M3 0h1v7H3V6H2V5H1V4H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
@@ -5791,6 +5801,7 @@ label.mail-label {
 :root[data-theme="dark"] {
   --track-a: #19191c;
   --track-b: #2a2a2e;
+  --scrollbar-track: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Cpath fill='%232a2a2e' d='M0 0h2v2H0z'/%3E%3Cpath fill='%2319191c' d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/svg%3E");
   --arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M3 0h1v1h1v1h1v1h1v1H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
   --arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='4' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M0 0h7v1H6v1H5v1H4v1H3V3H2V2H1V1H0z'/%3E%3C/svg%3E");
   --arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6e6e6' d='M3 0h1v7H3V6H2V5H1V4H0V3h1V2h1V1h1z'/%3E%3C/svg%3E");
@@ -5802,9 +5813,20 @@ label.mail-label {
   height: 18px;
 }
 
+::-webkit-scrollbar,
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-corner {
+  cursor: var(--classic-pointer, pointer);
+}
+
 /* the dithered track. dark mode sinks it well below the thumb so the thumb stands out */
 ::-webkit-scrollbar-track {
-  background: repeating-conic-gradient(var(--track-a) 0 25%, var(--track-b) 0 50%) 0 0 / 2px 2px;
+  /* A cached two-pixel tile preserves the dither without rerasterizing a conic
+     gradient as the custom thumb is dragged. */
+  background: var(--scrollbar-track) 0 0 / 2px 2px repeat;
 }
 
 ::-webkit-scrollbar-thumb,

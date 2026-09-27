@@ -298,7 +298,7 @@ function newTree() {
 
   <figure v-else-if="figure === 'eval'" class="rx-figure">
     <figcaption><strong>Fig. 3</strong> Clippy (white) scoring its moves. Each number is a legal move and its score. Pick one to see what goes into it.</figcaption>
-    <div class="rx-panel rx-split">
+    <div class="rx-panel rx-split rx-eval">
       <div class="rx-board" role="group" aria-label="Clippy's legal moves">
         <button v-for="(cell, i) in evalBoard" :key="i" :disabled="scoreAt[i] === undefined"
           :class="['rx-cell', 'felt', { legal: scoreAt[i] !== undefined, picked: shown.m === i, best: bestScored.m === i, flip: shownFlips.includes(i) }]"
@@ -420,6 +420,27 @@ button.rx-cell:not(:disabled) { cursor: var(--classic-pointer, pointer); }
 .rx-c > .rx-term { grid-area: term; }
 .rx-c > .rx-c-under { grid-area: under; }
 .rx-c .rx-check { margin-top: 0; }
+/* Give wide figures enough board width to fill the panel while keeping squares.
+   The readout stretches beside the board, with its controls at the bottom. */
+@container (min-width: 760px) {
+  .rx-c, .rx-eval {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+  .rx-c { grid-template-rows: auto minmax(0, 1fr); }
+  :is(.rx-c, .rx-eval) > .rx-board {
+    aspect-ratio: 1;
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+  .rx-c > .rx-c-under, .rx-eval > div:last-child {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+  :is(.rx-c-under, .rx-eval > div:last-child) > .rx-buttons {
+    margin-top: auto;
+    padding-top: 10px;
+  }
+}
 @container (max-width: 480px) {
   .rx-c { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'board term' 'under under'; column-gap: 12px; }
   .rx-c > .rx-board { max-width: none; }

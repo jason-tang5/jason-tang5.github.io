@@ -4,6 +4,7 @@
 // keeps bots and link previews out of the numbers. the worker side is
 // worker/analytics.mjs, which lists every event name.
 
+import { localAnalytics } from './local-analytics.js';
 // only the real site counts, so local testing doesn't show up in the numbers
 const live = location.hostname === 'jasontang.dev';
 
@@ -28,12 +29,14 @@ function start() {
     // no referrer
   }
   const entry = new URLSearchParams(location.hash.slice(1)).get('app') || '';
-  send({
+  const event = {
     name: 'visit',
     detail: /^[a-z0-9-]{1,80}$/.test(entry) ? entry : '',
     device: matchMedia('(max-width: 700px)').matches ? 'phone' : 'desktop',
     referrer,
-  });
+  };
+  localAnalytics(event);
+  send(event);
   for (const event of waiting.splice(0)) send(event);
 }
 
@@ -47,8 +50,9 @@ if (live) {
 // records an event. detail is a short lowercase slug, value a number. extra is
 // anything else the live scoreboard needs, like the snake player's name
 export function track(name, detail = '', value = 0, extra = {}) {
-  if (!live) return;
   const event = { ...extra, name, detail: String(detail).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 80), value };
+  localAnalytics(event);
+  if (!live) return;
   if (visit) send(event);
   else waiting.push(event);
 }

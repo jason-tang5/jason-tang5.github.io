@@ -552,6 +552,11 @@ function balloonDone(event, id) {
     </div>
     <div ref="explorer" class="project-explorer content-scroll inset" :style="previewWidth ? { '--preview-width': `${previewWidth}px` } : null">
       <aside class="project-preview">
+        <div class="preview-steps" role="group" aria-label="Project navigation">
+          <button @click="stepProject(-1)">← Back</button>
+          <span>{{ projects.findIndex(p => p.id === selected.id) + 1 }} / {{ projects.length }}</span>
+          <button @click="stepProject(1)">Next →</button>
+        </div>
         <div class="preview-title">
           <RetroIcon :name="selected.icon"/>
           <div>
@@ -566,11 +571,6 @@ function balloonDone(event, id) {
         </div>
         <!-- the project's first figure, the same one that opens its what i built -->
         <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
-        <div class="preview-steps">
-          <button class="raised" @click="stepProject(-1)">← Back</button>
-          <span>{{ projects.findIndex(p => p.id === selected.id) + 1 }} of {{ projects.length }}</span>
-          <button class="raised" @click="stepProject(1)">Next →</button>
-        </div>
         <i class="preview-resize" aria-hidden="true" @pointerdown.prevent="resizePreview"/>
       </aside>
       <div
