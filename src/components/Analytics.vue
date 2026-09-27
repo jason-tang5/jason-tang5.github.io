@@ -50,6 +50,7 @@ const cards = computed(() => {
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
     { label: 'Highest 2048 score', value: count(s.twenty48HighScore), icon: '2048' },
     { label: '2048 tiles made', value: count(s.twenty48Wins), icon: '2048' },
+    { label: 'Balloons popped', value: count(s.balloonsPopped), icon: 'balloon' },
   ];
 });
 // your own scores, kept in this browser by each game
@@ -66,6 +67,7 @@ const yourCards = computed(() => {
     { label: 'Minesweeper games beaten', value: number(yourMines.value.reduce((sum, l) => sum + l.wins, 0)), icon: 'mine', levels: yourMines.value },
     { label: 'Your Snake best', value: number(read('snake-best', '0')), icon: 'snake' },
     { label: 'Your 2048 best', value: number(read('2048-best', '0')), icon: '2048' },
+    { label: 'Balloons you popped', value: number(read('balloons-popped', '0')), icon: 'balloon' },
     { label: 'You vs Clippy', value: `${you}-${clippy}`, icon: 'reversi', note: you + clippy ? `You win ${Math.round(you / (you + clippy) * 100)}%` : 'No games yet' },
   ];
 });
@@ -213,7 +215,6 @@ onMounted(load);
         </template>
       </template>
     </main>
-    <div class="status-bar">Anonymous events · no analytics cookies · updates after processing</div>
   </div>
 </template>
 

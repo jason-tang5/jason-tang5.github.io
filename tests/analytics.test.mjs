@@ -30,6 +30,7 @@ const rows = [
   { name: 'breakout-win', count: 2, total: 101 },
   { name: 'minesweeper-win', count: 3, total: 0 },
   { name: 'mail-error', count: 2, detail: 'email', total: 0 },
+  { name: 'balloon-pop', count: 6, total: 0 },
 ];
 test('summary separates game completions from per-visit funnel and uses maximum score', () => {
   const result = summarize(rows, [{ day: '2026-09-26 00:00:00', visits: '5' }]);
@@ -37,6 +38,7 @@ test('summary separates game completions from per-visit funnel and uses maximum 
   assert.equal(result.snakeHighScore, 14);
   assert.equal(result.twenty48HighScore, 4000);
   assert.equal(result.twenty48Wins, 1);
+  assert.equal(result.balloonsPopped, 6);
   assert.equal(result.breakoutWins, 4);
   assert.equal(result.minesweeperWins, 3);
   assert.equal(result.breakout.averageWinSeconds, 51);

@@ -20,6 +20,7 @@ import PortfolioFigures from './PortfolioFigures.vue';
 import FpgaFigures from './FpgaFigures.vue';
 import ReversiFigures from './ReversiFigures.vue';
 import { read, save, remove } from '../storage.js';
+import { track } from '../analytics.js';
 import { noteGlyphs, noteColors } from '../notes.mjs';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from '../sound.js';
 import { theme, setTheme } from '../theme.js';
@@ -224,11 +225,141 @@ function setPortraitAscii(value) {
   save('portrait-ascii', value ? 'on' : 'off');
 }
 
+// ---- balloons: the button beside the lifts lets a bunch of pixel balloons float up
+// over the whole about window ----
+// the balloon is a little sprite, 14 pixels across, drawn in four frames instead of
+// being rotated: it leans left with the string trailing right, stretches tall, leans
+// right with the string trailing left, then squashes wide, like it's bobbing on air
+const balloonBodies = {
+  round: [4, 8, 10, 12, 12, 12, 12, 12, 12, 10, 8, 6, 4, 2],
+  tall: [4, 6, 8, 10, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2],
+  wide: [6, 10, 12, 14, 14, 14, 14, 12, 12, 10, 8, 4, 2],
+};
+const rowPath = (widths, shift = 0, y0 = 0) => widths.map((w, y) => (w > 0 ? `M${(14 - w) / 2 + shift} ${y0 + y}h${w}v1h-${w}z` : '')).join('');
+// the string, as how far each pixel sits from under the knot, top to bottom
+const balloonStrings = { right: [0, 0, 1, 1, 2, 2, 1, 1, 0], straight: [0, 0, 0, 1, 1, 0, 0, -1, -1], left: [0, 0, -1, -1, -2, -2, -1, -1, 0], wiggle: [0, 1, 1, 0, 0, -1, -1, 0, 0] };
+function balloonFrame(body, shift, string) {
+  const rows = balloonBodies[body];
+  const y0 = 24 - rows.length - 1 - 9;
+  const knotY = y0 + rows.length;
+  const left = (14 - rows[3]) / 2 + shift;
+  return {
+    outline: rowPath(rows, shift, y0),
+    fill: rowPath(rows.map((w, y) => Math.min(w, rows[y - 1] ?? 0, rows[y + 1] ?? 0) - 2), shift, y0),
+    shine: `M${left + 2} ${y0 + 3}h2v1h-2zM${left + 2} ${y0 + 4}h1v2h-1z`,
+    knot: `M${6 + shift} ${knotY}h2v1h-2z`,
+    string: balloonStrings[string].map((dx, i) => `M${7 + shift + dx} ${knotY + 1 + i}h1v1h-1z`).join(''),
+  };
+}
+const balloonFrames = [balloonFrame('round', -1, 'right'), balloonFrame('tall', 0, 'straight'), balloonFrame('round', 1, 'left'), balloonFrame('wide', 0, 'wiggle')];
+const balloonColors = [['#e8413c', '#8e1c18'], ['#f5c542', '#8a6410'], ['#3f7fe0', '#1c3f80'], ['#43b85c', '#1d6a2e'], ['#ee6fb4', '#8a2a60'], ['#f08c2e', '#8a4a10'], ['#9a62dc', '#4e2a80']];
+const aboutApp = ref(null);
+const balloons = ref([]);
+let balloonId = 0;
+function launchBalloons() {
+  play('balloons');
+  const rise = (aboutApp.value?.offsetHeight ?? 600) + 120;
+  const count = 7;
+  const batch = Array.from({ length: count }, (_, i) => {
+    const [color, dark] = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+    return {
+      id: ++balloonId, color, dark,
+      style: {
+        left: `${(i / count) * 88 + Math.random() * 6}%`,
+        '--rise': `${rise}px`,
+        '--scale': 4 + Math.floor(Math.random() * 2),
+        animationDuration: `${3.2 + Math.random() * 2.4}s`,
+        animationDelay: `${Math.random() * 0.9}s`,
+      },
+      // each one starts somewhere different in its bob, at its own pace
+      sway: { '--frame': `${0.7 + Math.random() * 0.4}s`, '--sway-time': `${1.5 + Math.random() * 0.8}s`, '--phase': `${-Math.random() * 2}s` },
+    };
+  });
+  balloons.value = [...balloons.value, ...batch];
+  if (!balloonWatch) balloonWatch = requestAnimationFrame(watchBalloons);
+}
+// the pieces a popped balloon bursts into, flying out from the middle
+const balloonShards = 'M7 0h2v2H7zM7 14h2v2H7zM0 7h2v2H0zM14 7h2v2h-2zM2 2h2v2H2zM12 2h2v2h-2zM2 12h2v2H2zM12 12h2v2h-2zM5 4h1v1H5zM10 4h1v1h-1zM4 10h1v1H4zM11 11h1v1h-1z';
+// a press anywhere over the window checks every balloon, with a hit box a bit bigger
+// than the balloon's body, and pops the nearest one under it, one per click. it stops
+// where it is and bursts, and goes once the burst is done
+const balloonReach = 14;
+let swallowClick = false;
+function balloonsAt(x, y) {
+  const hits = [];
+  if (!aboutApp.value) return hits;
+  for (const el of aboutApp.value.querySelectorAll('.balloon:not(.popped)')) {
+    const r = el.querySelector('svg').getBoundingClientRect();
+    // the body is the top 15 of the sprite's 24 rows, the string isn't worth a pop
+    const bottom = r.top + r.height * (15 / 24);
+    if (x >= r.left - balloonReach && x <= r.right + balloonReach && y >= r.top - balloonReach && y <= bottom + balloonReach) {
+      hits.push({ id: Number(el.dataset.id), distance: Math.hypot(x - (r.left + r.right) / 2, y - (r.top + bottom) / 2) });
+    }
+  }
+  // nearest first
+  return hits.sort((a, b) => a.distance - b.distance).map(h => h.id);
+}
+// the pointer turns to a hand over a balloon. they move under a still pointer too, so
+// it's checked every frame while any are up
+const overBalloon = ref(false);
+let pointerAt = null;
+let balloonWatch = 0;
+function watchBalloons() {
+  overBalloon.value = !!pointerAt && balloonsAt(pointerAt.x, pointerAt.y).length > 0;
+  balloonWatch = balloons.value.length ? requestAnimationFrame(watchBalloons) : 0;
+  if (!balloonWatch) overBalloon.value = false;
+}
+function trackBalloonPointer(event) {
+  pointerAt = event.type === 'pointerleave' ? null : { x: event.clientX, y: event.clientY };
+}
+onBeforeUnmount(() => cancelAnimationFrame(balloonWatch));
+function popBalloons(event) {
+  swallowClick = false;
+  if (!balloons.value.length || event.button !== 0) return;
+  const [hit] = balloonsAt(event.clientX, event.clientY);
+  if (hit === undefined) return;
+  // the press was for the balloons, not whatever is under them
+  event.preventDefault();
+  event.stopPropagation();
+  swallowClick = true;
+  balloons.value.find(b => b.id === hit).popped = true;
+  play('pop');
+  track('balloon-pop');
+  save('balloons-popped', String((Number(read('balloons-popped', '0')) || 0) + 1));
+}
+// and the click that follows it, so a link or button under a balloon doesn't go off too
+function swallowBalloonClick(event) {
+  if (!swallowClick) return;
+  swallowClick = false;
+  event.preventDefault();
+  event.stopPropagation();
+}
+function balloonDone(event, id) {
+  if (/balloon-(rise|pop)/.test(event.animationName)) balloons.value = balloons.value.filter(b => b.id !== id);
+}
+
 </script>
 
 <template>
   <!-- about -->
-  <div v-if="win.type === 'about'" class="app-layout about-app">
+  <div v-if="win.type === 'about'" ref="aboutApp" class="app-layout about-app" :class="{ 'over-balloon': overBalloon }"
+    @pointerdown.capture="popBalloons" @click.capture="swallowBalloonClick" @pointermove="trackBalloonPointer" @pointerleave="trackBalloonPointer">
+    <div class="balloon-sky" aria-hidden="true">
+      <span v-for="b in balloons" :key="b.id" class="balloon" :class="{ popped: b.popped }" :data-id="b.id" :style="b.style" @animationend="balloonDone($event, b.id)">
+        <svg v-if="b.popped" class="balloon-burst" viewBox="0 0 16 16" shape-rendering="crispEdges">
+          <path :d="balloonShards" :fill="b.color"/>
+        </svg>
+        <svg v-else viewBox="0 0 14 24" shape-rendering="crispEdges" :style="b.sway">
+          <g v-for="(f, k) in balloonFrames" :key="k" :class="['balloon-frame', `f${k}`]">
+            <path :d="f.outline" :fill="b.dark"/>
+            <path :d="f.fill" :fill="b.color"/>
+            <path :d="f.shine" fill="#fff" fill-opacity=".75"/>
+            <path :d="f.knot" :fill="b.dark"/>
+            <path :d="f.string" fill="#6b6b66"/>
+          </g>
+        </svg>
+      </span>
+    </div>
     <div class="address-bar">
       <span>Address</span>
       <div class="inset">{{ hoveredPlace?.path || 'Portfolio:\\About Me' }}</div>
@@ -331,16 +462,25 @@ function setPortraitAscii(value) {
             <p class="intro">{{ profile.bio }}</p>
             <div class="about-bottom">
               <div class="about-links">
-                <!-- a windows group box, the etched frame with its title in the border -->
-                <fieldset class="lift-box">
-                  <legend>lifts (lb)</legend>
+                <!-- a raised box like the shortcut toolbars: each lift sits in a cell the
+                     size of a toolbar button, the number where the icon would be and the
+                     lift's name under it like a button's label -->
+                <div class="lift-box raised">
+                  <p class="lift-title">Lifts<small>lb</small></p>
                   <dl>
                     <div v-for="[lift, weight] in profile.lifts" :key="lift">
-                      <dt>{{ lift }}</dt>
                       <dd>{{ weight }}</dd>
+                      <dt>{{ lift }}</dt>
                     </div>
                   </dl>
-                </fieldset>
+                </div>
+              </div>
+              <!-- the same raised box and toolbar button as the linkedin / github shortcuts -->
+              <div class="about-balloons-box raised">
+                <button class="about-shortcut ie-button about-balloons" title="Let go of some balloons" @click="launchBalloons">
+                  <RetroIcon name="balloon"/>
+                  <span>Balloons</span>
+                </button>
               </div>
             </div>
           </div>
@@ -537,8 +677,8 @@ function setPortraitAscii(value) {
   </div>
   <Snake v-else-if="win.type === 'snake'" :active="active"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>
-  <Reversi v-else-if="win.type === 'reversi'" :active="active"/>
-  <Twenty48 v-else-if="win.type === '2048'" :active="active"/>
+  <Reversi v-else-if="win.type === 'reversi'" :active="active" @open="id => emit('open', id)"/>
+  <Twenty48 v-else-if="win.type === '2048'" :active="active" @open="id => emit('open', id)"/>
 
   <!-- desktop settings -->
   <div v-else-if="win.type === 'settings'" class="app-layout">

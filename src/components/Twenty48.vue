@@ -5,6 +5,7 @@
 // scaled up with crisp pixels. under the monitor is the fpga board itself, with the
 // score on its six seven-segment hex displays and the same arcade buttons as snake.
 // the rules are in twenty48.mjs. arrows or wasd, a swipe on the screen, or the pad
+import RetroIcon from './RetroIcon.vue';
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { newGame, slide, addTile, canMove, hasWon, value, size, rgb, tileColor, tileInk } from '../twenty48.mjs';
 import { read, save } from '../storage.js';
@@ -15,6 +16,7 @@ import { createBackdrop, tilesScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
 
 const props = defineProps({ active: Boolean });
+const emit = defineEmits(['open']);
 
 // ---- the game, saved in the browser so it's still there next time ----
 function load() {
@@ -455,6 +457,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout t48-app">
     <canvas ref="backdropCanvas" class="t48-backdrop" aria-hidden="true"/>
+    <!-- the writeup for the fpga project this game was rebuilt from -->
+    <div class="toolbar ie-toolbar t48-toolbar">
+      <button class="ie-button" title="Read how FPGA 2048 was built" @click="emit('open', 'fpga-2048')">
+        <RetroIcon name="document"/>
+        <span>Project</span>
+      </button>
+    </div>
     <div ref="content" class="content-scroll t48-content">
       <div ref="stage" class="t48-stage" :class="{ wide }" :style="{ transform: `translate3d(-50%, -50%, 0) scale(${fit})` }">
         <!-- the vga cable, from the board up into the monitor's bottom right corner -->
@@ -650,6 +659,8 @@ onBeforeUnmount(() => {
 }
 :root[data-theme="dark"] .t48-app { --t48-back: #1d1d21; --t48-bezel: #2a2a31; --t48-bezel-light: #3c3c45; --t48-bezel-dark: #121216; }
 .t48-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* the toolbar sits over the ascii backdrop */
+.t48-toolbar { position: relative; z-index: 1; background: var(--surface); }
 .t48-content { position: relative; overflow: hidden; }
 /* Centre and scale one fixed scene without changing its internal layout. */
 .t48-stage { position: absolute; left: 50%; top: 50%; transform-origin: center; will-change: transform; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: 18px; width: max-content; box-sizing: border-box; padding: 8px 6px; }

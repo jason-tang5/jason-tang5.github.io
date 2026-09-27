@@ -1709,9 +1709,10 @@ input[type="checkbox"]:focus-visible {
   margin-top: 22px;
   padding-top: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
+  justify-content: flex-start;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
   font-size: 12px;
 }
 
@@ -1720,37 +1721,90 @@ input[type="checkbox"]:focus-visible {
   gap: 20px;
 }
 
-/* the lifts, in a windows group box: an etched frame with the title in its border */
+/* the lifts, in the same raised grey box as the shortcut toolbars and the balloons
+   button beside them: cells the size of a toolbar button, the number up top in the
+   pixel font and the lift under it */
 .lift-box {
+  display: flex;
+  align-items: stretch;
   max-width: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 6px 12px 8px;
-  border: 1px solid var(--shadow);
-  box-shadow: 1px 1px 0 var(--light), inset 1px 1px 0 var(--light);
-  font: 12px/1.6 'Courier New', monospace;
-  color: var(--d-muted, #3d3d3a);
+  padding: 3px 4px;
+  color: var(--ink);
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
 }
 
-.lift-box legend {
-  padding: 0 4px;
-  background: var(--d-page, transparent);
+/* (.about-copy p would give it the page's paragraph margins and size) */
+.lift-box .lift-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
   font-size: 11px;
-  letter-spacing: 1px;
-  color: var(--d-muted, #6b6b66);
+  line-height: 1.3;
+  padding: 0 8px 0 4px;
+  border-right: 1px solid var(--shadow);
+  box-shadow: 1px 0 var(--light);
+  font-weight: bold;
+}
+
+.lift-title small {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--muted);
 }
 
 .lift-box dl {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 16px;
-  margin: 0;
+  margin: 0 0 0 2px;
+}
+
+.lift-box dl > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 62px;
+  padding: 4px 6px 3px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+/* hovering a lift bevels it out like the shortcut buttons, and its number hops */
+.lift-box dl > div:hover {
+  border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+}
+
+.lift-box dl > div:hover dd {
+  animation: lift-hop .6s steps(1) infinite;
+}
+
+@keyframes lift-hop {
+  0%, 60%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-2px); }
+  40% { transform: translateY(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lift-box dl > div:hover dd { animation: none; }
 }
 
 .lift-box dd {
   margin: 0;
-  font-weight: bold;
+  font: bold 18px/32px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+}
+
+.lift-box dt {
+  white-space: nowrap;
+}
+
+/* a narrow window packs the cells in tighter so the balloons still fit beside them */
+@container about (max-width: 640px) {
+  .lift-box dl > div { min-width: 0; padding: 4px 2px 3px; }
+  .lift-box .lift-title { padding: 0 6px 0 3px; }
 }
 
 /* stack the portrait on top when the about window is narrow */
@@ -1828,11 +1882,18 @@ input[type="checkbox"]:focus-visible {
 /* ---- documents (single project, experience) ---- */
 
 .document {
+  --doc-gutter: 30px;
   background: var(--paper);
-  padding: 26px 30px;
+  padding: 26px var(--doc-gutter);
   font-size: 15px;
   line-height: 1.65;
   overflow-wrap: anywhere;
+}
+
+/* reading pages keep their text to a comfortable column, like notion, and a wide window
+   just grows the margins. the analytics dashboard still uses the whole width */
+.document:not(.analytics-page) {
+  padding-inline: max(var(--doc-gutter), calc((100% - 880px) / 2));
 }
 
 .document h1 {
@@ -1982,8 +2043,12 @@ input[type="checkbox"]:focus-visible {
   font: 14px/1.6 Tahoma, 'MS Sans Serif', Arial, sans-serif;
 }
 
+/* the list and the post keep to the same column as the project pages */
+.blog-reading {
+  padding-inline: max(clamp(16px, 4vw, 36px), calc((100% - 880px) / 2));
+}
+
 .blog-reading article {
-  max-width: 65ch;
   margin: auto;
 }
 
@@ -2805,13 +2870,43 @@ fieldset {
   40%, 100% { transform: translateY(0); }
 }
 
+/* the balloon icon rests with its string flicked one way. hovering bobs it up and
+   down in pixel steps while the string flicks back and forth */
+.retro-icon .bl-b {
+  visibility: hidden;
+}
+
+.about-balloons:is(:hover, :focus-visible) .retro-icon {
+  animation: balloon-bob 1s steps(1) infinite;
+}
+
+.about-balloons:is(:hover, :focus-visible) .bl-a {
+  animation: gh-wag .5s step-end infinite;
+}
+
+.about-balloons:is(:hover, :focus-visible) .bl-b {
+  visibility: visible;
+  animation: gh-wag .5s step-end -.25s infinite;
+}
+
+@keyframes balloon-bob {
+  0%, 100% { transform: translateY(0); }
+  25%, 75% { transform: translateY(-1px); }
+  50% { transform: translateY(-2px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .about-shortcut :is(.li-dot, .li-i, .li-n, .gh-wag-up, .gh-wag-down) {
+  .about-shortcut :is(.li-dot, .li-i, .li-n, .gh-wag-up, .gh-wag-down, .bl-a, .bl-b),
+  .about-balloons .retro-icon {
     animation: none !important;
   }
 
-  .about-shortcut .gh-rest {
+  .about-shortcut :is(.gh-rest, .bl-a) {
     visibility: visible !important;
+  }
+
+  .about-shortcut .bl-b {
+    visibility: hidden !important;
   }
 }
 
@@ -4393,14 +4488,14 @@ label.mail-label {
     font-size: 14px;
   }
 
+  /* the balloons button stays beside the lifts */
   .about-bottom {
-    flex-direction: column;
-    align-items: start;
     margin-top: 18px;
   }
 
   .about-links {
-    width: 100%;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
   .about-favorites .favorite {
@@ -4441,7 +4536,8 @@ label.mail-label {
 
 
   .document {
-    padding: 22px 18px;
+    --doc-gutter: 18px;
+    padding: 22px var(--doc-gutter);
   }
 
   .toolbar button,
@@ -6173,6 +6269,94 @@ label.mail-label {
 
 .about-app {
   container: about / inline-size;
+  position: relative;
+}
+
+/* the balloons button beside the lifts, and the balloons it lets go. they float over
+   the whole window, stepped like pixel art, and never catch a click */
+.about-balloons-box {
+  display: flex;
+  flex: none;
+  padding: 3px 4px;
+  background: var(--surface);
+}
+
+/* over a balloon's hit box, everything under it points like a button */
+.about-app.over-balloon,
+.about-app.over-balloon * {
+  cursor: var(--classic-pointer, pointer) !important;
+}
+
+.balloon-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.balloon {
+  position: absolute;
+  top: 100%;
+  animation: balloon-rise linear both;
+}
+
+/* popped: it stops where it is and bursts into pieces in a few hard steps. clicks
+   are hit tested over the whole window (popBalloons), so the balloons never take them */
+.balloon.popped {
+  animation-play-state: paused;
+}
+
+.balloon .balloon-burst {
+  width: calc(12px * var(--scale));
+  height: calc(12px * var(--scale));
+  animation: balloon-pop .32s steps(4) forwards;
+}
+
+@keyframes balloon-pop {
+  from { transform: scale(.5); opacity: 1; }
+  70% { opacity: 1; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+
+.balloon svg {
+  display: block;
+  width: calc(14px * var(--scale));
+  height: calc(24px * var(--scale));
+  animation: balloon-sway var(--sway-time, 1.8s) steps(4) infinite alternate;
+  animation-delay: var(--phase, 0s);
+}
+
+/* the four sprite frames take turns, a quarter of the cycle each */
+.balloon-frame {
+  visibility: hidden;
+  animation: balloon-frame calc(4 * var(--frame, .8s)) step-end infinite;
+}
+
+.balloon-frame.f0 { animation-delay: var(--phase, 0s); }
+.balloon-frame.f1 { animation-delay: calc(var(--phase, 0s) - 3 * var(--frame, .8s)); }
+.balloon-frame.f2 { animation-delay: calc(var(--phase, 0s) - 2 * var(--frame, .8s)); }
+.balloon-frame.f3 { animation-delay: calc(var(--phase, 0s) - 1 * var(--frame, .8s)); }
+
+@keyframes balloon-rise {
+  to { transform: translateY(calc(-1 * var(--rise))); }
+}
+
+/* drifting side to side in whole steps, on top of the sprite frames */
+@keyframes balloon-sway {
+  from { transform: translateX(-8px); }
+  to { transform: translateX(8px); }
+}
+
+@keyframes balloon-frame {
+  0% { visibility: visible; }
+  25%, 100% { visibility: hidden; }
+}
+
+/* with reduced motion the balloons still rise, just holding still on their first frame */
+@media (prefers-reduced-motion: reduce) {
+  .balloon svg, .balloon-frame { animation: none; }
+  .balloon-frame.f0 { visibility: visible; }
 }
 
 .about-explorer {

@@ -3,6 +3,7 @@
 // moves ahead (see bestMove in reversi.mjs). clippy talks in a yellow balloon the
 // whole time, like the office assistant it's borrowed from.
 // behind the table a much bigger ascii board keeps flipping itself, see ascii-backdrop.js
+import RetroIcon from './RetroIcon.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { black, white, newBoard, legalMoves, flipsFor, play as playMove, count, gameOver, bestMove } from '../reversi.mjs';
 import { read, save } from '../storage.js';
@@ -14,6 +15,7 @@ import { theme } from '../theme.js';
 import ClippyArt from './ClippyArt.vue';
 
 const props = defineProps({ active: Boolean });
+const emit = defineEmits(['open']);
 const board = ref(newBoard());
 const turn = ref(black);
 const thinking = ref(false);
@@ -239,6 +241,11 @@ onBeforeUnmount(() => {
           <span>Help</span>
         </span>
       </span>
+      <!-- the writeup for the course project this came from -->
+      <button class="ie-button" title="Read how the Reversi AI bot was built" @click="emit('open', 'reversi-ai')">
+        <RetroIcon name="document"/>
+        <span>Project</span>
+      </button>
       <span class="reversi-record" title="Games won against Clippy, remembered in this browser">You {{ record.you }} · Clippy {{ record.clippy }}</span>
     </div>
 

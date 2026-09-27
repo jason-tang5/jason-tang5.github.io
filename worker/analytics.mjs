@@ -33,6 +33,7 @@ export const eventNames = [
   'mail-error', // the mail form refused to send. detail is the field
   'mail-sent',
   'mail-failed',
+  'balloon-pop', // popped one of the about window's balloons
 ];
 
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
@@ -152,6 +153,7 @@ export function summarize(rows, daily = []) {
     snakeHighScore: Math.max(0, ...rows.filter(row => row.name === 'snake-score').map(row => Number(row.maximum) || 0)),
     twenty48HighScore: Math.max(0, ...rows.filter(row => row.name === '2048-score').map(row => Number(row.maximum) || 0)),
     twenty48Wins: n('2048-win'),
+    balloonsPopped: n('balloon-pop'),
     minesweeperWins: n('minesweeper-win'),
     breakoutWins: n('breakout-complete'),
     // reversi-lose is clippy winning, reversi-win is clippy losing

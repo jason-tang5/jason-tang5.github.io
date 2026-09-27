@@ -172,6 +172,17 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#f2b179" d="M18 17h12v1h1v12h-1v1H18v-1H17V18h1z"/>
         <path fill="#fff" d="M21 19h2v2h-2zM23 19h2v2h-2zM25 19h2v2h-2zM21 21h2v2h-2zM25 21h2v2h-2zM21 23h2v2h-2zM23 23h2v2h-2zM25 23h2v2h-2zM21 25h2v2h-2zM25 25h2v2h-2zM21 27h2v2h-2zM23 27h2v2h-2zM25 27h2v2h-2z"/>
       </g>
+      <!-- a red party balloon: a flat teardrop with a crescent of shadow bottom right,
+           a little shine and a short string. the string is drawn flicked both ways, so
+           on the about page it can wiggle while the balloon bobs -->
+      <g v-else-if="name === 'balloon'" stroke="none">
+        <path fill="#6e1210" d="M12 0h7v1h-7zM9 1h3v1h-3zM19 1h3v1h-3zM8 2h1v1h-1zM22 2h1v1h-1zM6 3h2v1h-2zM23 3h2v1h-2zM6 4h1v1h-1zM24 4h1v1h-1zM5 5h1v1h-1zM25 5h1v1h-1zM4 6h1v1h-1zM26 6h1v1h-1zM4 7h1v1h-1zM26 7h1v1h-1zM3 8h1v1h-1zM27 8h1v1h-1zM3 9h1v1h-1zM27 9h1v1h-1zM3 10h1v1h-1zM27 10h1v1h-1zM3 11h1v1h-1zM27 11h1v1h-1zM2 12h1v1h-1zM28 12h1v1h-1zM3 13h1v1h-1zM27 13h1v1h-1zM3 14h1v1h-1zM27 14h1v1h-1zM4 15h1v1h-1zM26 15h1v1h-1zM4 16h1v1h-1zM26 16h1v1h-1zM5 17h1v1h-1zM25 17h1v1h-1zM6 18h1v1h-1zM24 18h1v1h-1zM6 19h1v1h-1zM24 19h1v1h-1zM7 20h1v1h-1zM23 20h1v1h-1zM8 21h1v1h-1zM22 21h1v1h-1zM9 22h2v1h-2zM20 22h2v1h-2zM11 23h2v1h-2zM18 23h2v1h-2zM13 24h5v1h-5zM14 25h4v1h-4zM15 26h2v1h-2z"/>
+        <path fill="#e03a33" d="M12 1h7v1h-7zM9 2h13v1h-13zM8 3h15v1h-15zM7 4h17v1h-17zM6 5h2v1h-2zM10 5h15v1h-15zM5 6h2v1h-2zM8 6h18v1h-18zM5 7h2v1h-2zM8 7h18v1h-18zM4 8h22v1h-22zM4 9h22v1h-22zM4 10h22v1h-22zM4 11h22v1h-22zM3 12h23v1h-23zM4 13h21v1h-21zM4 14h21v1h-21zM5 15h19v1h-19zM5 16h18v1h-18zM6 17h17v1h-17zM7 18h15v1h-15zM7 19h14v1h-14zM8 20h12v1h-12zM9 21h9v1h-9zM11 22h5v1h-5z"/>
+        <path fill="#a8231e" d="M26 8h1v1h-1zM26 9h1v1h-1zM26 10h1v1h-1zM26 11h1v1h-1zM26 12h2v1h-2zM25 13h2v1h-2zM25 14h2v1h-2zM24 15h2v1h-2zM23 16h3v1h-3zM23 17h2v1h-2zM22 18h2v1h-2zM21 19h3v1h-3zM20 20h3v1h-3zM18 21h4v1h-4zM16 22h4v1h-4zM13 23h5v1h-5z"/>
+        <path fill="#fff" d="M8 5h2v1h-2zM7 6h1v1h-1zM7 7h1v1h-1z"/>
+        <path class="bl-string bl-a" fill="#555" d="M15 27h1v1h-1zM16 28h1v1h-1zM16 29h1v1h-1zM15 30h1v1h-1z"/>
+        <path class="bl-string bl-b" fill="#555" d="M15 27h1v1h-1zM14 28h1v1h-1zM14 29h1v1h-1zM15 30h1v1h-1z"/>
+      </g>
       <!-- a green board with the four opening discs in the middle -->
       <g v-else-if="name === 'reversi'">
         <path fill="#6b3e1c" d="M2 2h28v28H2z"/>

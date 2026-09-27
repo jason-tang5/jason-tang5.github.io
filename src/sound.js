@@ -321,6 +321,19 @@ const sounds = {
     blip(ac, { type: 'sine', from: a * 1.5, to: b * 1.5, start: 0.05, length: 0.2, volume: 0.02 });
   },
 
+  // letting the balloons go: a few quick squeaky rising chirps, like rubber being
+  // pulled, then a bright little run up as they float off
+  balloons: ac => {
+    [0, 0.07, 0.13].forEach((start, i) => blip(ac, { type: 'triangle', from: 500 + i * 120, to: 900 + i * 160, start, length: 0.06, volume: 0.05 }));
+    [659.25, 783.99, 1046.5, 1318.51].forEach((freq, i) => blip(ac, { type: 'sine', from: freq, start: 0.22 + i * 0.07, length: 0.16, volume: 0.04 }));
+  },
+
+  // a balloon popping: a sharp snap of noise over a quick low thump
+  pop: ac => {
+    burst(ac, { freq: 1800, q: 0.6, length: 0.05, volume: 0.2 });
+    blip(ac, { type: 'sine', from: 180, to: 70, length: 0.07, volume: 0.08 });
+  },
+
   // two rising notes
   open: ac => {
     blip(ac, { type: 'triangle', from: 660, length: 0.07, volume: 0.08 });
