@@ -4032,6 +4032,59 @@ label.mail-label {
 .snake-app .snake-content .live-scoreboard :is(td, th) {
   border-bottom-color: #ffffff1a;
 }
+
+/* the name field is a little lcd like the handheld's screen, set in the bezel, with
+   the label lettered like select and start */
+.snake-app .snake-content .leaderboard-name > span {
+  color: var(--gb-ink);
+  font: bold 10px Tahoma, sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.snake-app .snake-content .leaderboard-name input {
+  width: 16ch;
+  padding: 5px 8px;
+  border: 3px solid var(--gb-bezel);
+  border-radius: 4px;
+  background: #101d17;
+  color: #b2edaa;
+  caret-color: #b2edaa;
+  font: bold 14px 'Courier New', monospace;
+  letter-spacing: 1px;
+  box-shadow: inset 2px 2px 0 #000a, 1px 1px 0 var(--gb-body-light);
+  transition: box-shadow .1s;
+}
+
+.snake-app .snake-content .leaderboard-name input::placeholder {
+  color: #b2edaa66;
+  font-style: normal;
+}
+
+.snake-app .snake-content .leaderboard-name input:focus {
+  outline: none;
+  box-shadow: inset 2px 2px 0 #000a, 0 0 0 2px #b2edaa88, 1px 1px 0 var(--gb-body-light);
+}
+
+.snake-app .snake-content .leaderboard-name input[aria-invalid="true"] {
+  color: #ff9d8f;
+  caret-color: #ff9d8f;
+  box-shadow: inset 2px 2px 0 #000a, 0 0 0 2px #ff9d8f88;
+}
+
+.snake-app .snake-content .leaderboard-note {
+  color: var(--gb-ink);
+  opacity: .8;
+}
+
+.snake-app .snake-content .leaderboard-note.bad {
+  color: #b3261e;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] .snake-app .snake-content .leaderboard-note.bad {
+  color: #ff9d8f;
+}
 .snake-pad-left { grid-area: 2 / 1; }
 .snake-pad-right { grid-area: 2 / 3; }
 .snake-pad-down { grid-area: 3 / 2; }
