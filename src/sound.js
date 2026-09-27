@@ -159,6 +159,10 @@ const sounds = {
     blip(ac, { type: 'sine', from: 220, to: 360, start: 0.01, length: 0.06, volume: 0.07 });
   },
 
+  // a cd drawn into the player: a soft slide as the tray pulls it in, before the
+  // cartridge latch plays as it seats
+  discLoad: ac => swish(ac, { from: 900, to: 2400, q: 0.9, length: 0.36, volume: 0.05 }),
+
   // keyboard presses have no separate down and up, so play both
   click: ac => {
     sounds.press(ac);

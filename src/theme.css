@@ -2479,45 +2479,76 @@ fieldset {
   letter-spacing: 1px;
 }
 .cd-slot-front svg { width: 7px; height: 9px; fill: currentColor; }
+/* when the disc seats it knocks down onto the spindle and springs back, and the
+   front panel jolts with it */
+.cd-disc-slot.clicked .cd-disc-carriage { animation: cd-seat .24s steps(6); }
+.cd-disc-slot.clicked .cd-slot-front { animation: cd-seat-front .24s steps(6); }
+@keyframes cd-seat {
+  0% { transform: translateY(34px); }
+  30% { transform: translateY(37px); }
+  60% { transform: translateY(33px); }
+  100% { transform: translateY(34px); }
+}
+@keyframes cd-seat-front {
+  0%, 100% { transform: none; }
+  30% { transform: translateY(1px); }
+}
 .cd-disc-slot:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
+/* the disc tray is a dark smoked window like the stereo display, with the browsed
+   disc's title up top and the arrows either side of the insert button */
 .cd-disc-rack {
   flex: none;
   margin: 0 10px 10px;
-  padding: 8px;
-  background: var(--paper);
+  padding: 7px 8px 8px;
+  background: #090e10;
+  color: #8caba0;
   overflow: hidden;
 }
-.cd-rack-header { display: flex; justify-content: space-between; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; color: var(--muted); letter-spacing: 1px; }
-.cd-rack-stage { position: relative; height: 115px; perspective: 500px; touch-action: pan-y; }
+.cd-rack-header { display: flex; align-items: flex-start; gap: 8px; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.cd-rack-header > div { flex: 1; min-width: 0; }
+.cd-rack-header strong { display: block; overflow: hidden; color: #d8f1df; font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.cd-rack-header small { display: block; margin-top: 2px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.cd-rack-header > span { flex: none; padding: 1px 4px; border: 1px solid #2c3b3e; font: bold 10px 'Courier New', monospace; letter-spacing: 1px; }
+.cd-rack-stage {
+  position: relative;
+  height: 128px;
+  perspective: 480px;
+  touch-action: pan-y;
+  background: radial-gradient(#172326 1px, transparent 1px) 4px 4px / 12px 12px;
+}
+/* the discs stand round a ring seen from a little above: each one is turned to its
+   place on the ring, pushed out to the edge, then turned partway back toward you so
+   the side discs still show their faces. the back of the ring rides up and shrinks */
 .cd-rack-disc {
   position: absolute;
-  top: 10px;
+  top: 20px;
   left: calc(50% - 50px);
   width: 100px;
   height: 100px;
   border: 0;
   padding: 0;
   background: none;
-  transform: translateX(calc(var(--disc-offset) * 66px)) rotateY(calc(var(--disc-offset) * -28deg)) scale(.72);
-  opacity: .55;
-  transition: transform .36s cubic-bezier(.22, 1, .36, 1), opacity .25s;
+  transform: rotateX(-11deg) translateZ(-72px) rotateY(calc(var(--disc-angle) * 1deg)) translateZ(72px) rotateY(calc(var(--disc-face) * 1deg)) scale(var(--disc-scale, .74));
+  opacity: .5;
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1), opacity .25s;
 }
-.cd-rack-disc.selected { transform: translateX(0) rotateY(0) scale(1); opacity: 1; }
+.cd-rack-disc.selected { --disc-scale: 1; opacity: 1; }
 .cd-rack-disc .cd-disc { animation-play-state: running; animation-duration: 5s; }
-.cd-rack-disc.empty .cd-disc { opacity: .7; }
-.cd-rack-disc:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
-.cd-rack-number { position: absolute; top: 64px; left: 31px; width: 38px; padding: 2px; background: var(--disc-color); color: #172326; font: bold 10px 'Courier New', monospace; box-shadow: 1px 1px #555; }
-.cd-rack-navigation { display: flex; align-items: center; gap: 8px; }
-.cd-rack-navigation > div { flex: 1; min-width: 0; text-align: center; }
-.cd-rack-navigation strong { display: block; overflow-wrap: anywhere; font-size: 11px; }
-.cd-rack-navigation small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
-.cd-rack-navigation button { width: 32px; height: 32px; flex: none; }
+.cd-rack-disc.empty .cd-disc { opacity: .75; }
+.cd-rack-disc:focus-visible { outline: 1px dotted #d8f1df; outline-offset: 2px; }
+.cd-rack-number { position: absolute; z-index: 1; top: 64px; left: 31px; width: 38px; padding: 2px; background: var(--disc-color); color: #172326; font: bold 10px 'Courier New', monospace; box-shadow: 1px 1px #000; }
+.cd-rack-navigation { display: flex; align-items: stretch; gap: 6px; margin-top: 4px; }
+.cd-rack-navigation button { min-height: 32px; flex: none; color: var(--ink); }
+.cd-rack-navigation button:not(.cd-rack-insert) { width: 32px; padding: 0; }
 .cd-rack-navigation svg { display: block; width: 7px; height: 7px; margin: auto; fill: currentColor; }
-.cd-rack-insert { display: block; margin: 8px auto 0; min-height: 32px; padding: 4px 16px; font: bold 10px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.cd-rack-navigation .cd-rack-insert { flex: 1; min-width: 0; padding: 4px 8px; font: bold 10px 'Pixel MS Sans Serif', Tahoma, sans-serif; letter-spacing: 1px; }
+/* no engraved white shadow on the disabled insert button, it just blurs the letters */
+.cd-rack-navigation .cd-rack-insert:disabled { color: var(--muted); text-shadow: none; }
 .cd-rack-enter-active, .cd-rack-leave-active { transition: opacity .2s, transform .28s ease-out; }
 .cd-rack-enter-from, .cd-rack-leave-to { opacity: 0; transform: translateY(-12px); }
 @media (prefers-reduced-motion: reduce) {
   .cd-disc-carriage { transition: none; }
+  .cd-disc-slot.clicked :is(.cd-disc-carriage, .cd-slot-front) { animation: none; }
   .cd-rack-disc, .cd-rack-enter-active, .cd-rack-leave-active { transition: none; }
   .cd-rack-disc .cd-disc { animation: none; }
 }
@@ -2530,6 +2561,12 @@ fieldset {
   image-rendering: pixelated;
   animation: cd-spin 2.4s steps(12) infinite paused;
 }
+
+/* each disc has its own sprite sheet, tinted to its colour in music.mjs */
+.cd-disc.disc-1 { background-image: url(../assets/cd-disc-frames-1.png); }
+.cd-disc.disc-2 { background-image: url(../assets/cd-disc-frames-2.png); }
+.cd-disc.disc-3 { background-image: url(../assets/cd-disc-frames-3.png); }
+.cd-disc.disc-4 { background-image: url(../assets/cd-disc-frames-4.png); }
 
 .cd-disc.spinning {
   animation-play-state: running;
@@ -2812,7 +2849,7 @@ fieldset {
   min-height: 0;
 }
 
-.cd-repeat[aria-pressed="true"] { color: var(--navy); background: var(--hilite); }
+.cd-repeat[aria-pressed="true"] { background: var(--hilite); }
 
 .cd-transport svg {
   display: block;
@@ -2820,6 +2857,10 @@ fieldset {
   height: 14px;
   fill: currentColor;
 }
+
+/* the spotify arcs are cut out of the logo in the button's own colour, so they read in both themes */
+.cd-spotify-toggle path { stroke: var(--surface); }
+:root[data-theme="dark"] .cd-spotify-toggle svg { fill: var(--muted); }
 
 /* the spotify panel is visually hidden, not display: none, so the embed keeps playing */
 .cd-spotify {
@@ -4672,6 +4713,12 @@ label.mail-label {
   min-height: 144px;
   margin: 0 10px 8px;
   background: var(--surface);
+}
+
+/* the panel is a raised box, not a button: clicking the screen inside it shouldn't press its bevel in */
+.cd-visualizer.raised:active {
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  box-shadow: inset -1px -1px var(--shadow), inset 1px 1px var(--hilite);
 }
 
 .cd-visualizer-heading { display: flex; align-items: center; gap: 7px; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; }

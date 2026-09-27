@@ -35,6 +35,7 @@ function toggleRepeat() {
 const embedHost = ref(null);
 const disc = ref(null);
 const discEjected = ref(false);
+const discClicked = ref(false);
 function discOffset(index) {
   const count = discs.length;
   return ((index - browsing.value + count + Math.floor(count / 2)) % count) - Math.floor(count / 2);
@@ -50,18 +51,30 @@ function rackUp(event) {
 }
 function pickDisc(index, event) {
   if (rackSwiped && event.detail !== 0) return;
-  browsing.value = index;
+  spin(discOffset(index));
 }
 const discs = musicDiscs;
 const inserted = ref(0);
 const browsing = ref(0);
+// how far the carousel has turned in total, so a disc always travels the short way
+// round the ring instead of jumping across the front when the count wraps
+const turn = ref(0);
+// where a disc sits on the ring, counting whole turns so it keeps travelling the same way
+function discAngle(index) { return (index - turn.value) * 360 / discs.length; }
+// how far to turn it back toward you. it depends only on its spot on the ring, so a disc
+// looks the same however many times round you've gone: side discs turn back the most
+function discFace(index) { return Math.round(-Math.sin(discAngle(index) * Math.PI / 180) * 50); }
+function spin(steps) {
+  turn.value += steps;
+  browsing.value = ((turn.value % discs.length) + discs.length) % discs.length;
+}
 const activeDisc = computed(() => discs[inserted.value]);
 const albumUrl = computed(() => activeDisc.value.url);
 const tracks = computed(() => inserted.value === 0 ? originalTracks : [{ uri: activeDisc.value.uri, title: activeDisc.value.title, duration: 0 }]);
 let insertTimer;
 let insertPending = false;
 function rotateDisc(direction) {
-  browsing.value = (browsing.value + direction + discs.length) % discs.length;
+  spin(direction);
   play('release');
   buzz(8);
 }
@@ -70,7 +83,7 @@ function toggleDisc() {
   if (!discEjected.value) {
     insertPending = false;
     discEjected.value = true;
-    browsing.value = inserted.value;
+    turn.value = browsing.value = inserted.value;
     if (controller) pause();
     paused.value = true;
     play('cartOut');
@@ -82,6 +95,7 @@ function toggleDisc() {
     playbackEnd.reset();
     discEjected.value = false;
     insertPending = true;
+    play('discLoad');
     // Reduced motion has no transitionend; the timer also covers interrupted transitions.
     insertTimer = setTimeout(finishInsert, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420);
   }
@@ -92,6 +106,9 @@ function finishInsert() {
   insertPending = false;
   clearTimeout(insertTimer);
   play('cartIn'); buzz([12, 18, 25]);
+  // restart the seating bump even if the last one hasn't finished
+  discClicked.value = false;
+  requestAnimationFrame(() => { discClicked.value = true; });
   if (controller) { controller.loadUri(current.value.uri); requestPlay(); }
   else initialize();
 }
@@ -296,12 +313,12 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout cd-app">
     <div class="cd-face">
-      <button class="cd-disc-slot" :class="{ ejected: discEjected }"
+      <button class="cd-disc-slot" :class="{ ejected: discEjected, clicked: discClicked }"
         :aria-label="discEjected ? 'Insert CD' : 'Eject CD'" :aria-pressed="discEjected" :disabled="discEjected && !discs[browsing].uri" @click="toggleDisc">
         <span class="cd-disc-carriage" @transitionend="discSeated">
-          <span ref="disc" class="cd-disc" :class="{ spinning: !paused && !discEjected }" aria-hidden="true"/>
+          <span ref="disc" class="cd-disc" :class="[`disc-${inserted + 1}`, { spinning: !paused && !discEjected }]" aria-hidden="true"/>
         </span>
-        <span class="cd-slot-front" aria-hidden="true">
+        <span class="cd-slot-front" aria-hidden="true" @animationend="discClicked = false">
           <svg viewBox="0 0 7 9" shape-rendering="crispEdges"><path d="M3 0h1v1H3zM2 1h3v1H2zM1 2h5v1H1zM0 3h7v1H0zM0 6h7v2H0z"/></svg>
           {{ discEjected ? 'INSERT' : 'EJECT' }}
         </span>
@@ -364,7 +381,6 @@ onBeforeUnmount(() => {
               <path
                 d="M6 5.2c2.8-.9 5.6-.6 8 .8M6.5 7.6c2.3-.6 4.5-.4 6.6.7M7 9.8c1.8-.4 3.4-.3 5 .5"
                 fill="none"
-                stroke="#c0c0c0"
                 stroke-width="1.2"
                 stroke-linecap="round"
               />
@@ -376,22 +392,24 @@ onBeforeUnmount(() => {
 
     <Transition name="cd-rack">
       <section v-if="discEjected" class="cd-disc-rack inset" aria-label="CD carousel">
-        <div class="cd-rack-header"><strong>DISC SELECT</strong><span>{{ browsing + 1 }} / {{ discs.length }}</span></div>
+        <div class="cd-rack-header">
+          <div aria-live="polite"><strong>{{ discs[browsing].title }}</strong><small>{{ discs[browsing].uri ? 'Ready to play' : 'Album coming soon' }}</small></div>
+          <span>{{ browsing + 1 }} / {{ discs.length }}</span>
+        </div>
         <div class="cd-rack-stage" @pointerdown="rackDown" @pointerup="rackUp" @pointercancel="swipeFrom = null">
           <button v-for="(item, index) in discs" :key="index" class="cd-rack-disc"
             :class="{ selected: browsing === index, empty: !item.uri }"
-            :style="{ '--disc-offset': discOffset(index), '--disc-color': item.color, zIndex: discs.length - Math.abs(discOffset(index)) }"
+            :style="{ '--disc-angle': discAngle(index), '--disc-face': discFace(index), '--disc-color': item.color, zIndex: discs.length - Math.abs(discOffset(index)) }"
             :aria-label="item.title" :aria-pressed="browsing === index" @click="pickDisc(index, $event)">
-            <span class="cd-disc" aria-hidden="true"/>
+            <span class="cd-disc" :class="`disc-${index + 1}`" aria-hidden="true"/>
             <span class="cd-rack-number" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
           </button>
         </div>
         <div class="cd-rack-navigation">
           <button class="raised" aria-label="Previous disc" @click="rotateDisc(-1)"><svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 0h1v7H4zM3 1h1v5H3zM2 2h1v3H2zM1 3h1v1H1z"/></svg></button>
-          <div aria-live="polite"><strong>{{ discs[browsing].title }}</strong><small>{{ discs[browsing].uri ? 'Ready to play' : 'Album coming soon' }}</small></div>
+          <button class="raised cd-rack-insert" :disabled="!discs[browsing].uri" @click="toggleDisc">INSERT DISC</button>
           <button class="raised" aria-label="Next disc" @click="rotateDisc(1)"><svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z"/></svg></button>
         </div>
-        <button class="raised cd-rack-insert" :disabled="!discs[browsing].uri" @click="toggleDisc">INSERT DISC</button>
       </section>
     </Transition>
 
