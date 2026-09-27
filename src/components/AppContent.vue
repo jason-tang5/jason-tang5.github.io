@@ -48,6 +48,11 @@ defineProps({
 const emit = defineEmits(['open', 'close', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
+// the preview's back and next buttons step through the files, wrapping at the ends
+function stepProject(by) {
+  const i = projects.findIndex(p => p.id === selected.value.id);
+  selected.value = projects[(i + by + projects.length) % projects.length];
+}
 const favoritesStrip = ref(null);
 const favoritesLeft = ref(false);
 const favoritesRight = ref(false);
@@ -558,6 +563,11 @@ function balloonDone(event, id) {
         </div>
         <!-- the project's first figure, the same one that opens its what i built -->
         <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>
+        <div class="preview-steps">
+          <button class="raised" @click="stepProject(-1)">← Back</button>
+          <span>{{ projects.findIndex(p => p.id === selected.id) + 1 }} of {{ projects.length }}</span>
+          <button class="raised" @click="stepProject(1)">Next →</button>
+        </div>
         <i class="preview-resize" aria-hidden="true" @pointerdown.prevent="resizePreview"/>
       </aside>
       <div

@@ -1889,6 +1889,27 @@ input[type="checkbox"]:focus-visible {
   margin: 0;
 }
 
+/* back and next along the bottom of the preview, pushed down when it's short */
+.project-preview {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 20px;
+  font-size: 11px;
+  color: var(--d-muted, #4c4c4c);
+}
+
+.preview-steps button {
+  font-size: 12px;
+}
+
 /* the project's icon on the same line as its name */
 .preview-title {
   display: flex;
@@ -4602,7 +4623,8 @@ label.mail-label {
   .toolbar button,
   .toolbar a,
   .settings-reset,
-  .preview-actions > button {
+  .preview-actions > button,
+  .preview-steps button {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
