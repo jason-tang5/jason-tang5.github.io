@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analytics, validateEvent, summarize, publicSummary, queries } from '../worker/analytics.mjs';
+import { analytics, validateEvent, summarize, queries } from '../worker/analytics.mjs';
 const event = { visit: 'abcd123456', name: 'snake-score', value: 12 };
 const request = (path, options) => new Request(`https://jasontang.dev${path}`, options);
 test('validates event schema and rejects malformed or personal data', () => {
@@ -39,29 +39,24 @@ test('summary separates game completions from per-visit funnel and uses maximum 
   assert.equal(result.funnel[3].count, 2);
   assert.equal(result.referrers[0].label, 'direct');
   assert.equal(result.daily[0].day, '2026-09-26');
-  assert.deepEqual(Object.keys(publicSummary(result)), ['visitors', 'snakeHighScore', 'minesweeperWins', 'breakoutWins', 'daily']);
   assert.equal(summarize([]).snakeHighScore, 0);
 });
-test('summary routes protect private data, reject invalid periods and methods', async () => {
+test('the summary route returns everything and rejects invalid periods and methods', async () => {
   const env = { CLOUDFLARE_ACCOUNT_ID: 'test', ANALYTICS_TOKEN: 'secret' };
   let calls = 0;
-  const options = { verify: async () => false, fetcher: async (_url, init) => {
+  const options = { fetcher: async (_url, init) => {
     calls++;
     assert.equal(init.headers.Authorization, 'Bearer secret');
     return Response.json({ data: init.body.includes('GROUP BY day') ? [] : rows });
   } };
-  assert.equal((await analytics(request('/api/admin/analytics'), env, options)).status, 401);
-  assert.equal(calls, 0);
   const result = await (await analytics(request('/api/analytics'), env, options)).json();
+  assert.equal(calls, 2);
   assert.equal(result.visitors, 5);
-  assert.equal(result.mail, undefined);
-  assert.equal(result.referrers, undefined);
-  assert.equal(result.funnel, undefined);
+  assert.equal(result.mail.errors[0].count, 2);
+  assert.equal(result.referrers[0].label, 'direct');
   assert.equal((await analytics(request('/api/analytics?days=0'), env, options)).status, 400);
   assert.equal((await analytics(request('/api/analytics', { method: 'POST' }), env, options)).status, 405);
   assert.equal((await analytics(request('/api/analytics'), {}, options)).status, 503);
-  const privateResult = await (await analytics(request('/api/admin/analytics'), env, { ...options, verify: async () => true })).json();
-  assert.equal(privateResult.mail.errors[0].count, 2);
   assert.throws(() => queries('30 OR 1=1'), RangeError);
   assert.match(queries(30).events, /MAX\(double1\)/);
 });

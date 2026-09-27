@@ -1,16 +1,35 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
+import PixelPie from './PixelPie.vue';
 import { useLiveStats } from '../live-stats.js';
-const { data: live, error: liveError } = useLiveStats();
+import { read, save } from '../storage.js';
+const { data: live, error: liveError, refresh } = useLiveStats();
+const periods = [7, 30, 90];
 const days = ref(30);
 const data = ref(null);
-const privateData = ref(null);
 const busy = ref(false);
 const error = ref('');
-const privateError = ref('');
-const admin = ref(false);
 const number = value => Number(value || 0).toLocaleString();
+// the window is split into win95 tabs
+const tabs = [
+  { id: 'scoreboard', label: 'Scoreboard' },
+  { id: 'history', label: 'Site history' },
+  { id: 'behind', label: 'Behind the scenes' },
+];
+const tab = ref(read('analytics-tab', 'scoreboard'));
+const current = computed(() => tabs.some(t => t.id === tab.value) ? tab.value : 'scoreboard');
+function pick(id) {
+  tab.value = id;
+  save('analytics-tab', id);
+}
+// left and right arrows move between tabs, like a real tab strip
+function step(event, by) {
+  const list = tabs;
+  const next = list[(list.findIndex(t => t.id === current.value) + by + list.length) % list.length];
+  pick(next.id);
+  event.currentTarget.parentElement.querySelector(`[data-tab="${next.id}"]`)?.focus();
+}
 // the four all-time cards up top, from the live scoreboard
 const cards = computed(() => {
   const s = live.value;
@@ -24,6 +43,10 @@ const cards = computed(() => {
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
   ];
 });
+const clippyRows = computed(() => live.value ? [
+  { label: 'Clippy won', count: live.value.clippyWins },
+  { label: 'Visitors won', count: live.value.clippyLosses },
+] : []);
 const daily = computed(() => {
   const counts = new Map(data.value?.daily.map(row => [row.day, row.visits]) || []);
   return Array.from({ length: days.value }, (_, i) => {
@@ -34,10 +57,10 @@ const daily = computed(() => {
   });
 });
 const peak = computed(() => Math.max(1, ...daily.value.map(row => row.visits)));
-const sections = computed(() => privateData.value ? [
-  ['Windows opened', privateData.value.windows], ['Blog posts', privateData.value.blogPosts],
-  ['Breakout funnel', privateData.value.funnel], ['Devices', privateData.value.devices],
-  ['Referrers', privateData.value.referrers], ['Mail errors', privateData.value.mail.errors],
+const sections = computed(() => data.value ? [
+  // the last number is the section's bar color, --bar-1 to --bar-7 below
+  ['Windows opened', data.value.windows, 3], ['Blog posts', data.value.blogPosts, 5],
+  ['Breakout funnel', data.value.funnel, 7], ['Mail errors', data.value.mail.errors, 2],
 ] : []);
 async function get(url) {
   const response = await fetch(url, { redirect: 'error' });
@@ -45,88 +68,93 @@ async function get(url) {
   if (!response.ok) throw new Error(result.error || 'Could not load analytics.');
   return result;
 }
+function setDays(value) {
+  days.value = value;
+  load();
+}
 async function load() {
   busy.value = true;
   error.value = '';
-  privateError.value = '';
   data.value = null;
-  privateData.value = null;
   try { data.value = await get(`/api/analytics?days=${days.value}`); }
   catch { error.value = 'Site history is unavailable right now. Please try again later.'; }
-  if (admin.value) {
-    try { privateData.value = await get(`/api/admin/analytics?days=${days.value}`); }
-    catch { privateError.value = 'Could not load private analytics. Try signing in again.'; }
-  }
   busy.value = false;
 }
-onMounted(async () => {
-  await load();
-  try {
-    const response = await fetch('/api/admin/me', { redirect: 'manual' });
-    admin.value = response.ok && Boolean((await response.json()).email);
-    if (admin.value) await load();
-  } catch { /* Public scoreboard remains available when signed out. */ }
-});
+onMounted(load);
 </script>
 
 <template>
   <div class="app-layout">
     <div class="toolbar analytics-toolbar">
-      <label>Last <select v-model="days" :disabled="busy" @change="load"><option :value="7">7 days</option><option :value="30">30 days</option><option :value="90">90 days</option></select></label>
-      <button class="raised" :disabled="busy" @click="load">Refresh</button>
-      <a href="/api/admin/login?next=analytics">{{ admin ? 'Signed in' : 'Admin sign in' }}</a>
+      <div v-if="current !== 'scoreboard'" class="analytics-periods" role="group" aria-label="Period">
+        <span>Last</span>
+        <button v-for="value in periods" :key="value" class="raised" :class="{ pressed: days === value }" :aria-pressed="days === value" :disabled="busy" @click="setDays(value)">{{ value }} days</button>
+      </div>
+      <button class="raised" :disabled="busy" @click="refresh(); load()">Refresh</button>
     </div>
-    <main class="content-scroll document pixel-headings analytics-page" :aria-busy="busy">
-      <h1>All-time scoreboard</h1>
-      <p v-if="liveError && !live" role="status">{{ liveError }}</p>
-      <p v-else-if="!live" role="status">Loading scores...</p>
+    <div class="analytics-tabs" role="tablist" aria-label="Analytics">
+      <button v-for="t in tabs" :id="`analytics-tab-${t.id}`" :key="t.id" :data-tab="t.id" role="tab" :aria-selected="current === t.id" :aria-controls="`analytics-panel-${t.id}`" :tabindex="current === t.id ? 0 : -1"
+        @click="pick(t.id)" @keydown.right.prevent="step($event, 1)" @keydown.left.prevent="step($event, -1)">{{ t.label }}</button>
+    </div>
+    <main :id="`analytics-panel-${current}`" class="content-scroll document pixel-headings analytics-page" role="tabpanel" :aria-labelledby="`analytics-tab-${current}`" :aria-busy="busy">
+      <template v-if="current === 'scoreboard'">
+        <h1>All-time scoreboard</h1>
+        <p v-if="liveError && !live" role="status">{{ liveError }}</p>
+        <p v-else-if="!live" role="status">Loading scores...</p>
+        <template v-else>
+          <div class="score-cards">
+            <section v-for="card in cards" :key="card.label" class="score-card">
+              <RetroIcon :name="card.icon"/>
+              <strong>{{ card.value }}</strong>
+              <span>{{ card.label }}</span>
+              <small v-if="card.note">{{ card.note }}</small>
+            </section>
+          </div>
+          <p class="analytics-note"><strong>{{ number(live.visitors) }}</strong> total visits &middot; <strong>{{ number(live.online) }}</strong> online now</p>
+          <h2>Reversi against Clippy</h2>
+          <PixelPie :rows="clippyRows" label="Reversi games against Clippy"/>
+          <h2>Snake leaderboard</h2>
+          <table v-if="live.leaderboard.length" class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
+          <p v-else>No scores yet. Play Snake to set the first record!</p>
+        </template>
+      </template>
+      <template v-else-if="current === 'history'">
+        <h1>A little bit of site history</h1>
+        <p v-if="busy" role="status">Loading site history...</p>
+        <p v-else-if="error" role="status">{{ error }}</p>
+        <template v-if="data">
+          <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days</p>
+          <h2>Visitors by day</h2>
+          <p v-if="!data.visitors">No visits recorded yet. The next adventure starts with a click.</p>
+          <div class="analytics-chart" role="img" :aria-label="`Daily visits over the last ${days} days. Peak: ${peak === 1 && !data.visitors ? 0 : peak}.`">
+            <div v-for="row in daily" :key="row.day" class="analytics-column" :title="`${row.day}: ${number(row.visits)} visits`">
+              <span :style="{ height: `${row.visits / peak * 100}%` }"/>
+            </div>
+          </div>
+          <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
+          <h2>Boards cleared</h2>
+          <p class="analytics-note">Last {{ days }} days, replays included.</p>
+          <PixelPie :rows="[{ label: 'Minesweeper', count: data.minesweeperWins }, { label: 'Breakout', count: data.breakoutWins }]" label="Boards cleared"/>
+        </template>
+      </template>
       <template v-else>
-        <div class="score-cards">
-          <section v-for="card in cards" :key="card.label" class="score-card">
-            <RetroIcon :name="card.icon"/>
-            <strong>{{ card.value }}</strong>
-            <span>{{ card.label }}</span>
-            <small v-if="card.note">{{ card.note }}</small>
+        <h1>Behind the scenes</h1>
+        <p v-if="busy" role="status">Loading...</p>
+        <p v-else-if="error" role="status">{{ error }}</p>
+        <template v-if="data">
+          <p>Last {{ days }} days: {{ number(data.mail.sent) }} messages sent · {{ number(data.mail.failed) }} failed · {{ number(data.breakout.losses) }} lost Breakout balls · {{ data.breakout.averageWinSeconds ?? '—' }} seconds to win Breakout on average.</p>
+          <div class="analytics-pies">
+            <section><h2>Devices</h2><PixelPie :rows="data.devices" label="Devices"/></section>
+            <section><h2>Referrers</h2><PixelPie :rows="data.referrers" label="Referrers"/></section>
+          </div>
+          <section v-for="[title, rows, color] in sections" :key="title">
+            <h2>{{ title }}</h2><p v-if="!rows.length">No events yet.</p>
+            <div v-for="row in rows" :key="row.label" class="analytics-bar-row" :style="{ '--bar': `var(--bar-${color})` }">
+              <div><span>{{ row.label || 'Unknown' }}</span><strong>{{ number(row.count) }}</strong></div>
+              <div class="analytics-bar"><span :style="{ width: `${row.count / Math.max(1, ...rows.map(r => r.count)) * 100}%` }"/></div>
+            </div>
           </section>
-        </div>
-        <p class="analytics-note"><strong>{{ number(live.visitors) }}</strong> total visits &middot; <strong>{{ number(live.online) }}</strong> online now. Since tracking began. Online counts tabs active in the last 90 seconds. Scores are client-reported.</p>
-      </template>
-      <h1>A little bit of site history</h1>
-      <p>People dropping by, snakes getting longer, and a few games finally beaten.</p>
-      <p v-if="busy" role="status">Loading site history...</p>
-      <p v-else-if="error" role="status">{{ error }}</p>
-      <template v-if="data">
-        <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days. Visits count page loads with a click, tap or keypress, not unique people.</p>
-        <h2>Visitors by day</h2>
-        <p v-if="!data.visitors">No visits recorded yet. The next adventure starts with a click.</p>
-        <div class="analytics-chart" role="img" :aria-label="`Daily visits over the last ${days} days. Peak: ${peak === 1 && !data.visitors ? 0 : peak}. Exact counts in the table below.`">
-          <div v-for="row in daily" :key="row.day" class="analytics-column" :title="`${row.day}: ${number(row.visits)} visits`">
-            <span :style="{ height: `${row.visits / peak * 100}%` }"/>
-          </div>
-        </div>
-        <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
-        <details><summary>Daily counts</summary><table class="analytics-table"><thead><tr><th>Date (UTC)</th><th>Visits</th></tr></thead><tbody><tr v-for="row in daily" :key="row.day"><td>{{ row.day }}</td><td>{{ number(row.visits) }}</td></tr></tbody></table></details>
-        <h2>Boards cleared</h2>
-        <p class="analytics-note">Last {{ days }} days, replays included.</p>
-        <div v-for="(value, label) in { Minesweeper: data.minesweeperWins, Breakout: data.breakoutWins }" :key="label" class="analytics-bar-row">
-          <div><span>{{ label }}</span><strong>{{ number(value) }}</strong></div>
-          <div class="analytics-bar"><span :style="{ width: `${value / Math.max(1, data.minesweeperWins, data.breakoutWins) * 100}%` }"/></div>
-        </div>
-      </template>
-      <template v-if="live?.leaderboard.length">
-        <h2>Snake leaderboard</h2>
-        <table class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
-      </template>
-      <p v-if="privateError" role="status">{{ privateError }}</p>
-      <template v-if="privateData">
-        <h2>Behind the scenes</h2><p>Private analytics · {{ number(privateData.breakout.losses) }} lost balls · {{ privateData.breakout.averageWinSeconds ?? '—' }} seconds to win on average · {{ number(privateData.mail.failed) }} failed messages.</p>
-        <section v-for="[title, rows] in sections" :key="title">
-          <h2>{{ title }}</h2><p v-if="!rows.length">No events yet.</p>
-          <div v-for="row in rows" :key="row.label" class="analytics-bar-row">
-            <div><span>{{ row.label || 'Unknown' }}</span><strong>{{ number(row.count) }}</strong></div>
-            <div class="analytics-bar"><span :style="{ width: `${row.count / Math.max(1, ...rows.map(r => r.count)) * 100}%` }"/></div>
-          </div>
-        </section>
+        </template>
       </template>
     </main>
     <div class="status-bar">Anonymous events · no analytics cookies · updates after processing</div>
@@ -134,9 +162,23 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.analytics-toolbar { flex-wrap: wrap; gap: 8px; }
-.analytics-toolbar a { margin-left: auto; font-size: 12px; }
-.analytics-toolbar select { font: inherit; }
+.analytics-toolbar { flex-wrap: wrap; gap: 8px; font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.analytics-toolbar .raised { font: inherit; color: var(--ink); text-decoration: none; }
+.analytics-periods { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.analytics-periods span { margin-right: 4px; }
+.analytics-periods .pressed { font-weight: bold; background: var(--hilite); }
+/* win95 tab strip: the selected tab stands taller and joins the page below it */
+.analytics-tabs { display: flex; gap: 2px; padding: 6px 6px 0; margin-bottom: -2px; position: relative; z-index: 1; overflow-x: auto; flex-shrink: 0; }
+.analytics-tabs button {
+  font: 13px 'Pixel MS Sans Serif', Tahoma, sans-serif; color: var(--ink); white-space: nowrap; cursor: pointer;
+  padding: 4px 12px 3px; margin-top: 3px; background: var(--surface);
+  border: 2px solid; border-bottom: 0; border-color: var(--light) var(--edge) transparent var(--light);
+  box-shadow: inset -1px 0 var(--shadow), inset 1px 1px var(--hilite);
+}
+.analytics-tabs button[aria-selected="true"] { margin-top: 0; padding-bottom: 6px; font-weight: bold; background: var(--paper); }
+.analytics-tabs button:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
+.analytics-page { border-top: 2px solid var(--light); }
+.analytics-pies { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 24px; }
 .score-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
 .score-card {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; text-align: center; min-width: 0;
@@ -148,14 +190,16 @@ onMounted(async () => {
 .score-card span { font-size: 12px; }
 .score-card small { font-size: 11px; color: var(--muted); }
 .analytics-note { font-size: 12px; color: var(--muted); }
-.analytics-chart { display: flex; align-items: stretch; gap: 2px; height: 144px; border-left: 2px solid #555; border-bottom: 2px solid #555; padding: 8px 4px 0; background: repeating-linear-gradient(to top, #ddd 0 1px, transparent 1px 32px); }
+.analytics-chart { display: flex; align-items: stretch; gap: 2px; height: 144px; border-left: 2px solid #555; border-bottom: 2px solid #555; padding: 8px 4px 0; background: repeating-linear-gradient(to top, var(--d-rule, #ddd) 0 1px, transparent 1px 32px); }
 .analytics-column { flex: 1; min-width: 0; display: flex; align-items: flex-end; }
-.analytics-column span { width: 100%; background: repeating-linear-gradient(to top, #008080 0 6px, #fff 6px 8px); }
+.analytics-column span { width: 100%; background: repeating-linear-gradient(to top, #008080 0 6px, var(--paper) 6px 8px); }
 .analytics-axis { display: flex; justify-content: space-between; font: 10px/2 monospace; gap: 8px; }
 .analytics-bar-row { margin: 14px 0; }
 .analytics-bar-row > div:first-child { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
-.analytics-bar { height: 16px; background: #eee; margin-top: 4px; }
-.analytics-bar span { display: block; height: 100%; background: repeating-linear-gradient(to right, #000080 0 6px, transparent 6px 8px); }
+.analytics-page { --bar-1: #2a78d6; --bar-2: #eb6834; --bar-3: #1baf7a; --bar-4: #eda100; --bar-5: #e87ba4; --bar-6: #8a8a8a; --bar-7: #4a3aa7; }
+:root[data-theme="dark"] .analytics-page { --bar-1: #3987e5; --bar-2: #d95926; --bar-3: #199e70; --bar-4: #c98500; --bar-5: #d55181; --bar-6: #77777c; --bar-7: #9085e9; }
+.analytics-bar { height: 16px; background: var(--d-rule, #eee); margin-top: 4px; }
+.analytics-bar span { display: block; height: 100%; background: repeating-linear-gradient(to right, var(--bar) 0 6px, transparent 6px 8px); }
 .analytics-table { width: 100%; text-align: left; font-size: 12px; }
 .analytics-table td, .analytics-table th { border-bottom: 1px solid #ddd; }
 @media (max-width: 560px) { .score-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

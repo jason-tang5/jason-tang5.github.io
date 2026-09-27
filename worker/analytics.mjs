@@ -3,15 +3,13 @@ import { liveStats } from './live-stats.mjs';
 // wrangler.jsonc). the site sends small anonymous events (src/analytics.js):
 //
 //   POST /api/event              { visit, name, detail, value, device, referrer }
-//   GET  /api/admin/analytics    the summary for the analytics window (signed in only)
+//   GET  /api/analytics          the summary for the analytics window, public
 //
 // a visit is a random id made per page load and kept in memory, so there are no
 // cookies, ips or anything personal. the summary is built with the analytics engine
 // sql api, which needs CLOUDFLARE_ACCOUNT_ID (a var) and ANALYTICS_TOKEN (a secret,
 // an api token with account analytics read). kept apart from the worker so it can
 // be tested in plain node, and scripts/analytics-report.mjs reuses it for writeups.
-import { verifyAccess } from './access.mjs';
-
 export const dataset = 'jasontang_events';
 
 // every event the site sends. anything else is ignored
@@ -161,20 +159,14 @@ export function summarize(rows, daily = []) {
     },
     mail: {
       errors: sortedEntries(by('mail-error', 'detail')),
+      sent: n('mail-sent'),
       failed: n('mail-failed'),
     },
   };
 }
 
-export function publicSummary(summary) {
-  const { visitors, snakeHighScore, minesweeperWins, breakoutWins, daily } = summary;
-  return { visitors, snakeHighScore, minesweeperWins, breakoutWins, daily };
-}
-
-async function summary(request, env, verify, fetcher) {
+async function summary(request, env, fetcher) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed.' }, 405);
-  const isPublic = new URL(request.url).pathname === '/api/analytics';
-  if (!isPublic && !await verify(request, env)) return json({ error: 'Sign in first.' }, 401);
   if (!env.CLOUDFLARE_ACCOUNT_ID || !env.ANALYTICS_TOKEN) {
     return json({ error: 'Analytics isn’t set up yet: ANALYTICS_TOKEN is missing.' }, 503);
   }
@@ -185,16 +177,15 @@ async function summary(request, env, verify, fetcher) {
     const options = { accountId: env.CLOUDFLARE_ACCOUNT_ID, token: env.ANALYTICS_TOKEN, fetcher };
     const q = queries(days);
     const [rows, daily] = await Promise.all([sql(q.events, options), sql(q.daily, options)]);
-    const result = summarize(rows, daily);
-    return json({ days, ...(isPublic ? publicSummary(result) : result) });
+    return json({ days, ...summarize(rows, daily) });
   } catch (error) {
     console.error(error);
     return json({ error: 'Couldn’t load analytics right now.' }, 502);
   }
 }
 
-export function analytics(request, env, { verify = verifyAccess, fetcher = fetch } = {}) {
+export function analytics(request, env, { fetcher = fetch } = {}) {
   const { pathname } = new URL(request.url);
   if (pathname === '/api/event') return record(request, env);
-  return summary(request, env, verify, fetcher);
+  return summary(request, env, fetcher);
 }

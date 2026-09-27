@@ -79,8 +79,8 @@ completions. Analytics Engine retains three months of events and can sample data
 so counts may be estimates and high scores are the highest retained observations.
 Client-reported game results are a casual scoreboard, not verified competition scores.
 
-Public data is allowlisted by `/api/analytics`; detailed breakdowns remain behind
-Cloudflare Access at `/api/admin/analytics`. Only jasontang.dev sends events, after
+Everything in the analytics window is public, from `/api/analytics`. It's all anonymous
+totals; contact form names, emails and messages are never recorded. Only jasontang.dev sends events, after
 the first interaction, using an in-memory visit identifier with no analytics cookies.
 
 Create a Cloudflare API token with Account / Account Analytics / Read for the account

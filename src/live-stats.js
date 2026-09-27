@@ -27,5 +27,5 @@ export function useLiveStats() {
   onBeforeUnmount(() => {
     if (--users === 0) clearInterval(timer);
   });
-  return { data, error };
+  return { data, error, refresh: load };
 }
