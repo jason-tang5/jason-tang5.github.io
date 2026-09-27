@@ -23,12 +23,12 @@ try {
     await expect(page.getByText('Your Snake best', { exact: true })).toBeVisible();
     await expect(page.getByText('3-1', { exact: true })).toBeVisible();
     await expect(page.getByText('Clippy wins 75%', { exact: true })).toBeVisible();
-    await expect(page.locator('.pixel-pie')).toHaveCount(2);
+    await expect(page.locator('.pixel-pie')).toHaveCount(1);
     await expect(page.getByText('1,234', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '7 days' }).click();
     await expect(page.locator('.analytics-column')).toHaveCount(7);
     await page.getByRole('tab', { name: 'Behind the scenes' }).click();
-    await expect(page.locator('.score-card')).toHaveCount(4);
+    await expect(page.locator('.score-card')).toHaveCount(3);
     await expect(page.getByText('Messages sent', { exact: true })).toBeVisible();
     await expect(page.locator('.pixel-pie')).toHaveCount(1);
     const overflow = await page.locator('.analytics-page').evaluate(e => e.scrollWidth > e.clientWidth);

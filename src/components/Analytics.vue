@@ -62,13 +62,8 @@ const yourCards = computed(() => {
 // the same kind of cards for the behind the scenes numbers, over the chosen period
 const behindCards = computed(() => data.value ? [
   { label: 'Messages sent', value: number(data.value.mail.sent), icon: 'mail' },
-  { label: 'Messages failed', value: number(data.value.mail.failed), icon: 'contact' },
   { label: 'Breakout balls lost', value: number(data.value.breakout.losses), icon: 'game' },
   { label: 'Seconds to win Breakout', value: data.value.breakout.averageWinSeconds ?? '—', icon: 'games', note: 'on average' },
-] : []);
-const clippyRows = computed(() => live.value ? [
-  { label: 'Clippy won', count: live.value.clippyWins },
-  { label: 'Visitors won', count: live.value.clippyLosses },
 ] : []);
 const daily = computed(() => {
   const counts = new Map(data.value?.daily.map(row => [row.day, row.visits]) || []);
@@ -143,7 +138,6 @@ onMounted(load);
             <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
           </div>
           <h2>Your scores</h2>
-          <p class="analytics-note">Kept in this browser.</p>
           <div class="score-cards three">
             <section v-for="card in yourCards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
@@ -155,8 +149,6 @@ onMounted(load);
               </ul>
             </section>
           </div>
-          <h2>Reversi against Clippy</h2>
-          <PixelPie :rows="clippyRows" label="Reversi games against Clippy"/>
           <h2>Snake leaderboard</h2>
           <table v-if="live.leaderboard.length" class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
           <p v-else>No scores yet. Play Snake to set the first record!</p>
@@ -189,7 +181,7 @@ onMounted(load);
         <p v-if="busy" role="status">Loading...</p>
         <p v-else-if="error" role="status">{{ error }}</p>
         <template v-if="data">
-          <div class="score-cards">
+          <div class="score-cards three">
             <section v-for="card in behindCards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
               <strong>{{ card.value }}</strong>
@@ -197,7 +189,6 @@ onMounted(load);
               <small v-if="card.note">{{ card.note }}</small>
             </section>
           </div>
-          <p class="analytics-note">Last {{ days }} days</p>
           <h2>Devices</h2>
           <PixelPie :rows="data.devices" label="Devices"/>
           <section v-for="[title, rows, color] in sections" :key="title">
