@@ -447,6 +447,7 @@ try {
 
   // empty desktop to the right of the about window
   assert.ok(await soundsFrom(() => noisy.mouse.click(1330, 450)) > 0, 'background click makes a sound');
+  await noisy.locator('[data-window="about"] .hammer-toggle').click();
   assert.ok(await soundsFrom(() => noisy.locator('.portrait-ascii canvas').click()) > 0, 'breaking ascii letters makes a sound');
   assert.ok(await soundsFrom(() => noisy.locator('[data-window="about"]').getByRole('button', { name: 'Experience', exact: true }).click()) > 0, 'button click makes a sound');
 

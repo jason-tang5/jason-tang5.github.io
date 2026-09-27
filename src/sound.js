@@ -22,7 +22,7 @@ const xylophone = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.5];
 let note = 0;
 
 // minimum ms between repeats, so sweeping the mouse or dragging doesn't turn into a buzz
-const throttle = { hover: 60, crumble: 70, brick: 30, letter: 300, meow: 400, ping: 300 };
+const throttle = { hover: 60, brick: 30, letter: 300, meow: 400, ping: 300 };
 
 export const soundEnabled = () => enabled;
 export const soundLevel = () => level;
@@ -208,17 +208,18 @@ const sounds = {
     blip(ac, { type: 'sine', from: 380, to: 260, length: 0.035, volume: 0.05 });
   },
 
-  // ascii letters breaking off: typewriter keys. each clack is a sharp resonant
-  // snap with a little knock of the key hitting bottom, pitched slightly
-  // differently every time. bigger hits get a quick flurry of two or three keys
+  // ascii letters breaking off: a hammer blow. a low thud of the head landing, a short
+  // metallic clank from the steel ringing on top, then a crackle of bits breaking off,
+  // more of them the more letters went. pitched a little differently every hit
   crumble: (ac, amount = 1) => {
-    const keys = Math.min(3, 1 + Math.floor(amount / 40));
-    for (let i = 0; i < keys; i++) {
-      const start = i * 0.045 + Math.random() * 0.01;
-      const tone = 0.9 + Math.random() * 0.25;
-      burst(ac, { freq: 3200 * tone, q: 3, start, length: 0.018, volume: 0.28 });
-      blip(ac, { from: 1400 * tone, to: 700 * tone, start, length: 0.02, volume: 0.025 });
-      burst(ac, { freq: 700 * tone, q: 1.5, start: start + 0.004, length: 0.03, volume: 0.1 });
+    const tone = 0.9 + Math.random() * 0.2;
+    blip(ac, { type: 'sine', from: 170 * tone, to: 55, length: 0.11, volume: 0.16 });
+    burst(ac, { freq: 500 * tone, q: 1, length: 0.035, volume: 0.14 });
+    blip(ac, { type: 'triangle', from: 1850 * tone, to: 1780 * tone, start: 0.002, length: 0.09, volume: 0.02 });
+    blip(ac, { type: 'sine', from: 2710 * tone, start: 0.002, length: 0.06, volume: 0.012 });
+    const bits = Math.min(4, 1 + Math.floor(amount / 25));
+    for (let i = 0; i < bits; i++) {
+      burst(ac, { freq: 2600 + Math.random() * 1800, q: 2.5, start: 0.02 + i * 0.022 + Math.random() * 0.012, length: 0.014, volume: 0.09 });
     }
   },
 

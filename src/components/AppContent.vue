@@ -6,6 +6,7 @@ import { profile, projects, roles } from '../content.mjs';
 import { folders, registry } from '../registry.js';
 import { isUnlocked } from '../unlocks.js';
 import AsciiImage from './AsciiImage.vue';
+import { imageAscii } from '../ascii-density.js';
 import Analytics from './Analytics.vue';
 import Blog from './Blog.vue';
 import Music from './Music.vue';
@@ -192,10 +193,31 @@ function resizePreview(event) {
 const resumeUrl =`${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
-const portraitAscii = ref(read('portrait-ascii', 'on') !== 'off');
+const portraitAscii = imageAscii;
 // the portrait's ascii / normal buttons, sliders and reset sit in a toolbar over it,
 // like my pictures' toolbar, instead of on the photo
 const portraitControls = ref(null);
+// on a touchscreen the hint points at the hammer, since a finger has to pick it up
+// before it can smash letters. without the hammer it sits on the photo instead
+const portraitFrame = ref(null);
+const hintAt = ref(null);
+function placeHint() {
+  const hammer = portraitControls.value?.querySelector('.hammer-toggle');
+  if (!portraitHint.value || !hammer?.getClientRects().length || !portraitFrame.value) {
+    hintAt.value = null;
+    return;
+  }
+  const frame = portraitFrame.value.getBoundingClientRect();
+  const box = hammer.getBoundingClientRect();
+  hintAt.value = { left: `${Math.max(4, box.left - frame.left + box.width / 2 - 18)}px`, top: `${box.bottom - frame.top + 9}px` };
+}
+const hintObserver = new ResizeObserver(placeHint);
+watch(portraitFrame, (frame, old) => {
+  if (old) hintObserver.unobserve(old);
+  if (frame) hintObserver.observe(frame);
+});
+watch(portraitControls, controls => controls && hintObserver.observe(controls));
+onBeforeUnmount(() => hintObserver.disconnect());
 
 
 // the cd at the bottom of the about page. hovering it spins it, plays a little
@@ -254,7 +276,6 @@ onBeforeUnmount(stopCd);
 function setPortraitAscii(value) {
   portraitHint.value = false;
   portraitAscii.value = value;
-  save('portrait-ascii', value ? 'on' : 'off');
 }
 
 // ---- balloons: the button beside the lifts lets a bunch of pixel balloons float up
@@ -286,8 +307,8 @@ function launchBalloons() {
         animationDuration: `${3.2 + Math.random() * 2.4}s`,
         animationDelay: `${Math.random() * 0.9}s`,
       },
-      // each one starts somewhere different in its bob, at its own pace
-      sway: { '--frame': `${0.7 + Math.random() * 0.4}s`, '--sway-time': `${1.5 + Math.random() * 0.8}s`, '--phase': `${-Math.random() * 2}s` },
+      // each one starts somewhere different in its sway, at its own pace
+      sway: { '--sway-time': `${4.4 + Math.random() * 1.4}s`, '--phase': `${-Math.random() * 2}s` },
     };
   });
   balloons.value = [...balloons.value, ...batch];
@@ -459,9 +480,9 @@ function balloonDone(event, id) {
           </span>
         </Teleport>
         <div class="about-grid">
-          <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
+          <div ref="portraitFrame" class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
             <div ref="portraitControls" class="pictures-controls portrait-toolbar"/>
-            <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
+            <span v-if="portraitHint" class="portrait-hint" :class="{ pointing: hintAt }" :style="hintAt">Try clicking me!</span>
             <AsciiImage
               class="portrait-ascii"
               :source="portraitUrl"

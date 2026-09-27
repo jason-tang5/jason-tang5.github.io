@@ -5,7 +5,7 @@
 // right with the string trailing left, then squashes wide, like it's bobbing on air
 const balloonBodies = {
   round: [4, 8, 10, 12, 12, 12, 12, 12, 12, 10, 8, 6, 4, 2],
-  tall: [4, 6, 8, 10, 10, 10, 10, 10, 10, 10, 8, 6, 4, 2],
+  tall: [4, 6, 10, 10, 12, 12, 12, 12, 10, 10, 8, 6, 4, 2],
   wide: [6, 10, 12, 14, 14, 14, 14, 12, 12, 10, 8, 4, 2],
 };
 const rowPath = (widths, shift = 0, y0 = 0) => widths.map((w, y) => (w > 0 ? `M${(14 - w) / 2 + shift} ${y0 + y}h${w}v1h-${w}z` : '')).join('');
@@ -24,7 +24,8 @@ function balloonFrame(body, shift, string) {
     string: balloonStrings[string].map((dx, i) => `M${7 + shift + dx} ${knotY + 1 + i}h1v1h-1z`).join(''),
   };
 }
-export const balloonFrames = [balloonFrame('round', -1, 'right'), balloonFrame('tall', 0, 'straight'), balloonFrame('round', 1, 'left'), balloonFrame('wide', 0, 'wiggle')];
+// a fifth frame hangs round and upright, for the ends of a sway where it stops
+export const balloonFrames = [balloonFrame('round', -1, 'right'), balloonFrame('tall', 0, 'straight'), balloonFrame('round', 1, 'left'), balloonFrame('wide', 0, 'wiggle'), balloonFrame('round', 0, 'straight')];
 // [body, outline and knot]
 export const balloonColors = [['#e8413c', '#8e1c18'], ['#f5c542', '#8a6410'], ['#3f7fe0', '#1c3f80'], ['#43b85c', '#1d6a2e'], ['#ee6fb4', '#8a2a60'], ['#f08c2e', '#8a4a10'], ['#9a62dc', '#4e2a80']];
 export const balloonString = '#6b6b66';

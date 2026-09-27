@@ -1,6 +1,7 @@
 <script setup>
-// turns a photo into colored ascii letters that you can smash away with the mouse
-// to reveal the real photo underneath (the <img> sits behind this canvas).
+// turns a photo into colored ascii letters that you can smash away with the hammer
+// to reveal the real photo underneath (the <img> sits behind this canvas). without the
+// hammer picked up, a click or tap does nothing.
 //
 // how the drawing works:
 //   - backing: the letters that are still standing, drawn once per layout
@@ -9,6 +10,7 @@
 // every frame just copies backing, then adds the glow and flying letters on top.
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { play } from '../sound.js';
+import { hammerArmed as armed, hammerSize } from '../ascii-density.js';
 
 const props = defineProps({
   source: String,
@@ -27,12 +29,67 @@ const characters = ' .,:;i1tfLCG08@';
 
 const canvas = ref(null);
 const remaining = ref(0);
-const hammerSize = ref(2);
-// on a touchscreen a drag over the letters scrolls the page like anywhere else, and
-// a tap still knocks one letter out. the hammer button arms it so a drag smashes
-// instead. a mouse always smashes
-const armed = ref(false);
-let tap = null;
+// the hammer button arms it: then a press smashes letters, over and over while it's
+// held. without it a click or tap does nothing, and on a touchscreen a drag over the
+// letters scrolls the page like anywhere else (armed, shared in ascii-density.js)
+// the pixel sledgehammer on the hammer button, [colour, path] on a 20x20 grid, head up
+// top left and handle down to the bottom right, with a thick outline. picked up, the
+// same picture is the cursor over the letters
+const hammerSprite = [
+  ['#1b1b1b', 'M8 1h3v1H8zM7 2h2v1H7zM10 2h2v1H10zM6 3h2v1H6zM11 3h2v1H11zM5 4h2v1H5zM12 4h2v1H12zM4 5h2v1H4zM13 5h1v1H13zM3 6h2v1H3zM12 6h2v1H12zM2 7h2v1H2zM11 7h2v1H11zM1 8h2v1H1zM10 8h2v1H10zM1 9h1v1H1zM11 9h2v1H11zM1 10h2v1H1zM8 10h1v1H8zM12 10h2v1H12zM2 11h2v1H2zM7 11h3v1H7zM13 11h2v1H13zM3 12h2v1H3zM6 12h2v1H6zM9 12h2v1H9zM14 12h2v1H14zM4 13h3v1H4zM10 13h2v1H10zM15 13h2v1H15zM11 14h2v1H11zM16 14h2v1H16zM12 15h2v1H12zM17 15h2v1H17zM13 16h2v1H13zM18 16h1v1H18zM14 17h2v1H14zM17 17h2v1H17zM15 18h3v1H15z'],
+  ['#636b75', 'M11 5h2v1H11zM10 6h2v1H10zM9 7h2v1H9zM8 8h2v1H8zM2 9h1v1H2zM7 9h2v1H7zM3 10h1v1H3zM6 10h2v1H6zM4 11h3v1H4zM5 12h1v1H5z'],
+  ['#a3abb4', 'M9 3h1v1H9zM8 4h3v1H8zM7 5h4v1H7zM6 6h2v1H6zM9 6h1v1H9zM5 7h2v1H5zM8 7h1v1H8zM4 8h2v1H4zM7 8h1v1H7zM3 9h4v1H3zM4 10h2v1H4z'],
+  ['#dfe3e8', 'M9 2h1v1H9zM8 3h1v1H8zM10 3h1v1H10zM7 4h1v1H7zM11 4h1v1H11zM6 5h1v1H6zM5 6h1v1H5zM4 7h1v1H4zM3 8h1v1H3z'],
+  ['#f4f6f8', 'M8 6h1v1H8zM7 7h1v1H7zM6 8h1v1H6z'],
+  ['#8f5419', 'M9 9h2v1H9zM9 10h1v1H9z'],
+  ['#d98a2c', 'M10 10h1v1H10zM10 11h2v1H10zM11 12h2v1H11zM12 13h2v1H12zM13 14h2v1H13zM14 15h2v1H14zM15 16h2v1H15zM16 17h1v1H16z'],
+  ['#f2b562', 'M11 10h1v1H11zM12 11h1v1H12zM13 12h1v1H13zM14 13h1v1H14zM15 14h1v1H15zM16 15h1v1H16zM17 16h1v1H17z'],
+];
+// picked up, a copy of the hammer follows the mouse over the letters in place of the
+// cursor (a css cursor can't move). pressing swings it down, and it keeps swinging
+// while the button is held. each swing finishes before it stops
+const cursorAt = ref(null);
+const swinging = ref(false);
+let held = false;
+function trackCursor(event) {
+  cursorAt.value = armed.value && event.pointerType === 'mouse' ? { x: event.clientX, y: event.clientY } : null;
+}
+// every press starts a fresh swing from the top, however fast the clicks come, and
+// each one lands its own hit
+const hammerCursorEl = ref(null);
+function swingStart(event) {
+  if (!swingsWithSound() || event.pointerType !== 'mouse' || event.button !== 0) return;
+  held = true;
+  hammerCursorEl.value?.getAnimations().forEach(a => { a.currentTime = 0; });
+  swinging.value = true;
+  strikeSoon();
+}
+function swingEnd() {
+  held = false;
+}
+// the hammer cursor swings with a mouse once it's picked up, unless motion is reduced
+const swingsWithSound = () => armed.value && Boolean(cursorAt.value) && !props.reducedMotion;
+// one swing of the hammer, the same as hammer-strike's .36s in theme.css. its head comes
+// down 15% of the way through. that's when it hits: letters under it break and it
+// makes the sound, even if there's nothing left there to break
+const attack = 360;
+const strikeTimers = new Set();
+function strikeSoon() {
+  const timer = setTimeout(() => {
+    strikeTimers.delete(timer);
+    strike();
+  }, attack * 0.15);
+  strikeTimers.add(timer);
+}
+function strike() {
+  if (!cursorAt.value || !canvas.value) return;
+  const p = point({ clientX: cursorAt.value.x, clientY: cursorAt.value.y });
+  knock(p.x, p.y);
+}
+function swingLoop() {
+  if (!held) swinging.value = false;
+  else strikeSoon();
+}
 const hammerSlider = ref(null);
 let hammerDragging = false;
 
@@ -116,7 +173,7 @@ function remapClearedCells() {
 }
 
 function hitRadius() {
-  return Math.max(40, Math.min(width, height) * 0.24) * hammerSize.value / 5 * 0.7;
+  return Math.max(40, Math.min(width, height) * 0.24) * hammerSize.value / 5 * 1.05;
 }
 
 function draw() {
@@ -280,6 +337,7 @@ function fallingLetters(broken, x, y) {
 }
 
 // knocks out the letters around x/y
+// every hit makes the sound, even where the letters are already gone
 function knock(x, y, repaint = true) {
   if (!props.visible || document.hidden || !cells.length) return;
 
@@ -319,7 +377,7 @@ function knock(x, y, repaint = true) {
   }
 
   fallingLetters(broken, x, y);
-  if (broken.length) play('crumble', broken.length);
+  play('crumble', Math.max(1, broken.length));
   remaining.value -= broken.length;
   // wipe the dark background too once every letter is gone
   if (!remaining.value) {
@@ -347,9 +405,10 @@ function move(event) {
   if (drag && event.pointerId !== drag.id) return;
 
   const { x, y } = point(event);
+  // a held press doesn't break letters as it moves, it just moves where the next hit lands
   if (drag) {
     if (!(event.buttons & 1)) endDrag();
-    else dragTo(x, y);
+    else Object.assign(drag, { x, y });
   }
 
   if (props.reducedMotion) return;
@@ -365,10 +424,9 @@ function click(event) {
 }
 
 function startDrag(event) {
-  if (event.pointerType === 'touch' && !armed.value) {
-    tap = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    return;
-  }
+  // only the hammer breaks letters. without it a press does nothing here, and a
+  // finger's drag or swipe carries on to the page
+  if (!armed.value) return;
   // the press is the letters', not the window's or a swipe's
   event.stopPropagation();
   if (event.button !== 0 || !event.isPrimary || drag || !props.visible || !cells.length) return;
@@ -376,50 +434,23 @@ function startDrag(event) {
   canvas.value.focus({ preventScroll: true });
   canvas.value.setPointerCapture(event.pointerId);
 
+  // holding the press down hits over and over at the hammer's attack speed. the
+  // swinging hammer cursor hits when its head comes down (strike). anything else
+  // hits straight away, then again every swing's length while it's held
   const p = point(event);
   drag = { id: event.pointerId, ...p };
+  if (swingsWithSound()) return;
   knock(p.x, p.y);
-}
-
-function dragTo(x, y, finish = false) {
-  const distance = Math.hypot(x - drag.x, y - drag.y);
-  const spacing = Math.max(4, hitRadius() * 0.45);
-  if (distance < 0.5) return;
-  if (distance < spacing && !finish) return;
-
-  // pointer events can be far apart on fast drags, so fill in the gap with
-  // evenly spaced hits and only repaint once at the end
-  const steps = Math.max(1, Math.ceil(distance / spacing));
-  const start = { ...drag };
-  for (let i = 1; i <= steps; i++) {
-    knock(start.x + (x - start.x) * i / steps, start.y + (y - start.y) * i / steps, false);
-  }
-
-  drag.x = x;
-  drag.y = y;
-  draw();
-  schedule();
+  drag.repeat = setInterval(() => drag && knock(drag.x, drag.y), attack);
 }
 
 function pointerUp(event) {
-  // an unarmed tap that didn't turn into a scroll or a swipe knocks where it landed
-  if (tap?.id === event.pointerId) {
-    const still = Math.hypot(event.clientX - tap.x, event.clientY - tap.y) < 10;
-    tap = null;
-    if (still && props.visible && cells.length) {
-      const p = point(event);
-      knock(p.x, p.y);
-    }
-    return;
-  }
   if (drag?.id !== event.pointerId) return;
-  const p = point(event);
-  dragTo(p.x, p.y, true);
   endDrag();
 }
 
 function endDrag() {
-  tap = null;
+  clearInterval(drag?.repeat);
   const id = drag?.id;
   drag = null;
   if (id !== undefined && canvas.value?.hasPointerCapture(id)) canvas.value.releasePointerCapture(id);
@@ -613,6 +644,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   disposed = true;
+  strikeTimers.forEach(clearTimeout);
   endDrag();
   cancelAnimationFrame(frame);
   cancelAnimationFrame(layoutFrame);
@@ -625,26 +657,67 @@ onBeforeUnmount(() => {
   <canvas
     ref="canvas"
     class="ascii-knockoff"
-    :class="{ armed }"
+    :class="{ armed, 'hammer-cursor-on': cursorAt }"
     role="button"
     :tabindex="visible ? 0 : -1"
     :aria-label="remaining
-      ? `${description}. Click or drag, or press Enter or Space, to knock letters away and reveal the photo.`
+      ? `${description}. Pick up the hammer and click, or press Enter or Space, to knock letters away and reveal the photo.`
       : `${description}. Photo fully revealed.`"
-    @pointerdown="startDrag"
-    @pointermove="move"
-    @pointerup="pointerUp"
-    @pointercancel="endDrag"
-    @lostpointercapture="endDrag"
+    @pointerdown="swingStart($event); startDrag($event)"
+    @pointermove="trackCursor($event); move($event)"
+    @pointerenter="trackCursor"
+    @pointerleave="cursorAt = null"
+    @pointerup="swingEnd(); pointerUp($event)"
+    @pointercancel="swingEnd(); endDrag()"
+    @lostpointercapture="swingEnd(); endDrag()"
     @click.stop="click"
     @keydown.enter.stop.prevent="keyboard"
     @keydown.space.stop.prevent="keyboard"
   />
 
+  <!-- the hammer cursor, 32px across. the hot spot, where the pointer really is, is the
+       head's lower left end, the face that strikes -->
+  <Teleport to="body">
+    <svg
+      v-if="armed && cursorAt && visible"
+      ref="hammerCursorEl"
+      class="hammer-cursor"
+      :class="{ swinging }"
+      :style="{ left: `${cursorAt.x - 4}px`, top: `${cursorAt.y - 17}px` }"
+      width="32"
+      height="32"
+      viewBox="0 0 20 20"
+      shape-rendering="crispEdges"
+      aria-hidden="true"
+      @animationiteration="swingLoop"
+      @animationend="swinging = false"
+    >
+      <path v-for="[fill, d] in hammerSprite" :key="fill" :fill="fill" :d="d"/>
+    </svg>
+  </Teleport>
+
   <!-- hammer size slider, built like the ascii detail slider and stacked under the reset
        button. a big pixel circle marks the big end, a small one the small end. stops events
        so dragging it doesn't smash letters or move the window -->
   <Teleport :to="controlsTo || 'body'" :disabled="!controlsTo">
+  <!-- touchscreens only: pressed in, a drag over the photo smashes letters instead of
+       scrolling. a pixel sledgehammer on a slant, head up top left, left of its size slider -->
+  <button
+    v-show="visible"
+    class="hammer-toggle raised"
+    :class="{ pressed: armed }"
+    :aria-pressed="armed"
+    :title="armed ? 'Put the hammer down' : 'Pick up the hammer'"
+    aria-label="Hammer"
+    @click.stop="armed = !armed"
+    @pointerdown.stop
+    @pointermove.stop
+    @keydown.stop
+  >
+    <svg width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges" aria-hidden="true">
+      <path v-for="[fill, d] in hammerSprite" :key="fill" :fill="fill" :d="d"/>
+    </svg>
+  </button>
   <div v-show="visible" class="ascii-hammer raised" title="Hammer size" @click.stop @pointerdown.stop @pointermove.stop @keydown.stop>
     <svg width="11" height="11" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
       <path fill="currentColor" d="M3 0h5v1H3zM1 1h9v2H1zM0 3h11v5H0zM1 8h9v2H1zM3 10h5v1H3z"/>
@@ -674,20 +747,6 @@ onBeforeUnmount(() => {
     <svg width="5" height="5" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true">
       <path fill="currentColor" d="M1 0h3v1H1zM0 1h5v3H0zM1 4h3v1H1z"/>
     </svg>
-    <!-- touchscreens only: pressed in, a drag over the photo smashes letters instead of scrolling -->
-    <button
-      class="hammer-toggle raised"
-      :class="{ pressed: armed }"
-      :aria-pressed="armed"
-      :title="armed ? 'Put the hammer down' : 'Pick up the hammer'"
-      aria-label="Hammer"
-      @click="armed = !armed"
-    >
-      <svg width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
-        <path fill="currentColor" d="M3 1h7v1h2v1h1v4h-2V5H9v2H8v1H6V7H5V5H3V4H2V2h1z"/>
-        <path fill="#8a5a2b" d="M8 8h2v1h1v1h1v1h1v1h1v2h-2v-1h-1v-1h-1v-1H9V9H8z"/>
-      </svg>
-    </button>
   </div>
   </Teleport>
 </template>

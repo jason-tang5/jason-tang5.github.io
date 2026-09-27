@@ -9,13 +9,22 @@ const [balloonBody, balloonEdge] = balloonColors[0];
 <template>
   <svg :class="['retro-icon', { small }]" viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">
     <g stroke="#111" stroke-width="1" stroke-linejoin="miter">
-      <!-- three bars stepping up side by side, sharing their thick outlines, on a base -->
+      <!-- three bars stepping up side by side, sharing their thick outlines, on a base,
+           each lit from the top left -->
       <g v-if="name === 'chart'" stroke="none">
         <path fill="#111" d="M4 14h9v12H4zM11 8h9v18h-9zM18 2h9v24h-9zM2 26h28v2H2z"/>
         <path fill="#c8c8c8" d="M2 28h28v2H2z"/>
         <path fill="#1f6fc4" d="M6 16h5v10H6z"/>
         <path fill="#f7c928" d="M13 10h5v16h-5z"/>
         <path fill="#e0261b" d="M20 4h5v22h-5z"/>
+        <!-- a little light down the left of each bar and shade down the right, lit from
+             the top left like the other icons -->
+        <path fill="#4f8fd6" d="M6 16h1v10H6z"/>
+        <path fill="#1a5ca4" d="M10 16h1v10h-1z"/>
+        <path fill="#fbd955" d="M13 10h1v16h-1z"/>
+        <path fill="#d8ac12" d="M17 10h1v16h-1z"/>
+        <path fill="#ea5047" d="M20 4h1v22h-1z"/>
+        <path fill="#b81f16" d="M24 4h1v22h-1z"/>
       </g>
       <!-- the linkedin badge: a blue square with a white "in". the letters are separate
            so they can bounce on the about page -->

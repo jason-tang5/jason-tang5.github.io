@@ -268,8 +268,13 @@ input[type="checkbox"]:focus-visible {
   inset: 0;
   width: 100%;
   height: 100%;
-  cursor: pointer;
   touch-action: none;
+}
+
+/* a plain + over the letters until the hammer's picked up (then the hammer is the
+   cursor). one pixel lines with no outline, white to show up on the dark letters */
+.ascii-knockoff:not(.armed) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M7 0h1v15H7zM0 7h15v1H0z'/%3E%3C/svg%3E") 7 7, crosshair;
 }
 
 .ascii-knockoff:focus-visible {
@@ -392,16 +397,76 @@ input[type="checkbox"]:focus-visible {
   display: block;
 }
 
-/* the hammer button, only on touchscreens (KnockoffAscii.vue). until it's pressed in,
-   a drag over the letters scrolls the page and a tap knocks out one letter */
+/* the hammer button (KnockoffAscii.vue). picked up, the cursor over the letters turns
+   into the hammer, and on a touchscreen a drag smashes letters. put down, a finger's
+   drag scrolls the page and a tap knocks out one letter. over the photo it sits right
+   of the hammer size slider's column */
 .hammer-toggle.raised {
-  display: none;
+  display: grid;
+  position: absolute;
+  z-index: 2;
+  top: 42px;
+  left: 40px;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   min-height: 0;
   padding: 0;
   flex: none;
+  background: var(--surface);
+}
+
+.hammer-toggle svg {
+  display: block;
+  transform-origin: 85% 90%;
+}
+
+/* hovering gives it a little swing from the end of the handle, in two hard steps */
+.hammer-toggle:hover svg {
+  animation: hammer-swing .4s steps(1) infinite;
+}
+
+/* the hammer that follows the mouse over the letters once it's picked up. it pivots on
+   the end of the handle: pressing brings the head down in a few hard steps and back
+   up, over and over while the button is held */
+.ascii-knockoff.hammer-cursor-on {
+  cursor: none;
+}
+
+.hammer-cursor {
+  position: fixed;
+  z-index: 100002;
+  pointer-events: none;
+  transform-origin: 85% 90%;
+}
+
+/* over a balloon the pointing hand wins, and the click pops the balloon instead
+   (AppContent.vue) */
+body:has(.about-app.over-balloon) .hammer-cursor {
+  display: none;
+}
+
+.hammer-cursor.swinging {
+  animation: hammer-strike .36s steps(1) infinite;
+}
+
+/* a quick flick of a windup, so the hit lands right after the click, then a slower
+   recovery back up */
+@keyframes hammer-strike {
+  0%, 100% { transform: none; }
+  5% { transform: rotate(18deg); }
+  15% { transform: rotate(-35deg); }
+  55% { transform: rotate(-15deg); }
+}
+
+@keyframes hammer-swing {
+  0%, 100% { transform: none; }
+  50% { transform: rotate(-18deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hammer-toggle:hover svg,
+  .hammer-cursor.swinging { animation: none; }
 }
 
 .hammer-toggle.pressed {
@@ -411,10 +476,6 @@ input[type="checkbox"]:focus-visible {
 /* any touchscreen, not just ones that can't hover: some android phones (samsungs with
    a pen) say they can hover, which hid the hammer even though a finger still needs it */
 @media (hover: none), (any-pointer: coarse) {
-  .hammer-toggle.raised {
-    display: grid;
-  }
-
   .ascii-knockoff:not(.armed) {
     touch-action: pan-x pan-y pinch-zoom;
   }
@@ -5779,6 +5840,7 @@ label.mail-label {
 
 .pictures-controls .ascii-mode-controls { order: 1; }
 .pictures-controls .ascii-mode-controls .raised { min-height: 0; }
+.pictures-controls .hammer-toggle.raised { position: static; order: 2; width: 32px; height: 32px; }
 .pictures-controls .ascii-hammer { order: 2; }
 .pictures-controls .ascii-reset.raised { order: 3; width: 32px; }
 
@@ -5838,6 +5900,73 @@ label.mail-label {
 .pictures-app.compact .picture-subtitle {
   display: block !important;
   max-width: calc(100% - 20px);
+}
+
+/* on a narrow screen the toolbar is two rows: ascii / normal on their own up top, so
+   they never shift, then the detail slider, the hammer and its size slider, and the
+   reset underneath, which only show while ascii is on. the ::before is the line break */
+@media (max-width: 700px) {
+  .pictures-controls {
+    gap: 3px 6px;
+  }
+
+  .pictures-controls::before {
+    content: '';
+    order: 2;
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .pictures-controls .ascii-mode-controls {
+    display: contents;
+  }
+
+  .pictures-controls .ascii-mode-controls > button {
+    order: 1;
+    box-sizing: border-box;
+    height: 32px;
+  }
+
+  .pictures-controls .ascii-mode-controls > button + button {
+    margin-left: -6px;
+  }
+
+  .pictures-controls .ascii-mode-controls > .ascii-density { order: 3; }
+  .pictures-controls .hammer-toggle.raised { order: 4; }
+  .pictures-controls .ascii-hammer { order: 5; }
+  .pictures-controls .ascii-reset.raised { order: 6; }
+
+  .pictures-controls .density-slider {
+    width: 44px;
+  }
+}
+
+/* the hint as a speech bubble under the hammer, its tail pointing up at it */
+.portrait-frame .portrait-hint.pointing {
+  right: auto;
+  bottom: auto;
+}
+
+.portrait-hint.pointing::before,
+.portrait-hint.pointing::after {
+  content: '';
+  position: absolute;
+  border: solid transparent;
+  border-top: 0;
+}
+
+.portrait-hint.pointing::before {
+  left: 10px;
+  top: -8px;
+  border-width: 0 8px 8px;
+  border-bottom-color: #171717;
+}
+
+.portrait-hint.pointing::after {
+  left: 11px;
+  top: -6px;
+  border-width: 0 7px 7px;
+  border-bottom-color: var(--tip);
 }
 
 /* the about portrait always has its ascii controls in a toolbar over the photo,
@@ -6561,40 +6690,97 @@ label.mail-label {
   display: block;
   width: calc(14px * var(--scale));
   height: calc(24px * var(--scale));
-  animation: balloon-sway var(--sway-time, 1.8s) steps(4) infinite alternate;
+  animation: balloon-sway var(--sway-time, 5s) step-end infinite;
   animation-delay: var(--phase, 0s);
 }
 
-/* the four sprite frames take turns, a quarter of the cycle each */
+/* the sprite frames are timed to the sway like a cartoon: the balloon spends most of
+   it round, hanging upright where the swing slows at each end and leaning the way it
+   drifts (string trailing behind) on the way across. the squash and stretch only
+   flash by: squashed for a moment as it turns around at an end, stretched for a
+   moment at the fastest point in the middle. about three quarters of every sway is round */
 .balloon-frame {
   visibility: hidden;
-  animation: balloon-frame calc(4 * var(--frame, .8s)) step-end infinite;
+  animation: var(--frames) var(--sway-time, 5s) step-end infinite;
+  animation-delay: var(--phase, 0s);
 }
 
-.balloon-frame.f0 { animation-delay: var(--phase, 0s); }
-.balloon-frame.f1 { animation-delay: calc(var(--phase, 0s) - 3 * var(--frame, .8s)); }
-.balloon-frame.f2 { animation-delay: calc(var(--phase, 0s) - 2 * var(--frame, .8s)); }
-.balloon-frame.f3 { animation-delay: calc(var(--phase, 0s) - 1 * var(--frame, .8s)); }
+.balloon-frame.f0 { --frames: balloon-lean-left; }
+.balloon-frame.f1 { --frames: balloon-stretch; }
+.balloon-frame.f2 { --frames: balloon-lean-right; }
+.balloon-frame.f3 { --frames: balloon-squash; }
+.balloon-frame.f4 { --frames: balloon-hang; }
+
+@keyframes balloon-squash {
+  0% { visibility: visible; }
+  3% { visibility: hidden; }
+  47% { visibility: visible; }
+  53% { visibility: hidden; }
+  97% { visibility: visible; }
+}
+
+@keyframes balloon-hang {
+  3% { visibility: visible; }
+  12% { visibility: hidden; }
+  38% { visibility: visible; }
+  47% { visibility: hidden; }
+  53% { visibility: visible; }
+  62% { visibility: hidden; }
+  88% { visibility: visible; }
+  97% { visibility: hidden; }
+}
+
+@keyframes balloon-lean-left {
+  12% { visibility: visible; }
+  22% { visibility: hidden; }
+  28% { visibility: visible; }
+  38% { visibility: hidden; }
+}
+
+@keyframes balloon-stretch {
+  22% { visibility: visible; }
+  28% { visibility: hidden; }
+  72% { visibility: visible; }
+  78% { visibility: hidden; }
+}
+
+@keyframes balloon-lean-right {
+  62% { visibility: visible; }
+  72% { visibility: hidden; }
+  78% { visibility: visible; }
+  88% { visibility: hidden; }
+}
 
 @keyframes balloon-rise {
   to { transform: translateY(calc(-1 * var(--rise))); }
 }
 
-/* drifting side to side in whole steps, on top of the sprite frames */
+/* swinging side to side like it's on a string, in held pixel steps: the steps follow a
+   cosine, so they bunch up at the ends of the swing (slow in, slow out) and spread out
+   through the middle. starts at the right end, left end halfway */
 @keyframes balloon-sway {
-  from { transform: translateX(-8px); }
-  to { transform: translateX(8px); }
-}
-
-@keyframes balloon-frame {
-  0% { visibility: visible; }
-  25%, 100% { visibility: hidden; }
+  0%, 100% { transform: translateX(8px); }
+  6.25% { transform: translateX(7px); }
+  12.5% { transform: translateX(6px); }
+  18.75% { transform: translateX(3px); }
+  25% { transform: translateX(0px); }
+  31.25% { transform: translateX(-3px); }
+  37.5% { transform: translateX(-6px); }
+  43.75% { transform: translateX(-7px); }
+  50% { transform: translateX(-8px); }
+  56.25% { transform: translateX(-7px); }
+  62.5% { transform: translateX(-6px); }
+  68.75% { transform: translateX(-3px); }
+  75% { transform: translateX(0px); }
+  81.25% { transform: translateX(3px); }
+  87.5% { transform: translateX(6px); }
+  93.75% { transform: translateX(7px); }
 }
 
 /* with reduced motion the balloons still rise, just holding still on their first frame */
 @media (prefers-reduced-motion: reduce) {
   .balloon svg, .balloon-frame { animation: none; }
-  .balloon-frame.f0 { visibility: visible; }
+  .balloon-frame.f4 { visibility: visible; }
 }
 
 .about-explorer {

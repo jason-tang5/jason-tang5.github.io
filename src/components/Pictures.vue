@@ -6,12 +6,12 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AsciiImage from './AsciiImage.vue';
 import { photos } from '../photos.mjs';
-import { read, save } from '../storage.js';
+import { imageAscii } from '../ascii-density.js';
 
 defineProps({ visible: Boolean });
 
 const selected = ref(0);
-const ascii = ref(read('pictures-ascii', 'on') !== 'off');
+const ascii = imageAscii;
 const photo = computed(() => photos[selected.value]);
 
 // the arrows are the scrollbar's pixel triangles
@@ -68,7 +68,6 @@ function step(delta) {
 
 function setMode(value) {
   ascii.value = value;
-  save('pictures-ascii', value ? 'on' : 'off');
 }
 
 function keys(event) {
