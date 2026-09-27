@@ -8,7 +8,7 @@ export const profile = {
     linkedin: 'https://www.linkedin.com/in/jason-tang-uoft/',
     github: 'https://github.com/jason-tang5',
   },
-  bio: 'When I’m not coding, I’m usually playing badminton or volleyball, at the gym, or trying out another sport.',
+  bio: 'When I’m not building, I’m usually playing some sport, at the gym, or learning some random skill.',
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],
   // best lifts in lb, shown in a small group box at the bottom of the about window
@@ -87,5 +87,26 @@ export const projects = [
     summary: 'The tile-merging game, implemented in hardware on a DE1-SoC.',
     contribution: 'Built an FPGA implementation of 2048 in Verilog, rendered to a 160 × 120 VGA display at 60 Hz through a custom VGA adapter.',
     implementation: 'Implemented tile movement, merging, and scoring using a modular datapath and FSM controller. Verified the design through ModelSim testbenches, Tcl simulations, and physical I/O.',
+  },
+  {
+    id: 'reversi-ai',
+    name: 'Reversi AI Bot',
+    kind: 'Game AI',
+    date: 'January – February 2024',
+    icon: 'reversi',
+    tech: ['C'],
+    // opens the playable version in the games folder
+    game: 'reversi',
+    summary: 'A reversi clone in the terminal built in C with an AI opponent for my computer fundamentals (aps105) course.',
+    contribution: 'Created a reversi clone in C with core game logic and responsive user input handling, then developed an opponent using heuristic-based algorithms to evaluate potential game states each move.',
+    // a list is shown as separate paragraphs
+    implementation: [
+      'The bot scores candidate moves by board position, mobility, and corner control, looking ahead at how the opponent can respond.',
+      'The original source code is unfortunately lost, so the version in the Games folder recreates it from scratch but with Clippy talking smack in the background while you play',
+    ],
+    outcomes: [
+      'Achieved a 100% win rate over basic random-move bots.',
+      'Maintained an 80% win rate against algorithms developed by other students in the course.',
+    ],
   },
 ];

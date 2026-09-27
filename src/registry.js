@@ -27,13 +27,14 @@ export const apps = [
   app('analytics', 'Analytics', 'chart', 720, 640),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
+  app('reversi', 'Reversi', 'reversi', 420, 660, 320, 480),
   // locked until you beat the breakout game in contact, see unlock() in App.vue
   app('mail', 'Mail', 'mail', 500, 450, 360, 330),
 ];
 
 for (const a of apps) {
-  a.desktop = !['settings', 'mail', 'minesweeper', 'snake'].includes(a.id); // gets a desktop icon
-  a.menu = !['settings', 'mail', 'minesweeper', 'snake'].includes(a.id); // shows up in the start menu
+  a.desktop = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // gets a desktop icon
+  a.menu = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // shows up in the start menu
   a.fixedSize = ['minesweeper', 'music'].includes(a.id);
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
 }

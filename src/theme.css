@@ -3026,13 +3026,15 @@ label.mail-label {
   pointer-events: none;
 }
 
+/* every game gets the same size tile, however long its name */
 .games-folder {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 100px);
+  grid-auto-rows: 84px;
+  align-content: start;
   gap: 16px;
   padding: 22px;
   background: var(--paper);
-  flex-wrap: wrap;
 }
 .game-shortcut {
   display: flex;
@@ -3303,6 +3305,233 @@ label.mail-label {
 .snake-pad-left { grid-area: 2 / 1; }
 .snake-pad-right { grid-area: 2 / 3; }
 .snake-pad-down { grid-area: 3 / 2; }
+
+/* ---- reversi against clippy ----
+   a felt card table with a wooden board on it, clippy and his balloon up top, and a
+   much bigger ascii board flipping itself behind everything */
+.reversi-app {
+  --felt: #2f6b45;
+  --felt-cell: #1f7a45;
+  --felt-line: #14512c;
+  --felt-light: #2c9458;
+  --felt-shade: #17613a;
+  --felt-last: #2a8c52;
+  --wood: #7a4a24;
+  --wood-light: #a5703f;
+  --wood-dark: #4b2c14;
+  --balloon: #ffffcc;
+  position: relative;
+}
+
+:root[data-theme="dark"] .reversi-app {
+  --felt: #0f2418;
+  --felt-cell: #18613a;
+  --felt-line: #0c3a20;
+  --felt-light: #22784a;
+  --felt-shade: #104a2b;
+  --felt-last: #207246;
+  --wood: #5a3519;
+  --wood-light: #7a4e28;
+  --wood-dark: #2e1a0a;
+  --balloon: #f4f0b8;
+}
+
+.reversi-record {
+  margin-left: auto;
+  padding: 0 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.reversi-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--felt);
+}
+
+.reversi-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* clippy standing on the felt, the office assistant balloon pointing at him */
+.reversi-clippy {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  width: min(100%, 360px);
+}
+
+.reversi-clippy-art {
+  flex: none;
+  width: 40px;
+  height: 72px;
+}
+
+.reversi-clippy-art.thinking {
+  animation: clippy-think 0.6s steps(1) infinite;
+}
+
+@keyframes clippy-think {
+  50% { transform: translateY(-2px); }
+}
+
+/* square and hard edged, with a stepped tail, to match the pixel art */
+.reversi-balloon {
+  position: relative;
+  flex: 1;
+  min-height: 34px;
+  margin: 0 0 30px;
+  padding: 6px 9px;
+  border: 2px solid #111;
+  background: var(--balloon);
+  color: #111;
+  font-size: 11px;
+  line-height: 1.35;
+  box-shadow: 3px 3px 0 #0006;
+}
+
+.reversi-balloon::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  background: #111;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 75%, 25% 75%, 25% 50%, 50% 50%, 50% 25%, 75% 25%, 75% 0);
+}
+
+.reversi-balloon::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  bottom: 8px;
+  width: 4px;
+  height: 4px;
+  background: var(--balloon);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 50%, 50% 50%, 50% 0);
+}
+
+.reversi-table {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 360px);
+  padding: 8px 10px 10px;
+  background: var(--wood);
+  box-shadow: inset 2px 2px 0 var(--wood-light), inset -2px -2px 0 var(--wood-dark), 4px 4px 0 #0007;
+}
+
+.reversi-scores {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #f3e3c8;
+  font: bold 12px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+}
+
+.reversi-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 5px;
+  border: 1px dotted transparent;
+}
+
+/* whoever's turn it is gets a dotted box */
+.reversi-side.turn {
+  border-color: #f3e3c8;
+}
+
+.reversi-side .reversi-disc {
+  width: 16px;
+  height: 18px;
+}
+
+/* chunky 2px grid lines, and each square gets a one pixel bevel like a win98 button */
+.reversi-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  padding: 2px;
+  background: var(--felt-line);
+  box-shadow: 0 0 0 2px var(--wood-dark);
+}
+
+.reversi-cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--felt-cell);
+  box-shadow: inset 2px 2px 0 var(--felt-light), inset -2px -2px 0 var(--felt-shade);
+  cursor: default;
+}
+
+/* where you can play: a small square dot, bigger on hover */
+.reversi-cell.legal {
+  cursor: var(--classic-pointer, pointer);
+}
+
+.reversi-cell.legal::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #0007;
+}
+
+.reversi-cell.legal:hover::after,
+.reversi-cell.legal:focus-visible::after {
+  width: 10px;
+  height: 10px;
+}
+
+.reversi-cell:focus-visible {
+  outline: 2px dotted #ffffcc;
+  outline-offset: -4px;
+}
+
+.reversi-cell.last {
+  background: var(--felt-last);
+}
+
+.reversi-disc {
+  display: block;
+  width: 72%;
+  height: auto;
+  aspect-ratio: 8 / 9;
+}
+
+/* a disc turning over: squashed to its edge, then opening up as the new colour, in
+   a few hard steps instead of a smooth turn */
+.reversi-disc.flip {
+  animation: reversi-flip 0.24s steps(3, jump-start) both;
+}
+
+@keyframes reversi-flip {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reversi-disc.flip,
+  .reversi-clippy-art.thinking {
+    animation: none;
+  }
+}
 
 
 /* ---- ascii controls on phones ----

@@ -112,6 +112,14 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path stroke="none" fill="#111" d="M23 7h2v2h-2z"/>
         <path fill="#ef9e68" d="M6 5h4v4H6z"/>
       </g>
+      <!-- a green board with the four opening discs in the middle -->
+      <g v-else-if="name === 'reversi'">
+        <path fill="#6b3e1c" d="M2 2h28v28H2z"/>
+        <path stroke="none" fill="#1f7a45" d="M4 4h24v24H4z"/>
+        <path stroke="#14512c" d="M10 4v24M16 4v24M22 4v24M4 10h24M4 16h24M4 22h24"/>
+        <path fill="#fff" d="M11 11h4v4h-4zM17 17h4v4h-4z"/>
+        <path fill="#111" d="M17 11h4v4h-4zM11 17h4v4h-4z"/>
+      </g>
       <g v-else-if="name === 'mine'">
         <path fill="#808080" d="M3 3h27v27H3z"/>
         <path fill="#c0c0c0" d="M2 2h27v27H2z"/>

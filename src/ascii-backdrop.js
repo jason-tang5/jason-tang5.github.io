@@ -1,6 +1,6 @@
 // animated ascii backdrops for the space around the game boards, in courier text and
 // the game's own colours: bricks and sparks drifting up in contact, little snakes
-// playing snake in snake. they speed up while a game is running, pause when the
+// playing snake in snake, a huge reversi board flipping itself over in reversi. they speed up while a game is running, pause when the
 // window isn't in front, and stay still for reduced motion.
 
 // contact: bricks and sparks floating up past the breakout board
@@ -22,13 +22,24 @@ export const snakeScene = {
   alpha: { light: 0.45, dark: 0.6 },
 };
 
+// reversi: the whole backdrop is a board of discs. every so often a disc lands and
+// flips a line of its neighbours in each direction, rippling out like a real capture
+export const reversiScene = {
+  light: ['#5aa574', '#6fb886', '#4c9466', '#86c79a'],
+  dark: ['#5fc48a', '#7fd6a2', '#4aa874', '#9ae2b8'],
+  discs: true,
+  alpha: { light: 0.55, dark: 0.45 },
+};
+
 const cell = 12;
 const headFor = { right: '>', left: '<', up: '^', down: 'v' };
 const moves = { right: [1, 0], left: [-1, 0], up: [0, -1], down: [0, 1] };
 const turnsFrom = { right: ['up', 'down'], left: ['up', 'down'], up: ['left', 'right'], down: ['left', 'right'] };
 
 export function createBackdrop(canvas, options) {
-  return options.scene?.snakes ? createSnakeField(canvas, options) : createDrift(canvas, options);
+  if (options.scene?.snakes) return createSnakeField(canvas, options);
+  if (options.scene?.discs) return createDiscField(canvas, options);
+  return createDrift(canvas, options);
 }
 
 function createDrift(canvas, { running, scene = breakoutScene }) {
@@ -213,6 +224,126 @@ function createSnakeField(canvas, { running, scene }) {
     if (wait <= 0) {
       step();
       wait = running() ? 110 : 200;
+    }
+    draw();
+  }
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  resize();
+  frame = requestAnimationFrame(loop);
+
+  return {
+    setActive(value) { active = value; },
+    redraw() { draw(); },
+    destroy() {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    },
+  };
+}
+
+// the reversi scene. each cell holds a dark (@) or light (O) disc. a flip turns the
+// disc edge on through ( | ) before it shows the other face, and a capture flips
+// its line one cell at a time so it reads as a wave
+const discCell = 16;
+const flipTime = 320;
+const flipFrames = ['(', '|', ')'];
+
+function createDiscField(canvas, { running, scene }) {
+  const ctx = canvas.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let width = 0;
+  let height = 0;
+  let cols = 1;
+  let rows = 1;
+  let discs = [];
+  let frame = 0;
+  let last = 0;
+  let wait = 0;
+  let now = 0;
+  let active = true;
+
+  const random = n => Math.floor(Math.random() * n);
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = devicePixelRatio || 1;
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    cols = Math.max(1, Math.ceil(width / discCell));
+    rows = Math.max(1, Math.ceil(height / discCell));
+    discs = Array.from({ length: cols * rows }, () => ({
+      dark: Math.random() < 0.5,
+      color: random(scene.light.length),
+      depth: 0.45 + Math.random() * 0.55,
+      flipAt: -Infinity,
+    }));
+    draw();
+  }
+
+  // a disc lands somewhere and captures outwards in every direction
+  function capture() {
+    const x0 = random(cols);
+    const y0 = random(rows);
+    const dark = Math.random() < 0.5;
+    const flip = (x, y, delay) => {
+      const d = discs[y * cols + x];
+      if (d.dark === dark) return;
+      d.dark = dark;
+      d.flipAt = now + delay;
+    };
+    flip(x0, y0, 0);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const reach = 2 + random(5);
+      for (let i = 1; i <= reach; i++) {
+        const x = x0 + dx * i;
+        const y = y0 + dy * i;
+        if (x < 0 || y < 0 || x >= cols || y >= rows) break;
+        flip(x, y, i * 90);
+      }
+    }
+  }
+
+  function draw() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const colors = dark ? scene.dark : scene.light;
+    const alpha = scene.alpha[dark ? 'dark' : 'light'];
+    ctx.clearRect(0, 0, width, height);
+    ctx.textBaseline = 'top';
+    ctx.font = `bold ${discCell - 2}px 'Courier New', monospace`;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const d = discs[y * cols + x];
+        const t = (now - d.flipAt) / flipTime;
+        let glyph = d.dark ? '@' : 'O';
+        // mid flip: still showing the old face until it starts turning
+        if (t < 0) glyph = d.dark ? 'O' : '@';
+        else if (t < 1) glyph = flipFrames[Math.min(2, Math.floor(t * 3))];
+        // a freshly flipped disc glows for a moment
+        const glow = t >= 0 && t < 3.5 ? 1 + (1 - t / 3.5) * 2 : 1;
+        ctx.globalAlpha = Math.min(1, alpha * d.depth * glow);
+        ctx.fillStyle = colors[d.color];
+        ctx.fillText(glyph, x * discCell + 2, y * discCell + 1);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(time) {
+    frame = requestAnimationFrame(loop);
+    const dt = last ? Math.min(100, time - last) : 0;
+    last = time;
+    if (!active || document.hidden || reduced.matches) return;
+    now += dt;
+    wait -= dt;
+    if (wait <= 0) {
+      capture();
+      // idle it still flips every half second or so, faster while clippy is thinking
+      wait = running() ? 260 + Math.random() * 300 : 560 + Math.random() * 720;
     }
     draw();
   }

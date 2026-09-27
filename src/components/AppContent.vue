@@ -25,6 +25,7 @@ import { defaultWallpaper, wallpaperFilter, wallpapers } from '../wallpaper.js';
 const Game = defineAsyncComponent(() => import('./Game.vue'));
 const Snake = defineAsyncComponent(() => import('./Snake.vue'));
 const Minesweeper = defineAsyncComponent(() => import('./Minesweeper.vue'));
+const Reversi = defineAsyncComponent(() => import('./Reversi.vue'));
 
 defineProps({
   win: Object,
@@ -376,6 +377,11 @@ function setPortraitAscii(value) {
         <svg viewBox="0 0 16 16" aria-hidden="true"><path class="page" d="M1 3h9v12H1z"/><path d="M1 3h9v1H1zM1 14h9v1H1zM1 3h1v12H1zM9 9h1v6H9zM3 6h4v1H3zM3 8h3v1H3zM3 10h4v1H3z"/><path class="accent" d="M9 1h6v6h-1V3h-1v1h-1v1h-1v1h-1v1H9V6h1V5h1V4h1V3h1V2H9z"/></svg>
         <span>Open demo</span>
       </a>
+      <!-- projects that have a playable version in the games folder -->
+      <button v-if="win.project.game" class="ie-button" :title="`Play ${registry[win.project.game].label} in the Games folder`" @click="emit('open', win.project.game)">
+        <RetroIcon :name="registry[win.project.game].icon"/>
+        <span>Play it</span>
+      </button>
     </div>
     <article class="content-scroll document pixel-headings">
       <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
@@ -387,7 +393,7 @@ function setPortraitAscii(value) {
         <p>{{ win.project.contribution }}</p>
       </template>
       <h2>Implementation</h2>
-      <p>{{ win.project.implementation }}</p>
+      <p v-for="paragraph in [win.project.implementation].flat()" :key="paragraph">{{ paragraph }}</p>
       <template v-if="win.project.outcomes">
         <h2>Results</h2>
         <ul>
@@ -454,11 +460,15 @@ function setPortraitAscii(value) {
       <button class="game-shortcut" @click="emit('open', 'snake')">
         <RetroIcon name="snake"/><span>Snake</span>
       </button>
+      <button class="game-shortcut" @click="emit('open', 'reversi')">
+        <RetroIcon name="reversi"/><span>Reversi</span>
+      </button>
     </div>
-    <footer class="status-bar"><span>2 games</span></footer>
+    <footer class="status-bar"><span>3 games</span></footer>
   </div>
   <Snake v-else-if="win.type === 'snake'" :active="active"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>
+  <Reversi v-else-if="win.type === 'reversi'" :active="active"/>
 
   <!-- desktop settings -->
   <div v-else-if="win.type === 'settings'" class="app-layout">
