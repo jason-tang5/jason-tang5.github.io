@@ -20,6 +20,8 @@ export const eventNames = [
   'snake-score', // score reached during play
   'minesweeper-win', // each completed board
   'breakout-complete', // each completed board, including replays
+  'reversi-win', // beat clippy at reversi
+  'reversi-lose', // clippy won
   'visit', // first interaction of a page load. detail is the window it opened on
   'open', // a window opened. detail is its app id
   'blog-post', // a blog post read. detail is its slug

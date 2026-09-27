@@ -15,6 +15,9 @@ test('durable totals, presence and leaderboard survive object recreation', async
   await post(stats, 'heartbeat');
   await post(stats, 'minesweeper-win');
   await post(stats, 'breakout-complete');
+  await post(stats, 'reversi-lose');
+  await post(stats, 'reversi-lose');
+  await post(stats, 'reversi-win');
   await post(stats, 'snake-score', 'visitor123', 12);
   await post(stats, 'snake-score', 'visitor123', 5);
   await post(stats, 'snake-score', 'visitor456', 20);
@@ -23,6 +26,8 @@ test('durable totals, presence and leaderboard survive object recreation', async
   assert.equal(data.online, 1);
   assert.equal(data.minesweeperWins, 1);
   assert.equal(data.breakoutWins, 1);
+  assert.equal(data.clippyWins, 2);
+  assert.equal(data.clippyLosses, 1);
   assert.equal(data.snakeHighScore, 20);
   assert.deepEqual(data.leaderboard.map(r => r.score), [20, 12]);
   await post(stats, 'leave');

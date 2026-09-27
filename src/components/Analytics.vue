@@ -1,7 +1,8 @@
 <script setup>
-import Leaderboard from './Leaderboard.vue';
 import { computed, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
+import { useLiveStats } from '../live-stats.js';
+const { data: live, error: liveError } = useLiveStats();
 const days = ref(30);
 const data = ref(null);
 const privateData = ref(null);
@@ -10,12 +11,19 @@ const error = ref('');
 const privateError = ref('');
 const admin = ref(false);
 const number = value => Number(value || 0).toLocaleString();
-const cards = computed(() => data.value ? [
-  { label: 'Visits in period', value: data.value.visitors, icon: 'person' },
-  { label: 'Snake high score', value: data.value.snakeHighScore, icon: 'snake' },
-  { label: 'Minesweeper beaten', value: data.value.minesweeperWins, icon: 'mine' },
-  { label: 'Breakout beaten', value: data.value.breakoutWins, icon: 'game' },
-] : []);
+// the four all-time cards up top, from the live scoreboard
+const cards = computed(() => {
+  const s = live.value;
+  if (!s) return [];
+  const games = s.clippyWins + s.clippyLosses;
+  return [
+    { label: 'Minesweeper beaten', value: number(s.minesweeperWins), icon: 'mine' },
+    { label: 'Breakout finished', value: number(s.breakoutWins), icon: 'game' },
+    { label: 'Highest Snake score', value: number(s.snakeHighScore), icon: 'snake' },
+    { label: 'Clippy win-lose', value: `${number(s.clippyWins)}-${number(s.clippyLosses)}`, icon: 'reversi',
+      note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
+  ];
+});
 const daily = computed(() => {
   const counts = new Map(data.value?.daily.map(row => [row.day, row.visits]) || []);
   return Array.from({ length: days.value }, (_, i) => {
@@ -44,7 +52,7 @@ async function load() {
   data.value = null;
   privateData.value = null;
   try { data.value = await get(`/api/analytics?days=${days.value}`); }
-  catch { error.value = 'The scoreboard is unavailable right now. Please try again later.'; }
+  catch { error.value = 'Site history is unavailable right now. Please try again later.'; }
   if (admin.value) {
     try { privateData.value = await get(`/api/admin/analytics?days=${days.value}`); }
     catch { privateError.value = 'Could not load private analytics. Try signing in again.'; }
@@ -69,19 +77,26 @@ onMounted(async () => {
       <a href="/api/admin/login?next=analytics">{{ admin ? 'Signed in' : 'Admin sign in' }}</a>
     </div>
     <main class="content-scroll document pixel-headings analytics-page" :aria-busy="busy">
-      <Leaderboard/>
-      <h1>A little bit of site history</h1>
-      <p>People dropping by, snakes getting longer, and a few games finally beaten.</p>
-      <p v-if="busy" role="status">Loading the scoreboard...</p>
-      <p v-else-if="error" role="status">{{ error }}</p>
-      <template v-if="data">
-        <div class="analytics-cards">
-          <section v-for="card in cards" :key="card.label" class="analytics-card">
+      <h1>All-time scoreboard</h1>
+      <p v-if="liveError && !live" role="status">{{ liveError }}</p>
+      <p v-else-if="!live" role="status">Loading scores...</p>
+      <template v-else>
+        <div class="score-cards">
+          <section v-for="card in cards" :key="card.label" class="score-card">
             <RetroIcon :name="card.icon"/>
-            <div><strong>{{ number(card.value) }}</strong><span>{{ card.label }}</span></div>
+            <strong>{{ card.value }}</strong>
+            <span>{{ card.label }}</span>
+            <small v-if="card.note">{{ card.note }}</small>
           </section>
         </div>
-        <p class="analytics-note">Last {{ days }} days. Viewers count page loads with a click, tap or keypress, not unique people. Game totals include replays. Counts may be estimated; scores are the highest recorded.</p>
+        <p class="analytics-note"><strong>{{ number(live.visitors) }}</strong> total visits &middot; <strong>{{ number(live.online) }}</strong> online now. Since tracking began. Online counts tabs active in the last 90 seconds. Scores are client-reported.</p>
+      </template>
+      <h1>A little bit of site history</h1>
+      <p>People dropping by, snakes getting longer, and a few games finally beaten.</p>
+      <p v-if="busy" role="status">Loading site history...</p>
+      <p v-else-if="error" role="status">{{ error }}</p>
+      <template v-if="data">
+        <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days. Visits count page loads with a click, tap or keypress, not unique people.</p>
         <h2>Visitors by day</h2>
         <p v-if="!data.visitors">No visits recorded yet. The next adventure starts with a click.</p>
         <div class="analytics-chart" role="img" :aria-label="`Daily visits over the last ${days} days. Peak: ${peak === 1 && !data.visitors ? 0 : peak}. Exact counts in the table below.`">
@@ -92,10 +107,15 @@ onMounted(async () => {
         <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
         <details><summary>Daily counts</summary><table class="analytics-table"><thead><tr><th>Date (UTC)</th><th>Visits</th></tr></thead><tbody><tr v-for="row in daily" :key="row.day"><td>{{ row.day }}</td><td>{{ number(row.visits) }}</td></tr></tbody></table></details>
         <h2>Boards cleared</h2>
+        <p class="analytics-note">Last {{ days }} days, replays included.</p>
         <div v-for="(value, label) in { Minesweeper: data.minesweeperWins, Breakout: data.breakoutWins }" :key="label" class="analytics-bar-row">
           <div><span>{{ label }}</span><strong>{{ number(value) }}</strong></div>
           <div class="analytics-bar"><span :style="{ width: `${value / Math.max(1, data.minesweeperWins, data.breakoutWins) * 100}%` }"/></div>
         </div>
+      </template>
+      <template v-if="live?.leaderboard.length">
+        <h2>Snake leaderboard</h2>
+        <table class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
       </template>
       <p v-if="privateError" role="status">{{ privateError }}</p>
       <template v-if="privateData">
@@ -117,11 +137,17 @@ onMounted(async () => {
 .analytics-toolbar { flex-wrap: wrap; gap: 8px; }
 .analytics-toolbar a { margin-left: auto; font-size: 12px; }
 .analytics-toolbar select { font: inherit; }
-.analytics-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
-.analytics-card { border: 1px solid #aaa; box-shadow: 2px 2px #ddd; padding: 14px 10px; display: flex; gap: 12px; align-items: center; background: #fffdf2; }
-.analytics-card strong { display: block; font: bold 26px/1.3 'Courier New', monospace; color: #000080; }
-.analytics-card span { display: block; font-size: 12px; }
-.analytics-note { font-size: 12px; color: #555; }
+.score-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.score-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; text-align: center; min-width: 0;
+  background: var(--d-page-alt, #fffdf2); border: 2px solid var(--d-line, #000); box-shadow: 4px 4px 0 var(--d-line, #000);
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; image-rendering: pixelated;
+}
+.score-card svg { width: 32px; height: 32px; }
+.score-card strong { font: bold 28px/1.2 'Pixel MS Sans Serif', monospace; color: var(--d-link, #000080); overflow-wrap: anywhere; }
+.score-card span { font-size: 12px; }
+.score-card small { font-size: 11px; color: var(--muted); }
+.analytics-note { font-size: 12px; color: var(--muted); }
 .analytics-chart { display: flex; align-items: stretch; gap: 2px; height: 144px; border-left: 2px solid #555; border-bottom: 2px solid #555; padding: 8px 4px 0; background: repeating-linear-gradient(to top, #ddd 0 1px, transparent 1px 32px); }
 .analytics-column { flex: 1; min-width: 0; display: flex; align-items: flex-end; }
 .analytics-column span { width: 100%; background: repeating-linear-gradient(to top, #008080 0 6px, #fff 6px 8px); }
@@ -132,5 +158,6 @@ onMounted(async () => {
 .analytics-bar span { display: block; height: 100%; background: repeating-linear-gradient(to right, #000080 0 6px, transparent 6px 8px); }
 .analytics-table { width: 100%; text-align: left; font-size: 12px; }
 .analytics-table td, .analytics-table th { border-bottom: 1px solid #ddd; }
-@media (max-width: 400px) { .analytics-page { padding: 18px 14px; } .analytics-card { gap: 6px; padding: 10px 6px; } }
+@media (max-width: 560px) { .score-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 400px) { .analytics-page { padding: 18px 14px; } }
 </style>

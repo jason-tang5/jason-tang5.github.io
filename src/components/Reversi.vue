@@ -8,6 +8,7 @@ import { black, white, newBoard, legalMoves, flipsFor, play as playMove, count, 
 import { read, save } from '../storage.js';
 import { play } from '../sound.js';
 import { buzz } from '../haptics.js';
+import { track } from '../analytics.js';
 import { createBackdrop, reversiScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
 import ClippyArt from './ClippyArt.vue';
@@ -90,6 +91,7 @@ function finish() {
   say.value = pick(lines[result]);
   if (result === 'win') record.value.you++;
   if (result === 'lose') record.value.clippy++;
+  if (result !== 'draw') track(`reversi-${result}`);
   save('reversi-you', String(record.value.you));
   save('reversi-clippy', String(record.value.clippy));
   play(result === 'lose' ? 'error' : 'chime');
