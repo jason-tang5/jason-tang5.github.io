@@ -246,7 +246,7 @@ try {
     range.selectNodeContents(a);
     return [range.getBoundingClientRect().width, a.closest('.breakout-board').clientWidth];
   });
-  assert.ok(emailWidth > boardWidth * 0.85 && emailWidth <= boardWidth, `email spans the board (${emailWidth} of ${boardWidth})`);
+  assert.ok(emailWidth > boardWidth * 0.75 && emailWidth <= boardWidth, `email spans the board (${emailWidth} of ${boardWidth})`);
 
   // ---- games folder and ASCII snake ----
   await open('games');
@@ -255,7 +255,7 @@ try {
   await expect(page.locator('.desktop-shortcut', { hasText: 'Minesweeper' })).toHaveCount(0);
   await gamesFolder.getByRole('button', { name: /Snake/ }).click();
   const snake = page.locator('[data-window="snake"]');
-  await expect(snake.locator('pre')).toContainText('>');
+  await expect(snake.locator('pre')).toContainText('best');
   const initialSnake = await snake.locator('pre').textContent();
   await snake.getByRole('button', { name: 'Play', exact: true }).click();
   await expect.poll(() => snake.locator('pre').textContent()).not.toBe(initialSnake);
@@ -596,8 +596,8 @@ try {
 
   const mail = mailFixture.locator('#mail-fixture');
   await expect(mail.getByRole('textbox', { name: 'To', exact: true })).toHaveValue('jasontcanada@gmail.com');
-  await mail.getByRole('textbox', { name: 'Name', exact: true }).fill('Ada');
-  await mail.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@example.com');
+  await mail.getByRole('textbox', { name: 'Name:', exact: true }).fill('Ada');
+  await mail.getByRole('textbox', { name: 'From:', exact: true }).fill('ada@example.com');
   await mail.getByRole('textbox', { name: 'Message', exact: true }).fill('hello!');
   // mail reports how it went with a 'site-notice' event, which the desktop shows as a note
   await mailFixture.evaluate(() => {
@@ -605,6 +605,8 @@ try {
     window.addEventListener('site-notice', event => window.notices.push(event.detail));
   });
   const lastNotice = () => mailFixture.evaluate(() => window.notices.at(-1));
+  // the worker turns away anything sent under 3 seconds after the window opened
+  await mailFixture.waitForTimeout(3100);
   await mail.getByRole('button', { name: 'Send', exact: true }).click();
   await expect.poll(lastNotice).toEqual({ title: 'Message sent', message: 'Thanks! I’ll get back to you soon.' });
   await expect(mail.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue('');

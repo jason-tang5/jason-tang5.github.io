@@ -27,6 +27,10 @@ const emit = defineEmits(['update:enabled']);
 const host = ref(null);
 const fallbackVideo = ref(null);
 const failed = ref(false);
+const playbackBlocked = ref(false);
+let mediaObserver;
+let observedVideo;
+let playbackNudge;
 const asciiReset = ref(0);
 const reducedMotion = ref(false);
 const pageHidden = ref(document.hidden);
@@ -160,13 +164,34 @@ function render() {
 // the library's hidden <video> gets muted and playsinline as react props, which don't
 // always become real attributes. iphones only autoplay a video with both attributes,
 // so set them directly and give it a nudge
-function keepVideoPlaying() {
-  const video = host.value?.querySelector('video');
-  if (!video || !running.value) return;
+function playVideo(video) {
   video.muted = true;
+  video.defaultMuted = true;
   video.setAttribute('muted', '');
   video.setAttribute('playsinline', '');
-  if (video.paused) video.play().catch(() => {});
+  if (video.paused) video.play().then(() => { playbackBlocked.value = false; }).catch(error => {
+    if (error.name !== 'AbortError') playbackBlocked.value = true;
+  });
+}
+function keepVideoPlaying() {
+  const video = host.value?.querySelector('video');
+  if (!video) return;
+  // Chrome Android may suspend display:none autoplay media. Keep the decoding
+  // source laid out underneath its canvas instead of removing it from layout.
+  video.style.cssText = 'display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:-1';
+  if (observedVideo !== video) {
+    observedVideo?.removeEventListener('error', videoError);
+    observedVideo?.removeEventListener('canplay', keepVideoPlaying);
+    observedVideo = video;
+    video.addEventListener('error', videoError);
+    video.addEventListener('canplay', keepVideoPlaying);
+  }
+  if (running.value) playVideo(video);
+}
+function videoError() { failed.value = true; }
+function retryPlayback() {
+  keepVideoPlaying();
+  syncFallback();
 }
 
 function lost(event) {
@@ -186,7 +211,7 @@ function syncVisibility() {
 function syncFallback() {
   const video = fallbackVideo.value;
   if (!video) return;
-  if (props.visible && !reducedMotion.value && !pageHidden.value) video.play().catch(() => {});
+  if (props.visible && !reducedMotion.value && !pageHidden.value) playVideo(video);
   else video.pause();
 }
 
@@ -219,14 +244,22 @@ onMounted(() => {
   host.value.addEventListener('webglcontextlost', lost, true);
   observer = new ResizeObserver(render);
   observer.observe(host.value);
+  mediaObserver = new MutationObserver(keepVideoPlaying);
+  mediaObserver.observe(host.value, { childList: true, subtree: true });
+  document.addEventListener('pointerdown', retryPlayback);
   render();
   syncFallback();
   // react mounts the library's video a moment later
-  setTimeout(keepVideoPlaying, 300);
+  playbackNudge = setTimeout(keepVideoPlaying, 300);
 });
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  mediaObserver?.disconnect();
+  clearTimeout(playbackNudge);
+  document.removeEventListener('pointerdown', retryPlayback);
+  observedVideo?.removeEventListener('error', videoError);
+  observedVideo?.removeEventListener('canplay', keepVideoPlaying);
   motionQuery?.removeEventListener('change', syncMotion);
   document.removeEventListener('visibilitychange', syncVisibility);
   fallbackVideo.value?.pause();
@@ -291,6 +324,7 @@ onBeforeUnmount(() => {
         <path fill="#404040" d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/>
       </svg>
     </button>
+    <button v-if="mediaType === 'video' && playbackBlocked" class="raised video-play" @click.stop="retryPlayback">Play video</button>
     <!-- stop events here so clicking the toggle doesn't also poke the image or drag the window -->
     <div
       v-if="mediaType === 'image' || showControls"

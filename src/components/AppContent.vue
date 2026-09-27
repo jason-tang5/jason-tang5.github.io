@@ -169,7 +169,7 @@ function clearSaved() {
           <h1>{{ profile.name }}</h1>
           <p class="subtitle">{{ profile.subtitle }}</p>
           <p class="intro">{{ profile.intro }}</p>
-          <p>{{ profile.bio }}</p>
+          <p class="intro">{{ profile.bio }}</p>
           <div class="about-bottom">
             <!-- the lifts box stretches to exactly the width of the button row above it -->
             <div class="about-links">

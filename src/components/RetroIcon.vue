@@ -89,10 +89,26 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#c0c0c0" d="M5 15h6v4H5zm7 5h6v4h-6zm7-8h6v4h-6z"/>
       </g>
       <g v-else-if="name === 'sound' || name === 'mute'">
-        <path fill="#c0c0c0" d="M4 11h6l8-7v24l-8-7H4z"/>
+        <path fill="#c0c0c0" d="M4 11h6V9h3V6h3V4h2v24h-2v-2h-3v-3h-3v-2H4z"/>
         <path fill="#fff" stroke="none" d="M5 12h4v1H5z"/>
-        <path v-if="name === 'sound'" fill="none" stroke-width="2" d="M22 11c2 3 2 7 0 10M25 8c4 5 4 11 0 16"/>
+        <path v-if="name === 'sound'" fill="none" stroke-width="2" d="M21 11h2v3h2v4h-2v3h-2M26 7h2v4h2v10h-2v4h-2"/>
         <path v-else fill="none" stroke="#c00" stroke-width="3" d="M21 11l9 10M30 11l-9 10"/>
+      </g>
+      <g v-else-if="name === 'sticky'">
+        <path fill="#6b5a00" stroke="none" d="M6 6h24v18l-6 6H6z"/>
+        <path fill="#ffe66e" d="M3 3h24v18l-6 6H3z"/>
+        <path fill="#e6b800" d="M3 3h24v5H3z"/>
+        <path fill="#c9a000" d="M21 21h6l-6 6z"/>
+        <path fill="none" stroke="#8a7400" d="M7 13h15M7 17h15M7 21h10"/>
+      </g>
+      <g v-else-if="name === 'sun'">
+        <path fill="#ffd21f" d="M15 2h2v4h-2zM15 26h2v4h-2zM2 15h4v2H2zM26 15h4v2h-4zM5 5h3v3H5zM24 5h3v3h-3zM5 24h3v3H5zM24 24h3v3h-3z"/>
+        <path fill="#ffd21f" d="M12 9h8v1h2v2h1v8h-1v2h-2v1h-8v-1h-2v-2H9v-8h1v-2h2z"/>
+        <path fill="#fff6b0" stroke="none" d="M12 11h3v2h-3z"/>
+      </g>
+      <g v-else-if="name === 'moon'">
+        <path fill="#f3e9a6" d="M13 4h7v2h-4v2h-2v3h-1v10h1v3h2v2h4v2h-7v-2h-3v-2H8v-3H7V11h1V8h2V6h3z"/>
+        <path fill="#fff" stroke="none" d="M23 8h2v2h-2zM21 16h2v2h-2zM26 21h2v2h-2z"/>
       </g>
       <g v-else-if="name === 'start'">
         <path fill="#d44528" d="M3 3h11v11H3z"/>

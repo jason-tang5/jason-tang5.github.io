@@ -695,7 +695,7 @@ onBeforeUnmount(() => {
 
       <div class="tray">
         <button
-          class="tray-sound"
+          class="tray-sound raised"
           :aria-expanded="volumeOpen"
           :aria-label="audible ? 'Volume' : 'Volume (muted)'"
           title="Volume"

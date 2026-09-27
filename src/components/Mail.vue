@@ -96,14 +96,15 @@ async function send() {
   <!-- novalidate turns off the browser's own "please fill out this field" bubbles -->
   <form class="app-layout mail-app" novalidate @submit.prevent="send">
     <div class="mail-fields">
-      <button class="raised mail-label tinted" type="submit" :disabled="sending">{{ sending ? 'Sending…' : 'Send' }}</button>
-      <input class="inset" :value="contact.email" aria-label="To" readonly>
+      <label class="raised mail-label" for="mail-to">To:</label>
+      <input id="mail-to" class="inset" :value="contact.email" aria-label="To" readonly>
+      <button class="raised tinted mail-send" type="submit" :disabled="sending">{{ sending ? 'Sending…' : 'Send' }}</button>
 
-      <label class="raised mail-label" for="mail-name">Name</label>
-      <input id="mail-name" :ref="fields.name" v-model="name" class="inset" autocomplete="name" maxlength="100" required>
+      <label class="raised mail-label" for="mail-name">Name:</label>
+      <input id="mail-name" :ref="fields.name" v-model="name" class="inset" placeholder="Your name…" autocomplete="name" maxlength="100" required>
 
-      <label class="raised mail-label" for="mail-email">Email</label>
-      <input id="mail-email" :ref="fields.email" v-model="email" class="inset" type="email" autocomplete="email" maxlength="200" required>
+      <label class="raised mail-label" for="mail-email">From:</label>
+      <input id="mail-email" :ref="fields.email" v-model="email" class="inset" type="email" placeholder="Your email…" autocomplete="email" maxlength="200" required>
     </div>
 
     <textarea
@@ -111,7 +112,7 @@ async function send() {
       v-model="message"
       class="mail-message inset"
       aria-label="Message"
-      placeholder="Enter your message here... then click Send"
+      placeholder="Enter your message here…"
       maxlength="5000"
       required
     />

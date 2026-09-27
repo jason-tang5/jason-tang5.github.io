@@ -2321,7 +2321,7 @@ label.mail-label {
 
 .picture-thumbnails {
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   gap: 6px;
   padding: 0 8px 8px;
   overflow-x: auto;
@@ -3266,3 +3266,12 @@ label.mail-label {
     max-width: calc(100% - 20px);
   }
 }
+
+.about-copy h1 { font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.tray-sound.raised { border: 2px solid; border-color: #fff #404040 #404040 #fff; background: #c0c0c0; min-height: 30px; }
+.mail-fields { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.mail-fields input:not([readonly]) { grid-column: span 2; }
+.mail-send { height: 26px; padding: 0 16px; font-weight: bold; }
+.mail-fields input::placeholder, .mail-message::placeholder { color: #666; font-style: italic; opacity: 1; }
+
+.video-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
