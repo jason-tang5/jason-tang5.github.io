@@ -547,8 +547,10 @@ function balloonDone(event, id) {
     </div>
     <div ref="explorer" class="project-explorer content-scroll inset" :style="previewWidth ? { '--preview-width': `${previewWidth}px` } : null">
       <aside class="project-preview">
-        <RetroIcon :name="selected.icon"/>
-        <h2>{{ selected.name }}</h2>
+        <div class="preview-title">
+          <RetroIcon :name="selected.icon"/>
+          <h2>{{ selected.name }}</h2>
+        </div>
         <p>{{ selected.summary }}</p>
         <div class="preview-actions">
           <small><TechList :items="selected.tech" chips/></small>
