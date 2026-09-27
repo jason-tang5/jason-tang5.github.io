@@ -35,7 +35,7 @@ export const apps = [
 for (const a of apps) {
   a.desktop = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // gets a desktop icon
   a.menu = !['settings', 'mail', 'minesweeper', 'snake', 'reversi'].includes(a.id); // shows up in the start menu
-  a.fixedSize = ['minesweeper', 'music'].includes(a.id);
+  a.fixedSize = a.id === 'music';
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
 }
 

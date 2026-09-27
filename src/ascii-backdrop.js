@@ -1,7 +1,8 @@
 // animated ascii backdrops for the space around the game boards, in courier text and
 // the game's own colours: bricks and sparks drifting up in contact, little snakes
-// playing snake in snake, a huge reversi board flipping itself over in reversi. they speed up while a game is running, pause when the
-// window isn't in front, and stay still for reduced motion.
+// playing snake in snake, a huge reversi board flipping itself over in reversi, and
+// a minefield sweeping itself in minesweeper. they speed up while a game is running,
+// pause when the window isn't in front, and stay still for reduced motion.
 
 // contact: bricks and sparks floating up past the breakout board
 export const breakoutScene = {
@@ -22,6 +23,16 @@ export const snakeScene = {
   alpha: { light: 0.45, dark: 0.6 },
 };
 
+// minesweeper: a big ascii minefield that sweeps itself. patches flood open to show
+// their numbers in the classic colours, mines get flagged, and once most of it is
+// cleared a mine goes off and the field starts over
+export const minesScene = {
+  light: { hidden: '#8f8f8f', open: '#a8a8a8', flag: '#c00000', mine: '#000', numbers: ['', '#0000ff', '#008000', '#e00000', '#000080', '#800000', '#008080', '#000', '#606060'] },
+  dark: { hidden: '#5a5a66', open: '#3c3c46', flag: '#ff6b6b', mine: '#e8e8e8', numbers: ['', '#7f9cff', '#6fd08a', '#ff7b7b', '#a9b4ff', '#e08a8a', '#5fd0c8', '#e8e8e8', '#a0a0a0'] },
+  sweep: true,
+  alpha: { light: 0.4, dark: 0.55 },
+};
+
 // reversi: the whole backdrop is a board of discs. every so often a disc lands and
 // flips a line of its neighbours in each direction, rippling out like a real capture
 export const reversiScene = {
@@ -39,6 +50,7 @@ const turnsFrom = { right: ['up', 'down'], left: ['up', 'down'], up: ['left', 'r
 export function createBackdrop(canvas, options) {
   if (options.scene?.snakes) return createSnakeField(canvas, options);
   if (options.scene?.discs) return createDiscField(canvas, options);
+  if (options.scene?.sweep) return createSweepField(canvas, options);
   return createDrift(canvas, options);
 }
 
@@ -344,6 +356,146 @@ function createDiscField(canvas, { running, scene }) {
       capture();
       // idle it still flips every half second or so, faster while clippy is thinking
       wait = running() ? 260 + Math.random() * 300 : 560 + Math.random() * 720;
+    }
+    draw();
+  }
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  resize();
+  frame = requestAnimationFrame(loop);
+
+  return {
+    setActive(value) { active = value; },
+    redraw() { draw(); },
+    destroy() {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    },
+  };
+}
+
+// the minesweeper scene. every tick one hidden safe cell opens and floods out like a
+// real click, a few cells at a time so the opening spreads, and now and then a mine
+// next to the cleared ground gets flagged. past 60% cleared a mine goes off, the
+// mines show, and a moment later the field is covered back up with new mines
+const sweepCell = 14;
+
+function createSweepField(canvas, { running, scene }) {
+  const ctx = canvas.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let width = 0;
+  let height = 0;
+  let cols = 1;
+  let rows = 1;
+  let field = [];
+  let queue = [];
+  let frame = 0;
+  let last = 0;
+  let wait = 0;
+  let spread = 0;
+  let boomAt = 0;
+  let now = 0;
+  let active = true;
+
+  const random = n => Math.floor(Math.random() * n);
+  const around = i => {
+    const x = i % cols;
+    const y = Math.floor(i / cols);
+    const out = [];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < cols && ny < rows) out.push(ny * cols + nx);
+      }
+    }
+    return out;
+  };
+
+  function lay() {
+    field = Array.from({ length: cols * rows }, () => ({ mine: Math.random() < 0.15, open: false, flag: false, n: 0, depth: 0.5 + Math.random() * 0.5 }));
+    field.forEach((c, i) => { c.n = around(i).filter(j => field[j].mine).length; });
+    queue = [];
+    boomAt = 0;
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = devicePixelRatio || 1;
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    cols = Math.max(1, Math.ceil(width / sweepCell));
+    rows = Math.max(1, Math.ceil(height / sweepCell));
+    lay();
+    draw();
+  }
+
+  // click a random covered safe cell
+  function click() {
+    const hidden = field.map((c, i) => i).filter(i => !field[i].open && !field[i].mine && !field[i].flag);
+    if (hidden.length) queue.push(hidden[random(hidden.length)]);
+    // flag a mine that borders ground already cleared
+    const edge = field.map((c, i) => i).filter(i => field[i].mine && !field[i].flag && around(i).some(j => field[j].open));
+    if (edge.length && Math.random() < 0.6) field[edge[random(edge.length)]].flag = true;
+  }
+
+  // the flood fill, a handful of cells per step so it visibly spreads
+  function flood() {
+    for (let step = 0; step < 6 && queue.length; step++) {
+      const i = queue.shift();
+      const c = field[i];
+      if (c.open || c.flag || c.mine) continue;
+      c.open = true;
+      if (!c.n) queue.push(...around(i).filter(j => !field[j].open));
+    }
+  }
+
+  function draw() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const colors = dark ? scene.dark : scene.light;
+    const alpha = scene.alpha[dark ? 'dark' : 'light'];
+    ctx.clearRect(0, 0, width, height);
+    ctx.textBaseline = 'top';
+    ctx.font = `bold ${sweepCell - 1}px 'Courier New', monospace`;
+    field.forEach((c, i) => {
+      let glyph = '#';
+      let color = colors.hidden;
+      if (c.flag) { glyph = 'F'; color = colors.flag; }
+      if (boomAt && c.mine) { glyph = '*'; color = colors.mine; }
+      else if (c.open) { glyph = c.n ? String(c.n) : '.'; color = c.n ? colors.numbers[c.n] : colors.open; }
+      ctx.globalAlpha = alpha * (c.open && !c.n ? 0.6 : c.depth);
+      ctx.fillStyle = color;
+      ctx.fillText(glyph, (i % cols) * sweepCell + 3, Math.floor(i / cols) * sweepCell + 1);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(time) {
+    frame = requestAnimationFrame(loop);
+    const dt = last ? Math.min(100, time - last) : 0;
+    last = time;
+    if (!active || document.hidden || reduced.matches) return;
+    now += dt;
+    if (boomAt) {
+      if (now - boomAt > 1600) lay();
+      draw();
+      return;
+    }
+    spread -= dt;
+    if (spread <= 0) {
+      flood();
+      spread = 45;
+    }
+    wait -= dt;
+    if (wait <= 0 && !queue.length) {
+      click();
+      wait = running() ? 250 + Math.random() * 250 : 600 + Math.random() * 700;
+      const safe = field.filter(c => !c.mine).length;
+      if (field.filter(c => c.open).length > safe * 0.6) boomAt = now;
     }
     draw();
   }

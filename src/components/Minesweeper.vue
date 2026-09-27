@@ -2,7 +2,10 @@
 // minesweeper, as close to the win98 one as i could get it.
 // left click opens, right click (or f, or long press on touch) flags,
 // clicking a number with all its flags placed opens the rest around it.
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+// on a phone the squares grow to fill the screen, and in portrait the wide boards
+// are turned on their side so expert still fits. behind the board an ascii
+// minefield sweeps itself (see ascii-backdrop.js)
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import {
   digits,
   faceFill,
@@ -17,6 +20,8 @@ import {
 } from '../minesweeper-art.mjs';
 
 import { track } from '../analytics.js';
+import { createBackdrop, minesScene } from '../ascii-backdrop.js';
+import { theme } from '../theme.js';
 
 const props = defineProps({ active: Boolean, win: Object });
 
@@ -36,8 +41,15 @@ const menuOpen = ref(false);
 
 // template refs
 const root = ref(null);
+const body = ref(null);
 const grid = ref(null);
 const gameButton = ref(null);
+const backdropCanvas = ref(null);
+
+// phones get squares sized to the screen instead of the fixed 24px
+const phone = ref(innerWidth <= 700);
+const portrait = ref(innerHeight > innerWidth);
+const cell = ref(24);
 
 let timer;
 let holdTimer;
@@ -45,6 +57,8 @@ let held = false;
 
 const size = computed(() => {
   const [rows, cols, mines] = levels[level.value];
+  // a wide board on a tall phone screen is turned on its side
+  if (phone.value && portrait.value && cols > rows) return { rows: cols, cols: rows, mines };
   return { rows, cols, mines };
 });
 
@@ -96,10 +110,41 @@ function newGame(name = level.value) {
     () => reactive({ mine: false, n: 0, open: false, flag: false, boom: false }),
   );
   if (changed) fitWindow();
+  fitCells();
 }
 
-// the window can't be resized by hand. instead it wraps the board exactly,
-// so the squares are always 24px no matter the difficulty
+// on a phone, the biggest whole-pixel square that lets the board fit the space.
+// the frame, header and borders around the grid stay the same size, so measure them
+// once at the current size and give everything else to the squares
+async function fitCells() {
+  await nextTick();
+  if (!phone.value) {
+    cell.value = 24;
+    return;
+  }
+  if (!body.value || !grid.value) return;
+  const frame = body.value.querySelector('.mines-frame');
+  const style = getComputedStyle(body.value);
+  const roomW = body.value.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - (frame.offsetWidth - grid.value.clientWidth);
+  const roomH = body.value.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - (frame.offsetHeight - grid.value.clientHeight);
+  const { rows, cols } = size.value;
+  cell.value = Math.max(16, Math.min(48, Math.floor(Math.min(roomW / cols, roomH / rows))));
+}
+
+// turning the phone can change the board's shape, which needs a fresh board
+function screenChanged() {
+  const before = `${size.value.rows}x${size.value.cols}`;
+  phone.value = innerWidth <= 700;
+  portrait.value = innerHeight > innerWidth;
+  if (`${size.value.rows}x${size.value.cols}` !== before) newGame();
+  else fitCells();
+}
+
+// the window opens with some room around the board so the minefield backdrop shows,
+// and the squares are 24px no matter the difficulty. it can be dragged smaller, down
+// to snug around the board, or bigger
+const room = { x: 40, y: 28 };
+
 async function fitWindow() {
   await nextTick();
   const win = props.win;
@@ -108,9 +153,12 @@ async function fitWindow() {
   const desktop = document.querySelector('.desktop')?.getBoundingClientRect();
   const frame = root.value.querySelector('.mines-frame');
   const menubar = root.value.querySelector('.mines-menubar');
-  const width = Math.ceil(win.width - root.value.clientWidth + frame.offsetWidth + 12);
-  const height = Math.ceil(win.height - root.value.clientHeight + menubar.offsetHeight + frame.offsetHeight + 6);
-  Object.assign(win, { width, height, minWidth: width, minHeight: height });
+  const snugWidth = Math.ceil(win.width - root.value.clientWidth + frame.offsetWidth + 12);
+  const snugHeight = Math.ceil(win.height - root.value.clientHeight + menubar.offsetHeight + frame.offsetHeight + 6);
+  // the extra room shrinks rather than push a big board off the desktop
+  const width = Math.max(snugWidth, Math.min(snugWidth + room.x * 2, desktop?.width ?? Infinity));
+  const height = Math.max(snugHeight, Math.min(snugHeight + room.y * 2, desktop?.height ?? Infinity));
+  Object.assign(win, { width, height, minWidth: snugWidth, minHeight: snugHeight });
 
   // bigger boards might hang off the edge, so nudge the window back on screen
   if (desktop) {
@@ -286,28 +334,48 @@ function onRightClick(event, i) {
 
 newGame();
 
+let backdrop;
+let bodyObserver;
 onMounted(() => {
   fitWindow();
+  fitCells();
   document.addEventListener('pointerdown', outside);
+  addEventListener('resize', screenChanged);
+  bodyObserver = new ResizeObserver(() => fitCells());
+  bodyObserver.observe(body.value);
+  backdrop = createBackdrop(backdropCanvas.value, { running: () => state.value === 'playing', scene: minesScene });
+  backdrop.setActive(props.active);
 });
+
+watch(() => props.active, active => backdrop?.setActive(active));
+watch(theme, () => backdrop?.redraw());
 
 onBeforeUnmount(() => {
   clearInterval(timer);
   clearTimeout(holdTimer);
   document.removeEventListener('pointerdown', outside);
+  removeEventListener('resize', screenChanged);
+  bodyObserver?.disconnect();
+  backdrop?.destroy();
 });
 </script>
 
 <template>
   <div ref="root" class="app-layout minesweeper-app">
     <nav class="mines-menubar">
+      <!-- a raised button showing the level, with a pixel arrow, that opens the menu -->
       <button
         ref="gameButton"
+        class="mines-difficulty raised"
         :class="{ open: menuOpen }"
         aria-haspopup="menu"
         :aria-expanded="menuOpen"
+        :aria-label="`Difficulty: ${level}`"
         @click="toggleMenu"
-      ><u>D</u>ifficulty</button>
+      >
+        <span><u>D</u>ifficulty: {{ level }}</span>
+        <svg viewBox="0 0 7 4" aria-hidden="true"><path d="M0 0h7v1H0zM1 1h5v1H1zM2 2h3v1H2zM3 3h1v1H3z"/></svg>
+      </button>
       <div v-if="menuOpen" class="mines-menu raised" role="menu" aria-label="Difficulty" @keydown="menuKeys">
         <button
           v-for="(_, name) in levels"
@@ -321,7 +389,8 @@ onBeforeUnmount(() => {
       </div>
     </nav>
 
-    <div class="mines-body">
+    <div ref="body" class="mines-body">
+      <canvas ref="backdropCanvas" class="mines-backdrop" aria-hidden="true"/>
       <div class="mines-frame raised">
         <div class="mines-header inset">
           <!-- mine counter on the left, timer on the right -->
@@ -355,7 +424,7 @@ onBeforeUnmount(() => {
           class="mines-grid inset"
           role="group"
           aria-label="Minefield"
-          :style="{ '--cols': size.cols }"
+          :style="{ '--cols': size.cols, '--cell': `${cell}px` }"
           @pointerup="cellUp"
           @pointerleave="cellUp"
           @pointercancel="cellUp"

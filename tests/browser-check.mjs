@@ -287,7 +287,7 @@ try {
   await expect(hidden.locator('.mine-flag')).toHaveCount(1);
   await expect(mines.locator('.status-bar, .toolbar')).toHaveCount(0);
 
-  await mines.getByRole('button', { name: 'Difficulty', exact: true }).click();
+  await mines.getByRole('button', { name: /^Difficulty/ }).click();
   await mines.getByRole('menuitemradio', { name: 'Expert', exact: true }).click();
   await expect(mines.locator('.mine-cell')).toHaveCount(480);
   await expect(mines.getByRole('menu')).toHaveCount(0);

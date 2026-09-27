@@ -2649,7 +2649,9 @@ label.mail-label {
 
 
 /* ---- minesweeper ----
-   squares are always 24px. the window resizes itself to fit and small screens scroll */
+   squares are 24px on a desktop, where the window opens wrapped around the board and
+   can be dragged bigger, with the board kept in the middle. on a phone
+   Minesweeper.vue sets --cell so the board fills the screen */
 
 .minesweeper-app {
   background: var(--surface);
@@ -2659,7 +2661,36 @@ label.mail-label {
   position: relative;
   display: flex;
   flex-shrink: 0;
-  padding: 1px 2px;
+  padding: 4px 6px 2px;
+}
+
+/* the difficulty picker is a raised button with the level and a pixel arrow, and
+   looks pushed in while its menu is open */
+.mines-menubar > .mines-difficulty {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.mines-menubar > .mines-difficulty:hover {
+  background: var(--surface);
+  color: inherit;
+}
+
+.mines-menubar > .mines-difficulty.open {
+  background: var(--surface);
+  color: inherit;
+  border-color: var(--edge) var(--light) var(--light) var(--edge);
+  box-shadow: inset 1px 1px var(--shadow);
+}
+
+.mines-difficulty svg {
+  width: 14px;
+  height: 8px;
+  fill: currentColor;
+  shape-rendering: crispEdges;
 }
 
 .mines-menubar > button {
@@ -2707,13 +2738,26 @@ label.mail-label {
 }
 
 .mines-body {
+  position: relative;
+  display: grid;
+  place-items: center;
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 0 6px 6px;
 }
 
+/* the ascii minefield sweeping itself behind the board, see ascii-backdrop.js */
+.mines-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 .mines-frame {
+  position: relative;
   width: max-content;
   margin-inline: auto;
   padding: 8px;
@@ -2774,13 +2818,13 @@ label.mail-label {
 
 .mines-grid {
   display: grid;
-  grid-template-columns: repeat(var(--cols), 24px);
-  grid-auto-rows: 24px;
+  grid-template-columns: repeat(var(--cols), var(--cell, 24px));
+  grid-auto-rows: var(--cell, 24px);
 }
 
 .mine-cell {
-  width: 24px;
-  height: 24px;
+  width: var(--cell, 24px);
+  height: var(--cell, 24px);
   padding: 0;
   font-size: 14px;
   line-height: 1;
@@ -2818,22 +2862,29 @@ label.mail-label {
 }
 
 .mine-flag {
-  width: 16px;
-  height: 20px;
+  width: calc(var(--cell, 24px) * 2 / 3);
+  height: calc(var(--cell, 24px) * 5 / 6);
   shape-rendering: crispEdges;
 }
 
 .mine-bomb {
-  width: 20px;
-  height: 20px;
+  width: calc(var(--cell, 24px) * 5 / 6);
+  height: calc(var(--cell, 24px) * 5 / 6);
   shape-rendering: crispEdges;
 }
 
 .mine-number {
-  width: 16px;
-  height: 16px;
+  width: calc(var(--cell, 24px) * 2 / 3);
+  height: calc(var(--cell, 24px) * 2 / 3);
   fill: currentColor;
   shape-rendering: crispEdges;
+}
+
+/* on a phone the board gets even room all round */
+@media (max-width: 700px) {
+  .mines-body {
+    padding: 6px;
+  }
 }
 
 /* the classic number colors */
