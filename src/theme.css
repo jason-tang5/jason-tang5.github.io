@@ -1720,15 +1720,42 @@ input[type="checkbox"]:focus-visible {
   padding: 0;
 }
 
-/* each post is its title, the date, then the subtitle, with an etched line under it */
+/* each post is its title, the date, then the subtitle, with a pixel divider under it */
 .blog-list li {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: start;
-  padding: 22px 0 24px;
-  /* the etched windows divider, a grey line over a white one, same as <hr> */
-  border-bottom: 1px solid var(--shadow);
-  box-shadow: 0 1px 0 var(--light);
+  padding: 22px 0 28px;
+}
+
+/* the divider: chunky 2px dashes, each with a highlight dash one step down and to
+   the right so they look pressed into the page, broken in the middle for a diamond */
+.blog-list li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background:
+    linear-gradient(var(--d-page, #f5f4ed), var(--d-page, #f5f4ed)) center / 22px 100% no-repeat,
+    repeating-linear-gradient(90deg, var(--shadow) 0 6px, transparent 6px 10px) 0 0 / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--light) 0 6px, transparent 6px 10px) 2px 2px / 100% 2px no-repeat;
+}
+
+/* a pixel diamond in the gap, stepped two pixels at a time */
+.blog-list li::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 10px;
+  height: 10px;
+  translate: -50% 0;
+  z-index: 1;
+  background: var(--shadow);
+  clip-path: polygon(40% 0, 60% 0, 60% 20%, 80% 20%, 80% 40%, 100% 40%, 100% 60%, 80% 60%, 80% 80%, 60% 80%, 60% 100%, 40% 100%, 40% 80%, 20% 80%, 20% 60%, 0 60%, 0 40%, 20% 40%, 20% 20%, 40% 20%);
 }
 
 .blog-list button {
