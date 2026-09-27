@@ -62,7 +62,7 @@ const lines = {
     'Help is on the way! (It isn’t.)',
   ],
   helpTired: ['Please stop pressing that.', 'Help is getting tired…', 'I can hear it creaking.'],
-  helpBroken: ['Oh no. You broke Help.', 'Help has stopped working. Maybe that’s a sign.', 'That’s it, Help has left the building.'],
+  helpBroken: ['Oh no. You broke it.', 'Help has stopped working. Maybe that’s a sign.', 'That’s it, Help has left the building.'],
 };
 // the discs are tiny 8x9 pixel sprites, kept low res on purpose: a black outline drawn
 // twice one row apart, and the face with a one pixel edge peeking out under it.

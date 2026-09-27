@@ -23,8 +23,12 @@ export class LiveStats {
         this.sql.exec(`INSERT INTO sessions VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET seen=excluded.seen`, visit, now);
       }
       if (name === 'leave') this.sql.exec(`DELETE FROM sessions WHERE id=?`, visit);
-      const counter = { 'minesweeper-win': 'minesweeperWins', 'breakout-complete': 'breakoutWins', 'reversi-lose': 'clippyWins', 'reversi-win': 'clippyLosses' }[name];
+      const counter = { 'minesweeper-win': 'minesweeperWins', 'breakout-complete': 'breakoutWins', 'reversi-lose': 'clippyWins', 'reversi-win': 'clippyLosses', '2048-win': 'twenty48Wins' }[name];
       if (counter) this.sql.exec(`INSERT INTO totals VALUES (?, 1) ON CONFLICT(name) DO UPDATE SET value=value+1`, counter);
+      // the best 2048 score only ever goes up
+      if (name === '2048-score' && Number.isInteger(value) && value > 0 && value <= 1e6) {
+        this.sql.exec(`INSERT INTO totals VALUES ('twenty48HighScore', ?) ON CONFLICT(name) DO UPDATE SET value=MAX(value, excluded.value)`, value);
+      }
       if (name === 'snake-score' && Number.isInteger(value) && value > 0 && value <= 1000) {
         // names are checked again here, a blocked or missing one stays anonymous
         // a score belongs to the browser's saved player id, or to the visit for older pages
@@ -44,7 +48,7 @@ export class LiveStats {
     // sqlite hands back the name from the row with the max score
     const since = days => board(this.sql.exec(`SELECT id, MAX(score) AS score, name FROM daily_scores WHERE day > ? GROUP BY id ORDER BY score DESC, id LIMIT 10`, dayOf(now - days * day)));
     const online = [...this.sql.exec('SELECT COUNT(*) AS count FROM sessions')][0].count;
-    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard, leaderboardWeek: since(7), leaderboardMonth: since(30), leaderboardQuarter: since(90), leaderboardYear: since(365) }, { headers: { 'Cache-Control': 'no-store' } });
+    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, twenty48Wins: 0, twenty48HighScore: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard, leaderboardWeek: since(7), leaderboardMonth: since(30), leaderboardQuarter: since(90), leaderboardYear: since(365) }, { headers: { 'Cache-Control': 'no-store' } });
   }
 }
 const day = 86400000;

@@ -21,6 +21,9 @@ test('durable totals, presence and leaderboard survive object recreation', async
   await post(stats, 'snake-score', 'visitor123', 12);
   await post(stats, 'snake-score', 'visitor123', 5);
   await post(stats, 'snake-score', 'visitor456', 20);
+  await post(stats, '2048-win');
+  await post(stats, '2048-score', 'visitor123', 20480);
+  await post(stats, '2048-score', 'visitor456', 3000);
   const data = await get(new LiveStats(ctx));
   assert.equal(data.visitors, 1);
   assert.equal(data.online, 1);
@@ -29,6 +32,8 @@ test('durable totals, presence and leaderboard survive object recreation', async
   assert.equal(data.clippyWins, 2);
   assert.equal(data.clippyLosses, 1);
   assert.equal(data.snakeHighScore, 20);
+  assert.equal(data.twenty48Wins, 1);
+  assert.equal(data.twenty48HighScore, 20480);
   assert.deepEqual(data.leaderboard.map(r => r.score), [20, 12]);
   await post(stats, 'leave');
   assert.equal((await get(stats)).online, 0);

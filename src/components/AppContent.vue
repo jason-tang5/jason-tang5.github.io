@@ -16,6 +16,9 @@ import StickyNote from './StickyNote.vue';
 import RetroIcon from './RetroIcon.vue';
 import InlineText from './InlineText.vue';
 import TechList from './TechList.vue';
+import PortfolioFigures from './PortfolioFigures.vue';
+import FpgaFigures from './FpgaFigures.vue';
+import ReversiFigures from './ReversiFigures.vue';
 import { read, save, remove } from '../storage.js';
 import { noteGlyphs, noteColors } from '../notes.mjs';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from '../sound.js';
@@ -31,6 +34,9 @@ const Game = defineAsyncComponent(() => import('./Game.vue'));
 const Snake = defineAsyncComponent(() => import('./Snake.vue'));
 const Minesweeper = defineAsyncComponent(() => import('./Minesweeper.vue'));
 const Reversi = defineAsyncComponent(() => import('./Reversi.vue'));
+const Twenty48 = defineAsyncComponent(() => import('./Twenty48.vue'));
+// the interactive figures in a project's writeup, by name (content.mjs, figures)
+const figureFor = { apps: PortfolioFigures, stack: PortfolioFigures, live: PortfolioFigures, register: FpgaFigures, datapath: FpgaFigures, slide: FpgaFigures, fsm: FpgaFigures, weights: ReversiFigures, eval: ReversiFigures, lookahead: ReversiFigures };
 
 defineProps({
   win: Object,
@@ -447,15 +453,27 @@ function setPortraitAscii(value) {
       <template v-if="win.project.contribution">
         <h2>What I built</h2>
         <p>{{ win.project.contribution }}</p>
+        <component :is="figureFor[f]" v-for="f in [win.project.figures?.built ?? []].flat()" :key="f" :figure="f" @open="id => emit('open', id)"/>
       </template>
       <h2>Implementation</h2>
-      <p v-for="paragraph in [win.project.implementation].flat()" :key="paragraph">{{ paragraph }}</p>
+      <!-- paragraphs, with { figure } entries dropping a figure in between them -->
+      <template v-for="(item, i) in [win.project.implementation].flat()" :key="i">
+        <component :is="figureFor[item.figure]" v-if="item.figure" :figure="item.figure" @open="id => emit('open', id)"/>
+        <p v-else>{{ item }}</p>
+      </template>
+      <component :is="figureFor[f]" v-for="f in [win.project.figures?.implementation ?? []].flat()" :key="f" :figure="f" @open="id => emit('open', id)"/>
       <template v-if="win.project.outcomes">
         <h2>Results</h2>
         <ul>
           <li v-for="outcome in win.project.outcomes" :key="outcome">{{ outcome }}</li>
         </ul>
+        <component :is="figureFor[f]" v-for="f in [win.project.figures?.results ?? []].flat()" :key="f" :figure="f" @open="id => emit('open', id)"/>
       </template>
+      <template v-if="win.project.lessons">
+        <h2>Lessons learned</h2>
+        <p v-for="paragraph in [win.project.lessons].flat()" :key="paragraph">{{ paragraph }}</p>
+      </template>
+      <aside v-if="win.project.funFact" class="fun-fact"><strong>Fun fact</strong><p>{{ win.project.funFact }}</p></aside>
     </article>
     <footer class="status-bar"><span>Project information</span><span>{{ win.project.tech[0] }}</span></footer>
   </div>
@@ -520,6 +538,7 @@ function setPortraitAscii(value) {
   <Snake v-else-if="win.type === 'snake'" :active="active"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>
   <Reversi v-else-if="win.type === 'reversi'" :active="active"/>
+  <Twenty48 v-else-if="win.type === '2048'" :active="active"/>
 
   <!-- desktop settings -->
   <div v-else-if="win.type === 'settings'" class="app-layout">

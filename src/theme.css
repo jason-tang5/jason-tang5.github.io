@@ -6651,3 +6651,25 @@ label.mail-label {
   width: 24px;
   height: 24px;
 }
+
+/* the fun fact at the bottom of a project writeup, a little yellow note */
+.fun-fact {
+  margin: 20px 0 8px;
+  padding: 10px 14px;
+  background: #fff4b8;
+  color: #1b1b1b;
+  border: 2px solid var(--d-line, #000);
+  box-shadow: 4px 4px 0 var(--d-line, #000);
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
+}
+
+.fun-fact strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.fun-fact p {
+  margin: 4px 0 0;
+}

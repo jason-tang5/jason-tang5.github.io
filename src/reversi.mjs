@@ -65,7 +65,7 @@ export const gameOver = board => !legalMoves(board, black).length && !legalMoves
 // ---- the bot ----
 // a classic positional table: corners are gold, the squares next to them are poison
 // until the corner is taken, edges are decent
-const weights = [
+export const weights = [
   120, -20, 20, 5, 5, 20, -20, 120,
   -20, -40, -5, -5, -5, -5, -40, -20,
   20, -5, 15, 3, 3, 15, -5, 20,
@@ -75,16 +75,19 @@ const weights = [
   -20, -40, -5, -5, -5, -5, -40, -20,
   120, -20, 20, 5, 5, 20, -20, 120,
 ];
-const corners = [0, 7, 56, 63];
+export const corners = [0, 7, 56, 63];
 // each x or c square and the corner it hangs off
-const nextToCorner = [[1, 0], [8, 0], [9, 0], [6, 7], [15, 7], [14, 7], [48, 56], [57, 56], [49, 56], [62, 63], [55, 63], [54, 63]];
+export const nextToCorner = [[1, 0], [8, 0], [9, 0], [6, 7], [15, 7], [14, 7], [48, 56], [57, 56], [49, 56], [62, 63], [55, 63], [54, 63]];
 
 // how good the board looks for player: position, mobility, corners, and near the end
-// just the disc count
-export function evaluate(board, player) {
+// just the disc count. split into its parts so the writeup can show them
+export function evaluateParts(board, player) {
   const them = other(player);
   const discs = count(board);
-  if (gameOver(board)) return (discs[player] - discs[them]) * 1000;
+  if (gameOver(board)) {
+    const total = (discs[player] - discs[them]) * 1000;
+    return { position: 0, mobility: 0, corners: 0, parity: 0, final: total, total };
+  }
   const empty = 64 - discs[player] - discs[them];
   let position = 0;
   for (let i = 0; i < 64; i++) {
@@ -97,11 +100,13 @@ export function evaluate(board, player) {
   }
   const mine = legalMoves(board, player).length;
   const theirs = legalMoves(board, them).length;
-  const mobility = mine + theirs ? (100 * (mine - theirs)) / (mine + theirs) : 0;
+  const mobility = (mine + theirs ? (100 * (mine - theirs)) / (mine + theirs) : 0) * 0.8;
   const cornerScore = corners.reduce((sum, c) => sum + (board[c] === player ? 25 : board[c] === them ? -25 : 0), 0);
   const parity = empty < 14 ? (discs[player] - discs[them]) * 4 : 0;
-  return position + mobility * 0.8 + cornerScore + parity;
+  return { position, mobility, corners: cornerScore, parity, final: 0, total: position + mobility + cornerScore + parity };
 }
+
+export const evaluate = (board, player) => evaluateParts(board, player).total;
 
 function search(board, player, turn, depth, alpha, beta) {
   if (depth === 0 || gameOver(board)) return evaluate(board, player);

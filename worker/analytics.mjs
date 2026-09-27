@@ -20,6 +20,8 @@ export const eventNames = [
   'breakout-complete', // each completed board, including replays
   'reversi-win', // beat clippy at reversi
   'reversi-lose', // clippy won
+  '2048-win', // made the 2048 tile, once per game
+  '2048-score', // a finished 2048 game (game over or restarted). value is the score
   'visit', // first interaction of a page load. detail is the window it opened on
   'open', // a window opened. detail is its app id
   'blog-post', // a blog post read. detail is its slug
@@ -148,6 +150,8 @@ export function summarize(rows, daily = []) {
   return {
     visitors,
     snakeHighScore: Math.max(0, ...rows.filter(row => row.name === 'snake-score').map(row => Number(row.maximum) || 0)),
+    twenty48HighScore: Math.max(0, ...rows.filter(row => row.name === '2048-score').map(row => Number(row.maximum) || 0)),
+    twenty48Wins: n('2048-win'),
     minesweeperWins: n('minesweeper-win'),
     breakoutWins: n('breakout-complete'),
     // reversi-lose is clippy winning, reversi-win is clippy losing

@@ -161,6 +161,17 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#5f5d66" d="M11 27h3v1h-3zM16 27h3v1h-3z"/>
         <path fill="#a29e92" d="M21 24h1v3h-1zM23 23h1v3h-1z"/>
       </g>
+      <!-- four tiles spelling 2048, in the original game's colours -->
+      <g v-else-if="name === '2048'" stroke="none">
+        <path fill="#eee4da" d="M2 1h12v1h1v12h-1v1H2v-1H1V2h1z"/>
+        <path fill="#776e65" d="M5 3h2v2h-2zM7 3h2v2h-2zM9 3h2v2h-2zM9 5h2v2h-2zM5 7h2v2h-2zM7 7h2v2h-2zM9 7h2v2h-2zM5 9h2v2h-2zM5 11h2v2h-2zM7 11h2v2h-2zM9 11h2v2h-2z"/>
+        <path fill="#f67c5f" d="M18 1h12v1h1v12h-1v1H18v-1H17V2h1z"/>
+        <path fill="#fff" d="M21 3h2v2h-2zM23 3h2v2h-2zM25 3h2v2h-2zM21 5h2v2h-2zM25 5h2v2h-2zM21 7h2v2h-2zM25 7h2v2h-2zM21 9h2v2h-2zM25 9h2v2h-2zM21 11h2v2h-2zM23 11h2v2h-2zM25 11h2v2h-2z"/>
+        <path fill="#ede0c8" d="M2 17h12v1h1v12h-1v1H2v-1H1V18h1z"/>
+        <path fill="#776e65" d="M5 19h2v2h-2zM9 19h2v2h-2zM5 21h2v2h-2zM9 21h2v2h-2zM5 23h2v2h-2zM7 23h2v2h-2zM9 23h2v2h-2zM9 25h2v2h-2zM9 27h2v2h-2z"/>
+        <path fill="#f2b179" d="M18 17h12v1h1v12h-1v1H18v-1H17V18h1z"/>
+        <path fill="#fff" d="M21 19h2v2h-2zM23 19h2v2h-2zM25 19h2v2h-2zM21 21h2v2h-2zM25 21h2v2h-2zM21 23h2v2h-2zM23 23h2v2h-2zM25 23h2v2h-2zM21 25h2v2h-2zM25 25h2v2h-2zM21 27h2v2h-2zM23 27h2v2h-2zM25 27h2v2h-2z"/>
+      </g>
       <!-- a green board with the four opening discs in the middle -->
       <g v-else-if="name === 'reversi'">
         <path fill="#6b3e1c" d="M2 2h28v28H2z"/>

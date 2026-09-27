@@ -1,8 +1,10 @@
 // animated ascii backdrops for the space around the game boards, in courier text and
 // the game's own colours: bricks and sparks drifting up in contact, little snakes
 // playing snake in snake, a huge reversi board flipping itself over in reversi, and
-// a minefield sweeping itself in minesweeper. they speed up while a game is running,
-// pause when the window isn't in front, and stay still for reduced motion.
+// a minefield sweeping itself in minesweeper, and a 2048 board playing itself in 2048.
+// they speed up while a game is running, pause when the window isn't in front, and
+// stay still for reduced motion.
+import { slideLine } from './twenty48.mjs';
 
 // contact: bricks and sparks floating up past the breakout board
 export const breakoutScene = {
@@ -42,6 +44,16 @@ export const reversiScene = {
   alpha: { light: 0.55, dark: 0.45 },
 };
 
+// 2048: a big faint ascii 2048 board behind the monitor. every so often the whole
+// field slides one way, equal blocks merge and new ones pop in, like the game
+// playing itself. the colours are the fpga's 3-bit ones, toned down
+export const tilesScene = {
+  light: ['#8a8a1f', '#2f8a2f', '#a33b3b', '#2f8a9a', '#8a3ba3', '#3b4fa3'],
+  dark: ['#e0dd6a', '#7fe07f', '#ff8a8a', '#7fe0ea', '#d99aff', '#8f9cff'],
+  blocks: true,
+  alpha: { light: 0.4, dark: 0.45 },
+};
+
 const cell = 12;
 const headFor = { right: '>', left: '<', up: '^', down: 'v' };
 const moves = { right: [1, 0], left: [-1, 0], up: [0, -1], down: [0, 1] };
@@ -50,6 +62,7 @@ const turnsFrom = { right: ['up', 'down'], left: ['up', 'down'], up: ['left', 'r
 export function createBackdrop(canvas, options) {
   if (options.scene?.snakes) return createSnakeField(canvas, options);
   if (options.scene?.discs) return createDiscField(canvas, options);
+  if (options.scene?.blocks) return createBlockField(canvas, options);
   if (options.scene?.sweep) return createSweepField(canvas, options);
   return createDrift(canvas, options);
 }
@@ -497,6 +510,153 @@ function createSweepField(canvas, { running, scene }) {
       wait = running() ? 167 + Math.random() * 167 : 400 + Math.random() * 467;
       const safe = field.filter(c => !c.mine).length;
       if (field.filter(c => c.open).length > safe * 0.6) boomAt = now;
+    }
+    draw();
+  }
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(canvas);
+  resize();
+  frame = requestAnimationFrame(loop);
+
+  return {
+    setActive(value) { active = value; },
+    redraw() { draw(); },
+    destroy() {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    },
+  };
+}
+
+// the 2048 scene. blocks are ascii boxes on a grid; each slide works out where every
+// block goes with the game's own slideLine, glides them there, then merged blocks
+// glow and new blocks pop in to keep it packed, around three quarters full. when it
+// gets too crowded to move, some blocks go so it never locks up
+const blockW = 48;
+const blockH = 40;
+const glideTime = 260;
+
+function createBlockField(canvas, { running, scene }) {
+  const ctx = canvas.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let width = 0, height = 0, cols = 1, rows = 1;
+  let grid = [];
+  let sprites = []; // blocks mid-glide: { power, from, to, merged }
+  let born = new Map(); // cell -> time it popped in or merged, for the glow
+  let glideStart = -Infinity;
+  let frame = 0, last = 0, wait = 400, now = 0, active = true;
+  const random = n => Math.floor(Math.random() * n);
+
+  function spawn(count) {
+    for (let k = 0; k < count; k++) {
+      const empty = grid.flatMap((p, i) => (p ? [] : [i]));
+      if (!empty.length) return;
+      const at = empty[random(empty.length)];
+      grid[at] = Math.random() < 0.85 ? 1 : 2;
+      born.set(at, now);
+    }
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = devicePixelRatio || 1;
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    cols = Math.max(1, Math.ceil(width / blockW));
+    rows = Math.max(1, Math.ceil(height / blockH));
+    grid = Array(cols * rows).fill(0);
+    sprites = [];
+    born = new Map();
+    spawn(Math.ceil(cols * rows * 0.75));
+    draw();
+  }
+
+  // every row or column, listed from the side the blocks are pushed toward
+  function lines(direction) {
+    const out = [];
+    const across = direction === 'left' || direction === 'right';
+    for (let a = 0; a < (across ? rows : cols); a++) {
+      const line = [];
+      const length = across ? cols : rows;
+      for (let b = 0; b < length; b++) {
+        const along = direction === 'right' || direction === 'down' ? length - 1 - b : b;
+        line.push(across ? a * cols + along : along * cols + a);
+      }
+      out.push(line);
+    }
+    return out;
+  }
+
+  function slideAll() {
+    const direction = ['left', 'right', 'up', 'down'][random(4)];
+    const next = Array(cols * rows).fill(0);
+    sprites = [];
+    for (const cells of lines(direction)) {
+      slideLine(cells.map(i => grid[i])).tiles.forEach((t, k) => {
+        const to = cells[k];
+        next[to] = Math.min(t.power, 11);
+        for (const from of t.from) sprites.push({ power: grid[cells[from]], from: cells[from], to, merged: Boolean(t.merged) });
+        if (t.merged) born.set(to, now + glideTime);
+      });
+    }
+    grid = next;
+    glideStart = now;
+    // too crowded to move: let some blocks go, the big ones first
+    const filled = grid.filter(Boolean).length;
+    if (filled > cols * rows * 0.92) grid = grid.map(p => (p && Math.random() < 0.08 + p * 0.03 ? 0 : p));
+  }
+
+  const cellX = i => (i % cols) * blockW + 2;
+  const cellY = i => Math.floor(i / cols) * blockH + 2;
+
+  function drawBlock(power, x, y, glow) {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const colors = dark ? scene.dark : scene.light;
+    const label = String(2 ** power);
+    ctx.globalAlpha = Math.min(1, scene.alpha[dark ? 'dark' : 'light'] * glow);
+    ctx.fillStyle = colors[(power - 1) % colors.length];
+    ctx.fillText('+----+', x, y);
+    ctx.fillText(`|${label.padStart(Math.ceil((4 + label.length) / 2)).padEnd(4)}|`, x, y + 11);
+    ctx.fillText('+----+', x, y + 22);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.textBaseline = 'top';
+    ctx.font = `bold 11px 'Courier New', monospace`;
+    const t = (now - glideStart) / glideTime;
+    if (t < 1) {
+      // three steps, like a slow redraw, rather than a smooth glide
+      const k = Math.ceil(t * 3) / 3;
+      for (const s of sprites) drawBlock(s.power, cellX(s.from) + (cellX(s.to) - cellX(s.from)) * k, cellY(s.from) + (cellY(s.to) - cellY(s.from)) * k, 1);
+    } else {
+      grid.forEach((power, i) => {
+        if (!power) return;
+        const age = now - (born.get(i) ?? -Infinity);
+        drawBlock(power, cellX(i), cellY(i), age >= 0 && age < 400 ? 1 + (1 - age / 400) * 0.35 : 1);
+      });
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(time) {
+    frame = requestAnimationFrame(loop);
+    const dt = last ? Math.min(100, time - last) : 0;
+    last = time;
+    if (!active || document.hidden || reduced.matches) return;
+    now += dt;
+    const wasGliding = now - dt - glideStart < glideTime;
+    // new blocks pop in once the glide has landed, topping the field back up
+    if (wasGliding && now - glideStart >= glideTime) spawn(Math.max(1, Math.round(cols * rows * 0.78) - grid.filter(Boolean).length));
+    wait -= dt;
+    if (wait <= 0) {
+      slideAll();
+      // it slides about once a second, quicker while you're playing
+      wait = running() ? 520 + Math.random() * 300 : 1100 + Math.random() * 800;
     }
     draw();
   }

@@ -48,6 +48,8 @@ const cards = computed(() => {
     { label: 'Highest Snake score', value: number(live.value[boardKeys[days.value]]?.[0]?.score), icon: 'snake' },
     { label: 'Clippy win-lose', value: data.value ? `${number(s.clippyWins)}-${number(s.clippyLosses)}` : '—', icon: 'reversi',
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
+    { label: 'Highest 2048 score', value: count(s.twenty48HighScore), icon: '2048' },
+    { label: '2048 tiles made', value: count(s.twenty48Wins), icon: '2048' },
   ];
 });
 // your own scores, kept in this browser by each game
@@ -63,6 +65,7 @@ const yourCards = computed(() => {
   return [
     { label: 'Minesweeper games beaten', value: number(yourMines.value.reduce((sum, l) => sum + l.wins, 0)), icon: 'mine', levels: yourMines.value },
     { label: 'Your Snake best', value: number(read('snake-best', '0')), icon: 'snake' },
+    { label: 'Your 2048 best', value: number(read('2048-best', '0')), icon: '2048' },
     { label: 'You vs Clippy', value: `${you}-${clippy}`, icon: 'reversi', note: you + clippy ? `You win ${Math.round(you / (you + clippy) * 100)}%` : 'No games yet' },
   ];
 });
@@ -134,7 +137,7 @@ onMounted(load);
         <p v-if="liveError && !live" role="status">{{ liveError }}</p>
         <p v-else-if="!live" role="status">Loading scores...</p>
         <template v-else>
-          <div class="score-cards">
+          <div class="score-cards three">
             <section v-for="card in cards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
               <strong>{{ card.value }}</strong>
@@ -147,7 +150,7 @@ onMounted(load);
             <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
           </div>
           <h2>Your scores</h2>
-          <div class="score-cards three">
+          <div class="score-cards">
             <section v-for="card in yourCards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
               <strong>{{ card.value }}</strong>

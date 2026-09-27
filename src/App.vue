@@ -831,7 +831,8 @@ function soundChanged(event) {
 // a few listeners for the whole page instead of wiring up every button.
 // things marked data-sound="none" play their own sound (or none at all)
 function soundTarget(el) {
-  const target = el.closest('button, a, select');
+  // svg nodes in the project figures act as buttons too
+  const target = el.closest('button, a, select, figure [role="button"]');
   if (!target || target.disabled || target.closest('[data-sound="none"]')) return null;
   return target;
 }
@@ -1013,7 +1014,7 @@ onBeforeUnmount(() => {
           <strong>Welcome!</strong>
           <button aria-label="Dismiss welcome message" @click="dismissTip">×</button>
         </div>
-        <p>feel free to click around</p>
+        <p>feel free to click around!</p>
       </aside>
 
       <aside v-if="notice" class="first-tip desktop-notice raised" role="status" aria-label="Notification">

@@ -24,6 +24,8 @@ const rows = [
   { name: 'visit', count: '2', total: '0', device: 'desktop', referrer: 'example.com' },
   { name: 'snake-score', count: 9, total: 60, maximum: 14 },
   { name: 'snake-score', count: 3, total: 10, maximum: 7 },
+  { name: '2048-score', count: 2, total: 5000, maximum: 4000 },
+  { name: '2048-win', count: 1, total: 0, maximum: 0 },
   { name: 'breakout-complete', count: 4, total: 0 },
   { name: 'breakout-win', count: 2, total: 101 },
   { name: 'minesweeper-win', count: 3, total: 0 },
@@ -33,6 +35,8 @@ test('summary separates game completions from per-visit funnel and uses maximum 
   const result = summarize(rows, [{ day: '2026-09-26 00:00:00', visits: '5' }]);
   assert.equal(result.visitors, 5);
   assert.equal(result.snakeHighScore, 14);
+  assert.equal(result.twenty48HighScore, 4000);
+  assert.equal(result.twenty48Wins, 1);
   assert.equal(result.breakoutWins, 4);
   assert.equal(result.minesweeperWins, 3);
   assert.equal(result.breakout.averageWinSeconds, 51);
