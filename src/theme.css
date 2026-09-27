@@ -393,6 +393,27 @@ input[type="checkbox"]:focus-visible {
   background: var(--desktop, #008080);
 }
 
+/* a phone left still: everything but the wallpaper fades away, and comes back the
+   moment the phone moves or is touched (resting.js) */
+.desktop-shell :is(.desktop-grid, .desktop-signature, .first-tip, .window, .taskbar) {
+  transition: opacity 0.6s;
+}
+
+.desktop-shell.resting :is(.desktop-grid, .desktop-signature, .first-tip, .window, .taskbar) {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: 1.5s;
+}
+
+/* the strip the taskbar leaves behind goes dark instead of showing the teal behind it */
+.desktop-shell {
+  transition: background-color 1.5s;
+}
+
+.desktop-shell.resting {
+  background: #000;
+}
+
 .desktop {
   position: relative;
   flex: 1;

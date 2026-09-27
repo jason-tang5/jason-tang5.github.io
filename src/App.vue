@@ -27,6 +27,7 @@ import { isUnlocked } from './unlocks.js';
 import { trackOnce } from './analytics.js';
 import { theme, setTheme } from './theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from './wallpaper.js';
+import { useResting } from './resting.js';
 
 
 const windows = reactive([]);
@@ -49,6 +50,8 @@ const startMenu = ref(null);
 const area = reactive({ width: innerWidth, height: innerHeight - 46 });
 // on small screens windows go full screen and only the active one shows
 const compact = ref(innerWidth <= 700);
+// on a touch phone the desktop fades to just the wallpaper when the phone sits still
+const { resting } = useResting(() => compact.value && matchMedia('(pointer: coarse)').matches);
 const clock = ref(new Date());
 const tip = ref(read('tip') !== 'dismissed');
 
@@ -629,7 +632,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="desktop-shell" :style="{ '--desktop': wallpaper }">
+  <div class="desktop-shell" :class="{ resting }" :style="{ '--desktop': wallpaper }">
     <main ref="desktop" class="desktop" aria-label="Jason Tang’s desktop" @pointerdown.self="selected = null">
       <AsciiImage
         class="desktop-wallpaper"
