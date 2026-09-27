@@ -18,7 +18,7 @@ try {
     await page.setViewportSize({ width, height: 850 });
     await page.goto('http://localhost:5188/#app=analytics');
     await page.getByRole('tab', { name: 'Scoreboard' }).click();
-    await expect(page.locator('.score-card')).toHaveCount(8);
+    await expect(page.locator('.score-card')).toHaveCount(7);
     await expect(page.getByText('5,678', { exact: true })).toBeVisible();
     await expect(page.getByText('Your Snake best', { exact: true })).toBeVisible();
     await expect(page.getByText('3-1', { exact: true })).toBeVisible();

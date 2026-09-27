@@ -46,15 +46,15 @@ const cards = computed(() => {
 // your own scores, kept in this browser by each game
 // storage isn't reactive, so bumping this re-reads it (on refresh and tab changes)
 const reread = ref(0);
-const levelNames = ['expert', 'intermediate', 'beginner'];
+const yourMines = computed(() => {
+  reread.value;
+  return ['Beginner', 'Intermediate', 'Expert'].map(level => ({ level, wins: Number(read(`minesweeper-wins-${level.toLowerCase()}`, '0')) || 0 }));
+});
 const yourCards = computed(() => {
   reread.value;
-  const mines = levelNames.map(l => [l, Number(read(`minesweeper-best-${l}`, '0'))]).find(([, t]) => t);
-  const breakout = Number(read('breakout-best', '0'));
   const you = Number(read('reversi-you', '0')) || 0, clippy = Number(read('reversi-clippy', '0')) || 0;
   return [
-    { label: 'Your Minesweeper best', value: mines ? `${mines[1]}s` : '—', icon: 'mine', note: mines ? mines[0] : 'Not beaten yet' },
-    { label: 'Your Breakout best', value: breakout ? `${breakout}s` : '—', icon: 'game', note: breakout ? '' : 'Not beaten yet' },
+    { label: 'Minesweeper games beaten', value: number(yourMines.value.reduce((sum, l) => sum + l.wins, 0)), icon: 'mine', levels: yourMines.value },
     { label: 'Your Snake best', value: number(read('snake-best', '0')), icon: 'snake' },
     { label: 'You vs Clippy', value: `${you}-${clippy}`, icon: 'reversi', note: you + clippy ? `You win ${Math.round(you / (you + clippy) * 100)}%` : 'No games yet' },
   ];
@@ -124,7 +124,7 @@ onMounted(load);
       <button v-for="t in tabs" :id="`analytics-tab-${t.id}`" :key="t.id" :data-tab="t.id" role="tab" :aria-selected="current === t.id" :aria-controls="`analytics-panel-${t.id}`" :tabindex="current === t.id ? 0 : -1"
         @click="pick(t.id)" @keydown.right.prevent="step($event, 1)" @keydown.left.prevent="step($event, -1)">{{ t.label }}</button>
     </div>
-    <main :id="`analytics-panel-${current}`" class="content-scroll document pixel-headings analytics-page" role="tabpanel" :aria-labelledby="`analytics-tab-${current}`" :aria-busy="busy">
+    <main :id="`analytics-panel-${current}`" class="content-scroll document pixel-headings fancy-dividers analytics-page" role="tabpanel" :aria-labelledby="`analytics-tab-${current}`" :aria-busy="busy">
       <template v-if="current === 'scoreboard'">
         <h1>All-time scoreboard</h1>
         <p v-if="liveError && !live" role="status">{{ liveError }}</p>
@@ -144,12 +144,15 @@ onMounted(load);
           </div>
           <h2>Your scores</h2>
           <p class="analytics-note">Kept in this browser.</p>
-          <div class="score-cards">
+          <div class="score-cards three">
             <section v-for="card in yourCards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
               <strong>{{ card.value }}</strong>
               <span>{{ card.label }}</span>
               <small v-if="card.note">{{ card.note }}</small>
+              <ul v-if="card.levels" class="level-counts">
+                <li v-for="l in card.levels" :key="l.level"><span>{{ l.level }}</span><b>{{ number(l.wins) }}</b></li>
+              </ul>
             </section>
           </div>
           <h2>Reversi against Clippy</h2>
@@ -158,12 +161,13 @@ onMounted(load);
           <table v-if="live.leaderboard.length" class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
           <p v-else>No scores yet. Play Snake to set the first record!</p>
         </template>
-        <h1>A little bit of site history</h1>
         <p v-if="busy" role="status">Loading site history...</p>
         <p v-else-if="error" role="status">{{ error }}</p>
         <template v-if="data">
-          <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days</p>
+          <div class="history-row">
+          <section>
           <h2>Visitors by day</h2>
+          <p class="analytics-note"><strong>{{ number(data.visitors) }}</strong> visits in the last {{ days }} days</p>
           <p v-if="!data.visitors">No visits recorded yet. The next adventure starts with a click.</p>
           <div class="analytics-chart" role="img" :aria-label="`Daily visits over the last ${days} days. Peak: ${peak === 1 && !data.visitors ? 0 : peak}.`">
             <div v-for="row in daily" :key="row.day" class="analytics-column" :title="`${row.day}: ${number(row.visits)} visits`">
@@ -171,9 +175,13 @@ onMounted(load);
             </div>
           </div>
           <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
+          </section>
+          <section>
           <h2>Boards cleared</h2>
           <p class="analytics-note">Last {{ days }} days, replays included.</p>
           <PixelPie :rows="[{ label: 'Minesweeper', count: data.minesweeperWins }, { label: 'Breakout', count: data.breakoutWins }]" label="Boards cleared"/>
+          </section>
+          </div>
         </template>
       </template>
       <template v-else>
@@ -236,6 +244,13 @@ onMounted(load);
 .online-dot { width: 20px; height: 20px; flex: none; background: #1baf7a; border: 2px solid var(--d-line, #000); animation: online-blink 1.2s steps(1) infinite; }
 @keyframes online-blink { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .online-dot { animation: none; } }
+.score-cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.level-counts { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; max-width: 150px; font-size: 11px; }
+.level-counts li { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; border-top: 1px dotted var(--d-line, #999); }
+/* visitors by day and boards cleared side by side, stacked on a phone */
+.history-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 24px; align-items: start; margin-top: 12px; }
+.history-row .pixel-pie { flex-direction: column; align-items: flex-start; }
+@media (max-width: 700px) { .history-row { grid-template-columns: minmax(0, 1fr); } }
 .analytics-refresh { display: inline-flex; align-items: center; gap: 6px; }
 .analytics-refresh svg { width: 16px; height: 16px; fill: currentColor; }
 .score-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
@@ -261,6 +276,6 @@ onMounted(load);
 .analytics-bar span { display: block; height: 100%; background: repeating-linear-gradient(to right, var(--bar) 0 6px, transparent 6px 8px); }
 .analytics-table { width: 100%; text-align: left; font-size: 12px; }
 .analytics-table td, .analytics-table th { border-bottom: 1px solid #ddd; }
-@media (max-width: 560px) { .score-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .score-cards, .score-cards.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 400px) { .analytics-page { padding: 18px 14px; } }
 </style>

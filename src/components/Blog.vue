@@ -247,7 +247,8 @@ async function destroy() {
 
 <template>
   <div class="app-layout">
-    <div class="toolbar">
+    <!-- signed out, the list's toolbar would only say "Blog", so it's left off -->
+    <div v-if="draft || post || admin" class="toolbar">
       <template v-if="draft">
         <button class="raised" :disabled="saving" @click="publish">Publish</button>
         <button class="raised" :class="{ pressed: previewing }" @click="previewing = !previewing">Preview</button>

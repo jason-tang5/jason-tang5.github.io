@@ -2166,9 +2166,44 @@ input[type="checkbox"]:focus-visible {
 
 /* in dark mode the shadow grey is almost the page colour, so the divider uses a
    lighter grey with a dark glint under it instead */
-:root[data-theme="dark"] .blog-list {
+:root[data-theme="dark"] :is(.blog-list, .fancy-dividers) {
   --divider-ink: #74747f;
   --divider-glint: #0b0b0e;
+}
+
+/* the same divider under each h2 of a .fancy-dividers page (analytics). the gap for
+   the diamond is masked out instead of painted, so it works on any background */
+.fancy-dividers h2 {
+  position: relative;
+  border-bottom: 0;
+  padding-bottom: 12px;
+}
+
+.fancy-dividers h2::after,
+.fancy-dividers h2::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+}
+
+.fancy-dividers h2::after {
+  left: 0;
+  right: 0;
+  height: 4px;
+  background:
+    repeating-linear-gradient(90deg, var(--divider-ink, var(--shadow)) 0 6px, transparent 6px 10px) 0 0 / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--divider-glint, var(--light)) 0 6px, transparent 6px 10px) 2px 2px / 100% 2px no-repeat;
+  mask: linear-gradient(90deg, #000 calc(50% - 11px), transparent 0 calc(50% + 11px), #000 0);
+}
+
+.fancy-dividers h2::before {
+  left: 50%;
+  bottom: -3px;
+  width: 10px;
+  height: 10px;
+  translate: -50% 0;
+  background: var(--divider-ink, var(--shadow));
+  clip-path: polygon(40% 0, 60% 0, 60% 20%, 80% 20%, 80% 40%, 100% 40%, 100% 60%, 80% 60%, 80% 80%, 60% 80%, 60% 100%, 40% 100%, 40% 80%, 20% 80%, 20% 60%, 0 60%, 0 40%, 20% 40%, 20% 20%, 40% 20%);
 }
 
 /* a pixel diamond in the gap, stepped two pixels at a time */

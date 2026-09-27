@@ -13,7 +13,6 @@ import { beatContact, contactBeaten, contactBoardCleared, resetContactBoard } fr
 import { track, trackOnce } from '../analytics.js';
 import { play } from '../sound.js';
 import RetroIcon from './RetroIcon.vue';
-import { read, save } from '../storage.js';
 
 const props = defineProps({ active: Boolean });
 const emit = defineEmits(['unlock']);
@@ -32,8 +31,6 @@ let lossesInARow = 0;
 // for the analytics window: how many balls are lost, and how long a win takes from
 // the first time play started this visit
 let firstStart = 0;
-// when this board was first launched, for your best time in the analytics window
-let boardStart = 0;
 let losses = 0;
 
 function openMail() {
@@ -46,15 +43,10 @@ onMounted(() => {
     won: contactBoardCleared(),
     onStart: () => {
       firstStart ||= Date.now();
-      boardStart ||= Date.now();
       trackOnce('breakout-start');
     },
     onWin: () => {
       track('breakout-complete');
-      const seconds = Math.round((Date.now() - boardStart) / 1000);
-      const best = Number(read('breakout-best', '0'));
-      if (boardStart && (!best || seconds < best)) save('breakout-best', String(seconds));
-      boardStart = 0;
       trackOnce('breakout-win', '', Math.round((Date.now() - firstStart) / 1000));
       lossesInARow = 0;
       beatContact();
@@ -65,7 +57,6 @@ onMounted(() => {
     // restart puts the bricks back, but mail stays unlocked and go to mail stays put
     onRestart: () => {
       clearTimeout(mailTimer);
-      boardStart = 0;
       if (beaten.value) resetContactBoard();
     },
     onLose: () => {
