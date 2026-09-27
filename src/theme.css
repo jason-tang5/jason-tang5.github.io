@@ -2140,8 +2140,15 @@ input[type="checkbox"]:focus-visible {
   height: 4px;
   background:
     linear-gradient(var(--d-page, #f5f4ed), var(--d-page, #f5f4ed)) center / 22px 100% no-repeat,
-    repeating-linear-gradient(90deg, var(--shadow) 0 6px, transparent 6px 10px) 0 0 / 100% 2px no-repeat,
-    repeating-linear-gradient(90deg, var(--light) 0 6px, transparent 6px 10px) 2px 2px / 100% 2px no-repeat;
+    repeating-linear-gradient(90deg, var(--divider-ink, var(--shadow)) 0 6px, transparent 6px 10px) 0 0 / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--divider-glint, var(--light)) 0 6px, transparent 6px 10px) 2px 2px / 100% 2px no-repeat;
+}
+
+/* in dark mode the shadow grey is almost the page colour, so the divider uses a
+   lighter grey with a dark glint under it instead */
+:root[data-theme="dark"] .blog-list {
+  --divider-ink: #74747f;
+  --divider-glint: #0b0b0e;
 }
 
 /* a pixel diamond in the gap, stepped two pixels at a time */
@@ -2154,7 +2161,7 @@ input[type="checkbox"]:focus-visible {
   height: 10px;
   translate: -50% 0;
   z-index: 1;
-  background: var(--shadow);
+  background: var(--divider-ink, var(--shadow));
   clip-path: polygon(40% 0, 60% 0, 60% 20%, 80% 20%, 80% 40%, 100% 40%, 100% 60%, 80% 60%, 80% 80%, 60% 80%, 60% 100%, 40% 100%, 40% 80%, 20% 80%, 20% 60%, 0 60%, 0 40%, 20% 40%, 20% 20%, 40% 20%);
 }
 
