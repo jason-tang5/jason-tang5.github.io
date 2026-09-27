@@ -146,6 +146,20 @@ const sounds = {
   // letting go: a much lighter tick
   release: ac => burst(ac, { freq: 5200, q: 1.2, length: 0.007, volume: 0.05 }),
 
+  // the hi-score cartridge seating into the handheld: a short scrape of plastic,
+  // then a firm latch with a low knock under it
+  cartIn: ac => {
+    burst(ac, { freq: 900, q: 0.6, length: 0.05, volume: 0.05 });
+    burst(ac, { freq: 2300, q: 0.9, start: 0.06, length: 0.016, volume: 0.17 });
+    blip(ac, { type: 'sine', from: 150, to: 70, start: 0.06, length: 0.06, volume: 0.12 });
+  },
+
+  // and pulling it back out: the latch letting go with a little rising pop
+  cartOut: ac => {
+    burst(ac, { freq: 1900, q: 0.8, length: 0.012, volume: 0.12 });
+    blip(ac, { type: 'sine', from: 220, to: 360, start: 0.01, length: 0.06, volume: 0.07 });
+  },
+
   // keyboard presses have no separate down and up, so play both
   click: ac => {
     sounds.press(ac);

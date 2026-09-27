@@ -32,6 +32,54 @@ watch(playerName, value => {
   if (tidy !== value) { playerName.value = tidy; return; }
   if (!tidy || cleanName(tidy)) save('snake-name', tidy);
 });
+// the hi-score cartridge is either out beside the handheld or tucked into it
+const cartTucked = ref(read('snake-cart', 'out') === 'tucked');
+function setCart(tucked) {
+  cartTucked.value = tucked;
+  save('snake-cart', tucked ? 'tucked' : 'out');
+}
+// tucking it in latches with a click, a buzz and a little bump of the handheld
+const seated = ref(false);
+function tuckIn() {
+  play('cartIn');
+  buzz([15, 40, 60]);
+  setCart(true);
+  seated.value = true;
+  setTimeout(() => { seated.value = false; }, 260);
+}
+// the tucked cartridge's tab can be dragged up: it follows the pointer, ticks as it
+// slides and pops out once it's pulled far enough. a plain click pulls it out too
+const pull = ref(0);
+const pullOutAt = 30;
+let pullFrom = null;
+let dragged = false;
+function pullOut() {
+  pullFrom = null;
+  pull.value = 0;
+  play('cartOut');
+  buzz([20, 30, 40]);
+  setCart(false);
+}
+function peekDown(event) {
+  if (event.button !== 0) return;
+  pullFrom = event.clientY;
+  dragged = false;
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+function peekMove(event) {
+  if (pullFrom === null) return;
+  const distance = Math.max(0, Math.min(pullOutAt, pullFrom - event.clientY));
+  if (distance > 3) dragged = true;
+  if (Math.floor(distance / 10) > Math.floor(pull.value / 10)) buzz(8);
+  pull.value = distance;
+  if (distance >= pullOutAt) pullOut();
+}
+function peekUp() {
+  if (pullFrom === null) return;
+  pullFrom = null;
+  if (dragged) pull.value = 0;
+  else pullOut();
+}
 const nameIssue = computed(() => nameProblem(playerName.value));
 // enter or escape in the name line hands the keys back to the game
 function nameKey(event) {
@@ -252,7 +300,15 @@ onBeforeUnmount(() => {
     <canvas ref="backdropCanvas" class="snake-backdrop" aria-hidden="true"/>
     <div class="content-scroll snake-content">
       <div class="snake-stage">
-      <div class="snake-handheld">
+      <div class="snake-handheld-wrap">
+      <!-- tucked in, just the top of the cartridge sticks out of the back -->
+      <Transition name="cart-peek">
+        <button v-if="cartTucked" class="cart-peek" :class="{ pulling: pull }" :style="{ '--pull': `${pull}px` }" aria-label="Pull out the hi-score cartridge" title="Pull out the hi-scores"
+          @pointerdown="peekDown" @pointermove="peekMove" @pointerup="peekUp" @pointercancel="peekUp" @click="$event.detail === 0 && pullOut()">
+          <span aria-hidden="true"><b>&#9650;</b> HI-SCORES</span>
+        </button>
+      </Transition>
+      <div class="snake-handheld" :class="{ seated }">
         <div class="snake-bezel">
           <div class="snake-screen-top">
             <span class="snake-led" :class="{ on: running }" aria-hidden="true"/>
@@ -320,7 +376,10 @@ onBeforeUnmount(() => {
         </div>
         <div class="snake-speaker" aria-hidden="true"/>
       </div>
-      <Leaderboard/>
+      </div>
+      <Transition name="cart-out">
+        <Leaderboard v-if="!cartTucked" @tuck="tuckIn"/>
+      </Transition>
       </div>
     </div>
     <span class="sr-only" role="status">{{ status }}</span>

@@ -4067,27 +4067,147 @@ label.mail-label {
   display: none;
 }
 
-/* with room to spare, the leaderboard stands to the right of the handheld */
+/* the handheld and its cartridge sit in the middle of the window, stacked when it's
+   narrow and side by side with room to spare. the space on top is for pulling a
+   tucked cartridge up out of the handheld */
 .snake-content {
   container-type: inline-size;
 }
 
-@container (min-width: 720px) {
+.snake-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding-top: 36px;
+}
+
+@container (min-width: 700px) {
   .snake-stage {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 24px;
+    flex-direction: row;
+    gap: 40px;
+  }
+}
+
+.snake-handheld-wrap {
+  width: min(100%, 330px);
+  flex: none;
+}
+
+.snake-stage .snake-cart {
+  flex: none;
+}
+
+/* the handheld sits in front, so a tucked cartridge looks like it's in the slot */
+.snake-handheld-wrap .snake-handheld {
+  z-index: 1;
+}
+
+/* the top of a tucked cartridge, poking just out of the back of the handheld with
+   an arrow to pull it by. --pull is how far it's being dragged */
+.cart-peek {
+  position: relative;
+  display: grid;
+  place-items: start center;
+  width: 240px;
+  height: 42px;
+  margin: 0 auto -18px;
+  padding: 5px 0 0;
+  border: 0;
+  border-radius: 4px 0 0 0;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  background:
+    repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) 10px 7px / 30px 10px no-repeat,
+    repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) calc(100% - 24px) 7px / 30px 10px no-repeat,
+    #bcbcc3;
+  box-shadow: inset 3px 3px 0 #dcdce2;
+  color: #26307f;
+  font: bold 11px/1.2 Tahoma, sans-serif;
+  letter-spacing: 1px;
+  cursor: grab;
+  touch-action: none;
+  transform: translateY(calc(var(--pull, 0px) * -1));
+  transition: transform .12s;
+}
+
+.cart-peek.pulling {
+  cursor: grabbing;
+  transition: none;
+}
+
+/* the arrow nudges upward on its own now and then, asking to be pulled */
+.cart-peek b {
+  display: inline-block;
+  animation: cart-nudge 2.4s steps(2, end) infinite;
+}
+
+@keyframes cart-nudge {
+  0%, 70%, 100% { transform: none; }
+  80% { transform: translateY(-2px); }
+}
+
+@media (hover: hover) {
+  .cart-peek:hover:not(.pulling) {
+    transform: translateY(-4px);
+  }
+}
+
+.cart-peek:focus-visible {
+  outline: 1px dotted var(--edge);
+  outline-offset: 2px;
+}
+
+:root[data-theme="dark"] .cart-peek {
+  background:
+    repeating-linear-gradient(90deg, #3a3a42 0 2px, transparent 2px 7px) 10px 7px / 30px 10px no-repeat,
+    repeating-linear-gradient(90deg, #3a3a42 0 2px, transparent 2px 7px) calc(100% - 24px) 7px / 30px 10px no-repeat,
+    #5a5a64;
+  box-shadow: inset 3px 3px 0 #74747f;
+  color: #c9cad8;
+}
+
+/* the handheld gives a small bump as the cartridge latches in */
+.snake-handheld.seated {
+  animation: cart-seat .26s steps(3, end);
+}
+
+@keyframes cart-seat {
+  40% { transform: translateY(3px); }
+}
+
+/* tucking slides the cartridge down into the slot, pulling it out slides it back up */
+.cart-peek-enter-active,
+.cart-peek-leave-active,
+.cart-out-enter-active,
+.cart-out-leave-active {
+  transition: transform .22s steps(4, end), opacity .22s steps(4, end);
+}
+
+.cart-peek-enter-from,
+.cart-peek-leave-to {
+  transform: translateY(40px);
+}
+
+.cart-out-enter-from,
+.cart-out-leave-to {
+  transform: translateY(-24px);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-peek b,
+  .snake-handheld.seated {
+    animation: none;
   }
 
-  .snake-stage .snake-handheld {
-    margin: 0;
-    flex: none;
-  }
-
-  .snake-stage .snake-pager {
-    margin: 26px 0 0;
-    flex: 0 1 300px;
+  .cart-peek-enter-active,
+  .cart-peek-leave-active,
+  .cart-out-enter-active,
+  .cart-out-leave-active {
+    transition: none;
   }
 }
 .snake-pad-left { grid-area: 2 / 1; }

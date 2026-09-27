@@ -1,15 +1,17 @@
 <script setup>
-// the snake leaderboard as a 90s pager beside (or under) the handheld: a backlit
-// screen with the top ten, and three buttons to flip between the last 7 days, the
-// last 30 and all time. names are typed on the handheld's screen (Snake.vue)
+// the snake leaderboard as a game cartridge beside (or under) the handheld: the
+// scores are printed on its label, three buttons flip between the last 7 days, the
+// last 30 and all time, and it can be tucked back into the handheld (Snake.vue).
+// names are typed on the handheld's screen
 import { computed, ref } from 'vue';
 import { useLiveStats } from '../live-stats.js';
 import { read, save } from '../storage.js';
+defineEmits(['tuck']);
 const { data, error } = useLiveStats();
 const periods = [
-  { id: 'week', button: '7D', title: 'LAST 7 DAYS', key: 'leaderboardWeek' },
-  { id: 'month', button: '30D', title: 'LAST 30 DAYS', key: 'leaderboardMonth' },
-  { id: 'all', button: 'ALL', title: 'ALL TIME', key: 'leaderboard' },
+  { id: 'week', button: '7D', title: 'Last 7 days', key: 'leaderboardWeek' },
+  { id: 'month', button: '30D', title: 'Last 30 days', key: 'leaderboardMonth' },
+  { id: 'all', button: 'ALL', title: 'All time', key: 'leaderboard' },
 ];
 const saved = read('snake-board-period', 'all');
 const period = ref(periods.some(p => p.id === saved) ? saved : 'all');
@@ -21,97 +23,81 @@ function pick(id) {
 }
 </script>
 <template>
-  <section class="snake-pager">
-    <h2 class="sr-only">Snake leaderboard, {{ current.title.toLowerCase() }}</h2>
-    <div class="pager-top" aria-hidden="true">
-      <span class="pager-brand">JASON <em>page</em></span>
-      <span class="pager-led" :class="{ on: data && !error }"/>
+  <section class="snake-cart">
+    <div class="cart-grip" aria-hidden="true"/>
+    <div class="cart-label">
+      <div class="cart-label-top">
+        <h2>SNAKE <span>HI-SCORES</span></h2>
+        <p>{{ current.title }}</p>
+      </div>
+      <p v-if="error && !data" class="cart-message" role="status">No signal. Try again shortly.</p>
+      <p v-else-if="!data" class="cart-message" role="status">Loading...</p>
+      <ol v-else-if="rows.length" class="cart-scores">
+        <li v-for="row in rows" :key="row.rank">
+          <span class="cart-rank">{{ row.rank }}</span>
+          <span class="cart-player">{{ row.player.replace(/^Player /, '#') }}</span>
+          <span class="cart-score">{{ String(row.score).padStart(3, '0') }}</span>
+        </li>
+      </ol>
+      <p v-else class="cart-message">No scores yet.<br>Be the first!</p>
     </div>
-    <div class="pager-screen">
-      <p class="pager-title">HI-SCORES <span>{{ current.title }}</span></p>
-      <p v-if="error && !data" class="pager-message" role="status">NO SIGNAL</p>
-      <p v-else-if="!data" class="pager-message" role="status">CONNECTING...</p>
-      <table v-else-if="rows.length">
-        <thead class="sr-only"><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead>
-        <tbody><tr v-for="row in rows" :key="row.rank"><td>{{ String(row.rank).padStart(2, '0') }}</td><td>{{ row.player.replace(/^Player /, '#') }}</td><td>{{ String(row.score).padStart(3, '0') }}</td></tr></tbody>
-      </table>
-      <p v-else class="pager-message">NO SCORES YET<br>BE THE FIRST!</p>
-    </div>
-    <div class="pager-buttons" role="group" aria-label="Leaderboard period">
-      <button v-for="p in periods" :key="p.id" :aria-pressed="period === p.id" :aria-label="p.title.toLowerCase()" @click="pick(p.id)">{{ p.button }}</button>
+    <div class="cart-controls">
+      <div class="cart-periods" role="group" aria-label="Leaderboard period">
+        <button v-for="p in periods" :key="p.id" :aria-pressed="period === p.id" :title="p.title" @click="pick(p.id)">{{ p.button }}</button>
+      </div>
+      <button class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
     </div>
   </section>
 </template>
 <style scoped>
-/* dark plastic with a belt clip on the back, like the handheld's cousin */
-.snake-pager {
-  --pager-body: #2c2e35;
-  --pager-light: #464954;
-  --pager-dark: #17181c;
-  --lcd: #a9bb7c;
-  --lcd-ink: #1e2a12;
-  position: relative;
-  width: min(100%, 300px);
+/* grey plastic with the top right corner cut off and grip ridges along the top */
+.snake-cart {
+  --cart: #bcbcc3;
+  --cart-light: #dcdce2;
+  --cart-dark: #8e8e98;
+  width: min(100%, 290px);
   box-sizing: border-box;
-  margin: 18px auto 0;
-  padding: 12px 14px 16px;
-  border-radius: 14px 14px 22px 22px;
-  background: var(--pager-body);
-  box-shadow: inset -3px -3px 0 var(--pager-dark), inset 3px 3px 0 var(--pager-light), 3px 3px 0 var(--gb-drop, #555);
+  margin: 0;
+  padding: 8px 16px 14px;
+  background: var(--cart);
+  border-radius: 4px 0 12px 12px;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  box-shadow: inset -3px -3px 0 var(--cart-dark), inset 3px 3px 0 var(--cart-light);
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
 }
-.snake-pager::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  right: 34px;
-  width: 58px;
-  height: 8px;
-  border-radius: 3px 3px 0 0;
-  background: var(--pager-dark);
-}
-.pager-top { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; }
-.pager-brand { color: #c9cad8; font: bold 13px 'Pixel MS Sans Serif', Tahoma, sans-serif; letter-spacing: 1px; -webkit-font-smoothing: none; }
-.pager-brand em { font-weight: normal; }
-.pager-led { width: 8px; height: 8px; background: #4a1f1f; border: 1px solid #000; }
-.pager-led.on { background: #ff5a4a; box-shadow: 0 0 4px #ff5a4a; animation: pager-blink 2.4s steps(1) infinite; }
-@keyframes pager-blink { 90% { opacity: .3; } }
-/* the backlit screen, sunk into the plastic */
-.pager-screen {
-  min-height: 188px;
-  padding: 8px 10px;
-  border: 4px solid var(--pager-dark);
-  border-radius: 4px;
-  background: var(--lcd);
-  color: var(--lcd-ink);
-  box-shadow: inset 2px 2px 0 #0003;
-  font: bold 13px/1.45 'Courier New', monospace;
-}
-.pager-title { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 4px; padding: 0 4px; background: var(--lcd-ink); color: var(--lcd); font-size: 12px; }
-.pager-message { margin: 40px 0 0; text-align: center; font-size: 13px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 0 2px; }
-td:nth-child(2) { width: 100%; overflow-wrap: anywhere; }
-td:last-child { text-align: right; }
-/* three rubber buttons along the bottom edge */
-.pager-buttons { display: flex; justify-content: center; gap: 12px; margin-top: 12px; }
-.pager-buttons button {
-  min-width: 52px;
-  padding: 4px 10px;
-  border: 1px solid #000;
-  border-radius: 8px;
-  background: #5a5d68;
-  color: #e2e3ea;
-  font: bold 11px Tahoma, sans-serif;
+:root[data-theme="dark"] .snake-cart { --cart: #5a5a64; --cart-light: #74747f; --cart-dark: #3a3a42; }
+.cart-grip { height: 12px; margin: 0 26px 10px 4px; background: repeating-linear-gradient(90deg, var(--cart-dark) 0 2px, transparent 2px 7px); }
+/* the sticker, with a printed band across the top */
+.cart-label { padding: 0 0 8px; background: #f3efe2; color: #1b1d33; border-radius: 3px; box-shadow: inset 0 0 0 2px var(--cart-dark), 2px 2px 0 var(--cart-light); overflow: hidden; }
+.cart-label-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--gb-ink, #26307f); color: #fff; }
+.cart-label-top h2 { margin: 0; font: bold 16px 'Pixel MS Sans Serif', Tahoma, sans-serif; letter-spacing: 1px; -webkit-font-smoothing: none; }
+.cart-label-top h2 span { font-size: 11px; font-weight: normal; }
+.cart-label-top p { margin: 0; font-size: 11px; white-space: nowrap; }
+:root[data-theme="dark"] .cart-label-top { background: #26307f; }
+.cart-scores { list-style: none; margin: 6px 0 0; padding: 0 10px; min-height: 150px; font: bold 13px/1.5 'Courier New', monospace; }
+.cart-scores li { display: flex; gap: 8px; border-bottom: 1px dotted #1b1d3333; }
+.cart-rank { width: 2ch; text-align: right; color: #26307f; }
+.cart-player { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cart-message { min-height: 150px; margin: 0; padding-top: 50px; box-sizing: border-box; text-align: center; font-size: 13px; }
+/* the buttons, shaped like the handheld's select and start */
+.cart-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.cart-periods { display: flex; gap: 6px; }
+.cart-controls button {
+  padding: 3px 9px;
+  border: 1px solid #333;
+  border-radius: 7px;
+  background: var(--gb-pill, #8d8b95);
+  color: #fff;
+  font: bold 10px Tahoma, sans-serif;
   letter-spacing: 1px;
-  box-shadow: inset 0 -3px 0 #3a3c44;
+  box-shadow: inset 0 -2px 0 var(--gb-pill-dark, #5f5d66);
   cursor: var(--classic-pointer);
   transition: transform .08s, filter .08s;
 }
 @media (hover: hover) {
-  .pager-buttons button:hover { transform: translateY(-1px); filter: brightness(1.15); }
+  .cart-controls button:hover { transform: translateY(-1px); filter: brightness(1.15); }
 }
-.pager-buttons button:active,
-.pager-buttons button[aria-pressed="true"] { transform: translateY(1px); box-shadow: inset 0 1px 0 #0006; background: #4a4d57; color: var(--lcd); }
-.pager-buttons button:focus-visible { outline: 1px dotted #c9cad8; outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .pager-led.on { animation: none; } }
+.cart-controls button:active,
+.cart-periods button[aria-pressed="true"] { transform: translateY(1px); box-shadow: inset 0 1px 0 #0005; background: var(--gb-ink, #26307f); }
+.cart-controls button:focus-visible { outline: 1px dotted #000; outline-offset: 2px; }
 </style>
