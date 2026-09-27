@@ -4614,6 +4614,13 @@ label.mail-label {
     justify-content: flex-end;
   }
 
+  /* the list keeps its full height. the details list scrolls sideways, which would
+     otherwise let it shrink and cut off rows when a taller preview comes in */
+  .project-icons,
+  .project-details {
+    flex-shrink: 0;
+  }
+
   .project-preview {
     border-right: 0;
     border-top: 1px solid var(--d-rule, #aaa);
