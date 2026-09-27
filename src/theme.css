@@ -5375,6 +5375,8 @@ label.mail-label {
 
 .reversi-content {
   position: relative;
+  /* the board grows and shrinks with the window, see .reversi-table */
+  container-type: size;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5397,7 +5399,7 @@ label.mail-label {
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  width: min(100%, 360px);
+  width: var(--reversi-width);
 }
 
 .reversi-clippy-art {
@@ -5451,10 +5453,17 @@ label.mail-label {
   clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 50%, 50% 50%, 50% 0);
 }
 
+/* as big as the window lets it be: the full width, or the height left under clippy
+   (about 140px goes to him, the padding and the scores), whichever is less. a tiny
+   window scrolls rather than shrinking it past playable */
+.reversi-content > * {
+  --reversi-width: clamp(240px, min(100cqw - 24px, 100cqh - 140px), 760px);
+}
+
 .reversi-table {
   position: relative;
   box-sizing: border-box;
-  width: min(100%, 360px);
+  width: var(--reversi-width);
   padding: 8px 10px 10px;
   background: var(--wood);
   box-shadow: inset 2px 2px 0 var(--wood-light), inset -2px -2px 0 var(--wood-dark), 4px 4px 0 #0007;
@@ -5516,17 +5525,17 @@ label.mail-label {
   cursor: var(--classic-pointer, pointer);
 }
 
+/* sized to the square, so they grow with the board */
 .reversi-cell.legal::after {
   content: '';
-  width: 6px;
-  height: 6px;
+  width: max(6px, 14%);
+  aspect-ratio: 1;
   background: #0007;
 }
 
 .reversi-cell.legal:hover::after,
 .reversi-cell.legal:focus-visible::after {
-  width: 10px;
-  height: 10px;
+  width: max(10px, 24%);
 }
 
 .reversi-cell:focus-visible {
