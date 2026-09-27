@@ -29,6 +29,8 @@
   --muted: #555;
   --tip: #ffffdf;
   --taskbar-height: 46px;
+  /* how wide the taskbar is when it's moved to the left or right edge */
+  --taskbar-width: 176px;
 }
 
 /* dark mode: the same win95 bevels, just dimmed. set by theme.js */
@@ -953,6 +955,220 @@ input[type="checkbox"]:focus-visible {
   position: relative;
   display: flex;
   flex-shrink: 0;
+}
+
+/* the taskbar section of desktop settings: four edge buttons, each with a tiny
+   screen showing where the bar goes, and the auto-hide checkbox */
+.taskbar-edges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.taskbar-edges button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+}
+
+.taskbar-edges svg {
+  width: 18px;
+  height: 15px;
+  shape-rendering: crispEdges;
+}
+
+.taskbar-edge-screen {
+  fill: #008080;
+  stroke: var(--edge);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.taskbar-edge-bar {
+  fill: var(--surface);
+  stroke: var(--edge);
+  vector-effect: non-scaling-stroke;
+}
+
+.taskbar-autohide-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 700px) {
+  .taskbar-edges {
+    display: none;
+  }
+}
+
+/* ---- the taskbar on other edges (desktop settings, taskbar.js) ----
+   the desktop and taskbar swap places, and on the left or right the taskbar
+   stands up: everything stacks, and the popups open away from the edge */
+.desktop-shell {
+  position: relative;
+}
+
+.desktop-shell.taskbar-top {
+  flex-direction: column-reverse;
+}
+
+.desktop-shell.taskbar-left {
+  flex-direction: row-reverse;
+}
+
+.desktop-shell.taskbar-right {
+  flex-direction: row;
+}
+
+.taskbar-top .taskbar {
+  height: var(--taskbar-height);
+  padding: 3px 4px;
+  border-top: 0;
+  border-bottom: 2px solid var(--shadow);
+}
+
+.taskbar-left .taskbar,
+.taskbar-right .taskbar {
+  width: var(--taskbar-width);
+  height: auto;
+  flex-direction: column;
+  padding: 4px 3px;
+  border-top: 0;
+}
+
+.taskbar-left .taskbar {
+  border-right: 2px solid var(--shadow);
+}
+
+.taskbar-right .taskbar {
+  border-left: 2px solid var(--light);
+}
+
+.taskbar-left .taskbar :is(.start-button, .show-desktop),
+.taskbar-right .taskbar :is(.start-button, .show-desktop) {
+  min-height: 34px;
+}
+
+.taskbar-left .taskbar-divider,
+.taskbar-right .taskbar-divider {
+  border-left: 0;
+  border-right: 0;
+  border-top: 1px solid var(--shadow);
+  border-bottom: 1px solid var(--light);
+  margin: 2px 0;
+}
+
+.taskbar-left .task-items,
+.taskbar-right .task-items {
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.taskbar-left .task-button,
+.taskbar-right .task-button {
+  flex: 0 0 32px;
+  min-width: 0;
+  max-width: none;
+}
+
+.taskbar-left .tray,
+.taskbar-right .tray {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 4px;
+}
+
+.taskbar-left .clock,
+.taskbar-right .clock {
+  flex-basis: 100%;
+  min-height: 30px;
+}
+
+/* the start menu drops down from a top taskbar, and opens beside a side one */
+.taskbar-top .start-menu {
+  top: var(--taskbar-height);
+  bottom: auto;
+}
+
+.taskbar-left .start-menu {
+  top: 4px;
+  bottom: auto;
+  left: var(--taskbar-width);
+  max-height: calc(100dvh - 8px);
+}
+
+.taskbar-right .start-menu {
+  top: 4px;
+  bottom: auto;
+  left: auto;
+  right: var(--taskbar-width);
+  max-height: calc(100dvh - 8px);
+}
+
+.taskbar-top :is(.volume-popup, .calendar) {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.taskbar-left :is(.volume-popup, .calendar) {
+  left: calc(100% + 8px);
+  right: auto;
+  bottom: 0;
+}
+
+.taskbar-right :is(.volume-popup, .calendar) {
+  right: calc(100% + 8px);
+  bottom: 0;
+}
+
+/* auto-hide: the taskbar floats over the desktop and slides off its edge, leaving a
+   few pixels showing, until the mouse gets close (App.vue) or it has focus */
+.taskbar-autohide .taskbar {
+  position: absolute;
+  transition: transform 0.18s ease-out, opacity 0.6s;
+}
+
+.taskbar-autohide.taskbar-bottom .taskbar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateY(calc(100% - 4px));
+}
+
+.taskbar-autohide.taskbar-top .taskbar {
+  left: 0;
+  right: 0;
+  top: 0;
+  transform: translateY(calc(-100% + 4px));
+}
+
+.taskbar-autohide.taskbar-left .taskbar {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(calc(-100% + 4px));
+}
+
+.taskbar-autohide.taskbar-right .taskbar {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  transform: translateX(calc(100% - 4px));
+}
+
+.taskbar-autohide.taskbar-shown .taskbar,
+.taskbar-autohide .taskbar:focus-within {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taskbar-autohide .taskbar {
+    transition: none;
+  }
 }
 
 /* flat speaker icon next to the clock, like the win95 volume icon */

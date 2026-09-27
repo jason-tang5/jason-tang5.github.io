@@ -20,6 +20,7 @@ import { noteGlyphs, noteColors } from '../notes.mjs';
 import { play } from '../sound.js';
 import { theme, setTheme } from '../theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from '../wallpaper.js';
+import { autoHide, edges, setAutoHide, setTaskbarEdge, taskbarEdge } from '../taskbar.js';
 
 // the games only load when someone actually opens them
 const Game = defineAsyncComponent(() => import('./Game.vue'));
@@ -511,6 +512,30 @@ function setPortraitAscii(value) {
         </div>
       </fieldset>
       <button class="raised" @click="emit('wallpaper', defaultWallpaper)">Reset wallpaper</button>
+      <fieldset>
+        <legend>Taskbar</legend>
+        <!-- phones always keep it at the bottom, so the edge choice is desktop only -->
+        <div class="taskbar-edges" role="group" aria-label="Taskbar position">
+          <button
+            v-for="e in edges"
+            :key="e.id"
+            class="raised"
+            :class="{ pressed: taskbarEdge === e.id }"
+            :aria-pressed="taskbarEdge === e.id"
+            @click="taskbarEdge !== e.id && setTaskbarEdge(e.id)"
+          >
+            <svg viewBox="0 0 12 10" aria-hidden="true">
+              <path class="taskbar-edge-screen" d="M0 0h12v10H0z"/>
+              <path class="taskbar-edge-bar" :d="{ bottom: 'M0 8h12v2H0z', top: 'M0 0h12v2H0z', left: 'M0 0h2v10H0z', right: 'M10 0h2v10h-2z' }[e.id]"/>
+            </svg>
+            {{ e.label }}
+          </button>
+        </div>
+        <label class="taskbar-autohide-option">
+          <input type="checkbox" :checked="autoHide" @change="setAutoHide($event.target.checked)">
+          Automatically hide the taskbar
+        </label>
+      </fieldset>
     </div>
     <footer class="status-bar"><span>Display properties</span></footer>
   </div>

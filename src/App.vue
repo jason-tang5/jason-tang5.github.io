@@ -28,6 +28,7 @@ import { trackOnce } from './analytics.js';
 import { theme, setTheme } from './theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from './wallpaper.js';
 import { useResting } from './resting.js';
+import { autoHide, edgeNotices, taskbarEdge } from './taskbar.js';
 
 
 const windows = reactive([]);
@@ -216,21 +217,98 @@ const taskItems = ref(null);
 const taskbarCrowded = ref(false);
 function measureTaskbar() {
   const el = taskItems.value;
-  if (el) taskbarCrowded.value = el.scrollWidth > el.clientWidth + 1;
+  if (!el) return;
+  taskbarCrowded.value = ['left', 'right'].includes(edge.value)
+    ? el.scrollHeight > el.clientHeight + 1
+    : el.scrollWidth > el.clientWidth + 1;
+}
+
+// ---- taskbar edge and auto-hide (settings in taskbar.js) ----
+
+// phones always keep the taskbar along the bottom
+const edge = computed(() => (compact.value ? 'bottom' : taskbarEdge.value));
+watch(taskbarEdge, value => {
+  showNotice(...edgeNotices[value]);
+  nextTick(measureTaskbar);
+});
+
+// a hidden taskbar slides out when the mouse reaches its edge of the screen, and
+// tucks away again once the mouse leaves it with no menu open. on a touch screen a
+// tap near the edge brings it out and a tap anywhere else puts it away
+const taskbarEl = ref(null);
+const taskbarShown = ref(false);
+let hideTimer;
+const menuOpen = () => startOpen.value || volumeOpen.value || calendar.value || !!taskMenu.value;
+
+function nearEdge(x, y, reach) {
+  return {
+    bottom: y >= innerHeight - reach,
+    top: y <= reach,
+    left: x <= reach,
+    right: x >= innerWidth - reach,
+  }[edge.value];
+}
+
+function overTaskbar(x, y) {
+  const r = taskbarEl.value?.getBoundingClientRect();
+  return r && x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
+}
+
+function showTaskbar() {
+  clearTimeout(hideTimer);
+  taskbarShown.value = true;
+}
+
+function hideTaskbarSoon(delay = 400) {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    if (!menuOpen()) taskbarShown.value = false;
+  }, delay);
+}
+
+function taskbarPointerMove(event) {
+  if (!autoHide.value || event.pointerType === 'touch') return;
+  if (nearEdge(event.clientX, event.clientY, 6) || (taskbarShown.value && overTaskbar(event.clientX, event.clientY))) showTaskbar();
+  else if (taskbarShown.value) hideTaskbarSoon();
+}
+
+function taskbarPointerDown(event) {
+  if (!autoHide.value || event.pointerType === 'mouse') return;
+  if (event.target.closest('.taskbar, .start-menu, .task-menu')) return;
+  if (nearEdge(event.clientX, event.clientY, 28)) showTaskbar();
+  else if (taskbarShown.value) hideTaskbarSoon(0);
+}
+
+// picking something from the start menu on a phone puts the taskbar away too.
+// started in onMounted, since volumeOpen is declared further down
+function watchMenus() {
+  watch(menuOpen, open => {
+    if (!open && autoHide.value && compact.value) hideTaskbarSoon(300);
+  });
 }
 watch(() => windows.length, () => nextTick(measureTaskbar));
 
-// right clicking a taskbar button opens its window menu just above the taskbar.
-// { id, x } where x is the pointer's left edge, kept on screen
+// right clicking a taskbar button opens its window menu just off the taskbar.
+// { id, x, y } is where the pointer was, kept on screen
 const taskMenu = ref(null);
 const taskMenuEl = ref(null);
 async function openTaskMenu(event, id) {
   startOpen.value = false;
   calendar.value = false;
-  taskMenu.value = { id, x: Math.min(event.clientX, innerWidth - 176) };
+  taskMenu.value = { id, x: Math.min(event.clientX, innerWidth - 176), y: Math.min(event.clientY, innerHeight - 190) };
   await nextTick();
   taskMenuEl.value?.querySelector('button:not(:disabled)')?.focus();
 }
+// the menu sits beside whichever edge the taskbar is on
+const taskMenuStyle = computed(() => {
+  const { x, y } = taskMenu.value;
+  return {
+    bottom: { left: `${x}px` },
+    top: { left: `${x}px`, top: 'calc(var(--taskbar-height) + 2px)', bottom: 'auto' },
+    left: { left: 'calc(var(--taskbar-width) + 2px)', top: `${y}px`, bottom: 'auto' },
+    right: { right: 'calc(var(--taskbar-width) + 2px)', top: `${y}px`, bottom: 'auto' },
+  }[edge.value];
+});
 function taskMenuAction(action) {
   const { id } = taskMenu.value;
   taskMenu.value = null;
@@ -669,6 +747,9 @@ onMounted(() => {
   document.addEventListener('pointerdown', pressSound, true);
   document.addEventListener('click', clickSound, true);
   document.addEventListener('pointerover', hoverSound);
+  watchMenus();
+  document.addEventListener('pointermove', taskbarPointerMove);
+  document.addEventListener('pointerdown', taskbarPointerDown);
   window.addEventListener('hashchange', hashOpen);
   window.addEventListener('site-notice', noticeEvent);
 });
@@ -683,13 +764,20 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', pressSound, true);
   document.removeEventListener('click', clickSound, true);
   document.removeEventListener('pointerover', hoverSound);
+  document.removeEventListener('pointermove', taskbarPointerMove);
+  document.removeEventListener('pointerdown', taskbarPointerDown);
+  clearTimeout(hideTimer);
   window.removeEventListener('hashchange', hashOpen);
   window.removeEventListener('site-notice', noticeEvent);
 });
 </script>
 
 <template>
-  <div class="desktop-shell" :class="{ resting }" :style="{ '--desktop': wallpaper }">
+  <div
+    class="desktop-shell"
+    :class="[`taskbar-${edge}`, { resting, 'taskbar-autohide': autoHide, 'taskbar-shown': taskbarShown }]"
+    :style="{ '--desktop': wallpaper }"
+  >
     <main ref="desktop" class="desktop" aria-label="Jason Tang’s desktop" @pointerdown.self="selected = null">
       <AsciiImage
         class="desktop-wallpaper"
@@ -767,7 +855,7 @@ onBeforeUnmount(() => {
       </DesktopWindow>
     </main>
 
-    <nav class="taskbar" aria-label="Taskbar">
+    <nav ref="taskbarEl" class="taskbar" aria-label="Taskbar" @focusin="autoHide && showTaskbar()" @focusout="autoHide && hideTaskbarSoon()">
       <button
         ref="start"
         class="start-button raised"
@@ -876,7 +964,7 @@ onBeforeUnmount(() => {
       class="system-menu task-menu raised"
       role="menu"
       :aria-label="`${get(taskMenu.id).label} window menu`"
-      :style="{ left: `${taskMenu.x}px` }"
+      :style="taskMenuStyle"
       @keydown="taskMenuKeys"
     >
       <!-- the app's full name up top, since the taskbar button often cuts it off -->
