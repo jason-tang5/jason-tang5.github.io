@@ -1995,17 +1995,28 @@ fieldset {
 }
 
 /* when the window is narrow and the photo stacks on top, the box stops floating over
-   the photo and sits above it on the left, and the text goes straight under the
-   photo with no gap left for the box */
+   the photo and sits above it, exactly as wide as the photo with the icons spread
+   across, and the text goes straight under the photo with no gap left for the box.
+   the widths match .portrait-frame's in the same layouts */
 @container (max-width: 560px) {
   .about-shortcuts {
     position: static;
-    align-self: flex-start;
-    margin-bottom: 12px;
+    box-sizing: border-box;
+    width: min(390px, 100%);
+    margin-bottom: 4px;
+    justify-content: space-around;
   }
 
   .about-copy {
     padding-top: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  @container (max-width: 560px) {
+    .about-shortcuts {
+      width: min(300px, 100%);
+    }
   }
 }
 
