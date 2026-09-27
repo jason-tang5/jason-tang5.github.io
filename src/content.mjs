@@ -92,7 +92,7 @@ export const projects = [
     id: 'reversi-ai',
     name: 'Reversi AI Bot',
     kind: 'Game AI',
-    date: 'January – February 2024',
+    date: 'February 2024',
     icon: 'reversi',
     tech: ['C'],
     // opens the playable version in the games folder
