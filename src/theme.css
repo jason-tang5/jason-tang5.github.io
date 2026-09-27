@@ -4666,12 +4666,6 @@ label.mail-label {
     flex-shrink: 0;
   }
 
-  /* a folder's icons sit in the middle of a phone instead of hugging the left */
-  .games-folder,
-  .project-icons {
-    justify-content: center;
-  }
-
   .project-preview {
     border-right: 0;
     border-top: 1px solid var(--d-rule, #aaa);
@@ -4764,7 +4758,10 @@ label.mail-label {
 /* every game gets the same size tile, however long its name */
 .games-folder {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 100px);
+  /* the columns share out the width, each icon in the middle of its own, so the gaps
+     between icons and at the edges come out even */
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  justify-items: center;
   grid-auto-rows: 84px;
   align-content: start;
   /* packed close, so three still fit across a phone */
@@ -4773,6 +4770,7 @@ label.mail-label {
   background: var(--paper);
 }
 .game-shortcut {
+  width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6816,7 +6814,9 @@ label.mail-label {
 
 .project-icons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 92px);
+  /* even gaps, like the other folders */
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  justify-items: center;
   align-content: start;
   gap: 4px;
   padding: 10px 6px;
@@ -6829,8 +6829,7 @@ label.mail-label {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding-bottom: 30px;
+  gap: 2px;
 }
 
 .project-file {
@@ -6902,10 +6901,13 @@ label.mail-label {
   }
 }
 
-/* every tile is the same size, with room for a name two lines long */
-.project-icons .project-file {
-  height: 80px;
-  justify-content: flex-start;
+/* the open button sits right under the name. hidden, it still keeps its room, so
+   nothing moves when it shows up */
+.project-icons .row-open {
+  position: static;
+  transform: none;
+  padding: 1px 10px;
+  min-height: 0;
 }
 
 /* in the icon view only the name is highlighted, not a big navy square */
