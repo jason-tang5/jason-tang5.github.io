@@ -49,7 +49,6 @@ const cards = computed(() => {
     { label: 'Clippy win-lose', value: data.value ? `${number(s.clippyWins)}-${number(s.clippyLosses)}` : '—', icon: 'reversi',
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
     { label: 'Highest 2048 score', value: count(s.twenty48HighScore), icon: '2048' },
-    { label: '2048 tiles made', value: count(s.twenty48Wins), icon: '2048' },
     { label: 'Balloons popped', value: count(s.balloonsPopped), icon: 'balloon' },
   ];
 });
@@ -152,7 +151,7 @@ onMounted(load);
             <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
           </div>
           <h2>Your scores</h2>
-          <div class="score-cards">
+          <div class="score-cards three-two">
             <section v-for="card in yourCards" :key="card.label" class="score-card">
               <RetroIcon :name="card.icon"/>
               <strong>{{ card.value }}</strong>
@@ -249,6 +248,10 @@ onMounted(load);
 @keyframes online-blink { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .online-dot { animation: none; } }
 .score-cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* three across the top and two wider ones under them */
+.score-cards.three-two { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.score-cards.three-two > * { grid-column: span 2; }
+.score-cards.three-two > :nth-child(n + 4) { grid-column: span 3; }
 .level-counts { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; max-width: 150px; font-size: 11px; }
 .level-counts li { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; border-top: 1px dotted var(--d-line, #999); }
 /* visitors by day and boards cleared side by side, stacked on a phone */
@@ -280,6 +283,9 @@ onMounted(load);
 .analytics-bar span { display: block; height: 100%; background: repeating-linear-gradient(to right, var(--bar) 0 6px, transparent 6px 8px); }
 .analytics-table { width: 100%; text-align: left; font-size: 12px; }
 .analytics-table td, .analytics-table th { border-bottom: 1px solid #ddd; }
-@media (max-width: 560px) { .score-cards, .score-cards.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .score-cards, .score-cards.three, .score-cards.three-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .score-cards.three-two > :nth-child(n) { grid-column: auto; }
+}
 @media (max-width: 400px) { .analytics-page { padding: 18px 14px; } }
 </style>
