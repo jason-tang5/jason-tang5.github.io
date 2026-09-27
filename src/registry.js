@@ -13,18 +13,19 @@ const app = (id, label, icon, width, height, minWidth = 340, minHeight = 260) =>
 });
 
 export const apps = [
+  // the desktop icons and start menu follow this order
   app('about', 'About Me', 'person', 900, 740, 430, 350),
-  app('projects', 'Projects', 'folder', 720, 480, 430, 310),
-  app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('resume', 'Resume', 'document', 740, 650),
+  app('experience', 'Experience', 'case', 680, 570, 410, 310),
+  app('projects', 'Projects', 'folder', 720, 480, 430, 310),
+  app('blog', 'Blog', 'notebook', 720, 580),
   app('contact', 'Contact', 'contact', 440, 540, 340, 400),
+  app('games', 'Games', 'games', 440, 350, 300, 270),
+  app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
   app('music', 'CD Player', 'music', 306, 264, 306, 264),
-  app('blog', 'Blog', 'notebook', 720, 580),
-  app('games', 'Games', 'games', 440, 350, 300, 270),
-  app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
   app('analytics', 'Analytics', 'chart', 720, 640),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),

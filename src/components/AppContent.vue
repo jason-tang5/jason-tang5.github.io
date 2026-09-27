@@ -54,18 +54,18 @@ const places = [
     title: 'Favorites',
     star: true,
     items: [
-      { id: 'projects', path: 'Portfolio:\\Projects' },
-      { id: 'experience', path: 'Portfolio:\\Experience.txt' },
       { id: 'resume', path: 'Portfolio:\\Jason_Tang_Resume.pdf' },
+      { id: 'experience', path: 'Portfolio:\\Experience.txt' },
+      { id: 'projects', path: 'Portfolio:\\Projects' },
       { id: 'blog', path: 'Portfolio:\\Blog' },
     ],
   },
   {
     title: 'Other places',
     items: [
-      { id: 'pictures', path: 'Portfolio:\\My Pictures' },
       { id: 'games', path: 'Portfolio:\\Games' },
       { id: 'funstuff', path: 'Portfolio:\\Fun Stuff' },
+      { id: 'pictures', path: 'Portfolio:\\My Pictures' },
       { id: 'stickies', path: 'Portfolio:\\Sticky Notes' },
     ],
   },
