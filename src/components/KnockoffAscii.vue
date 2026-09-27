@@ -408,6 +408,24 @@ function keyboard() {
   if (cell) knock(cell.x, cell.y);
 }
 
+const surface = (w, h) => {
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(w);
+  c.height = Math.ceil(h);
+  return c;
+};
+
+// a drag on the detail slider can change the size many times a frame, so rebuilding
+// waits for the next frame and only happens once, with the latest size
+let layoutFrame = 0;
+function layoutSoon() {
+  if (layoutFrame) return;
+  layoutFrame = requestAnimationFrame(() => {
+    layoutFrame = 0;
+    layout();
+  });
+}
+
 // rebuilds the letter grid, runs on load and whenever the canvas resizes
 function layout() {
   if (!canvas.value || !picture?.complete || !picture.naturalWidth) return;
@@ -440,47 +458,79 @@ function layout() {
   ctx.drawImage(picture, (picture.naturalWidth - sw) / 2, (picture.naturalHeight - sh) / 2, sw, sh, 0, 0, cols, rows);
   const pixels = ctx.getImageData(0, 0, cols, rows).data;
 
-  const boost = value => Math.min(255, value * 1.25 + 20);
-  cells = Array.from({ length: cols * rows }, (_, id) => {
-    const [r, g, b] = pixels.subarray(id * 4, id * 4 + 3);
-    const brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    return {
-      id,
-      x: ((id % cols) + 0.5) * cellWidth,
-      y: (Math.floor(id / cols) + 0.5) * cellHeight,
-      // never the space character, every cell gets something visible
-      char: characters[Math.max(1, Math.round(brightness * (characters.length - 1)))],
-      color: `rgb(${boost(r)},${boost(g)},${boost(b)})`,
-    };
-  });
+  // each cell's letter (by brightness), its colour lifted a little, and a much brighter
+  // copy of that colour for the glow. the colours stay one pixel per cell
+  const colors = new ImageData(cols, rows);
+  const brightColors = new ImageData(cols, rows);
+  const letterOf = new Uint8Array(cols * rows);
+  for (let id = 0; id < cols * rows; id++) {
+    const o = id * 4;
+    const brightness = (0.2126 * pixels[o] + 0.7152 * pixels[o + 1] + 0.0722 * pixels[o + 2]) / 255;
+    // never the space character, every cell gets something visible
+    letterOf[id] = Math.max(1, Math.round(brightness * (characters.length - 1)));
+    for (let k = 0; k < 3; k++) {
+      const lifted = Math.min(255, pixels[o + k] * 1.25 + 20);
+      colors.data[o + k] = lifted;
+      brightColors.data[o + k] = Math.min(255, lifted * 2.4);
+    }
+    colors.data[o + 3] = 255;
+    brightColors.data[o + 3] = 255;
+  }
+  cells = Array.from({ length: cols * rows }, (_, id) => ({
+    id,
+    x: ((id % cols) + 0.5) * cellWidth,
+    y: (Math.floor(id / cols) + 0.5) * cellHeight,
+  }));
   remapClearedCells();
   remaining.value = cells.length - removed().size;
 
-  backing = document.createElement('canvas');
-  glyphs = document.createElement('canvas');
-  glow = document.createElement('canvas');
-  for (const surface of [backing, glyphs, glow]) {
-    surface.width = Math.ceil(width);
-    surface.height = Math.ceil(height);
+  // drawing thousands of letters one by one, each in its own colour, is what made the
+  // detail slider lag. instead each character is drawn once, in white, into a strip,
+  // every cell is stamped from that strip, and then the colours go over all the letters
+  // in one go: the one-pixel-per-cell colours stretched to full size without smoothing
+  const slotWidth = Math.ceil(cellHeight) + 2;
+  const slotHeight = Math.ceil(cellHeight * 1.3) + 2;
+  const strip = surface(slotWidth * characters.length, slotHeight);
+  const pen = strip.getContext('2d');
+  pen.font = `bold ${cellHeight}px "Courier New", monospace`;
+  pen.textAlign = 'center';
+  pen.textBaseline = 'middle';
+  pen.fillStyle = '#fff';
+  for (let i = 1; i < characters.length; i++) pen.fillText(characters[i], (i + 0.5) * slotWidth, slotHeight / 2);
+
+  const mask = surface(width, height);
+  const stamps = mask.getContext('2d');
+  for (const cell of cells) {
+    stamps.drawImage(strip, letterOf[cell.id] * slotWidth, 0, slotWidth, slotHeight, cell.x - slotWidth / 2, cell.y - slotHeight / 2, slotWidth, slotHeight);
   }
 
-  const letters = glyphs.getContext('2d');
-  letters.font = `bold ${cellHeight}px "Courier New", monospace`;
-  letters.textAlign = 'center';
-  letters.textBaseline = 'middle';
-  for (const cell of cells) {
-    letters.fillStyle = cell.color;
-    letters.fillText(cell.char, cell.x, cell.y);
-  }
+  // the mask's letters, painted in one set of colours
+  const colored = paint => {
+    const small = surface(cols, rows);
+    small.getContext('2d').putImageData(paint, 0, 0);
+    const out = surface(width, height);
+    const ink = out.getContext('2d');
+    ink.drawImage(mask, 0, 0);
+    ink.globalCompositeOperation = 'source-in';
+    ink.imageSmoothingEnabled = false;
+    ink.drawImage(small, 0, 0, width, height);
+    return out;
+  };
+
+  glyphs = colored(colors);
+  backing = surface(width, height);
+  glow = surface(width, height);
 
   const base = backing.getContext('2d');
   base.fillStyle = '#15151e';
   base.fillRect(0, 0, width, height);
   base.drawImage(glyphs, 0, 0);
 
+  // the glow is the same picture 2.4 times brighter, background included
   const bright = glow.getContext('2d');
-  bright.filter = 'brightness(2.4)';
-  bright.drawImage(backing, 0, 0);
+  bright.fillStyle = 'rgb(50, 50, 72)';
+  bright.fillRect(0, 0, width, height);
+  bright.drawImage(colored(brightColors), 0, 0);
 
   // Bake the snapped holes into the cached background once, not every frame.
   for (const id of removed()) {
@@ -519,7 +569,7 @@ function visibility() {
 }
 
 watch(() => props.source, load);
-watch(() => [props.columns, props.cellSize], layout);
+watch(() => [props.columns, props.cellSize], layoutSoon);
 
 // the ascii button was pressed again, bring every letter back for this photo
 watch(() => props.resetVersion, () => {
@@ -532,7 +582,7 @@ watch(() => [props.visible, props.reducedMotion], () => {
 });
 
 onMounted(() => {
-  observer = new ResizeObserver(layout);
+  observer = new ResizeObserver(layoutSoon);
   observer.observe(canvas.value);
   document.addEventListener('visibilitychange', visibility);
   load();
@@ -542,6 +592,7 @@ onBeforeUnmount(() => {
   disposed = true;
   endDrag();
   cancelAnimationFrame(frame);
+  cancelAnimationFrame(layoutFrame);
   observer?.disconnect();
   document.removeEventListener('visibilitychange', visibility);
 });
