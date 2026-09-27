@@ -12,9 +12,9 @@ const emit = defineEmits(['open']);
 
 // ---- desktop: the site in miniature. a cursor opens a window, drags it, closes
 // it and moves on, only while the figure is on screen ----
-const deskIcons = ['about', 'resume', 'experience', 'projects', 'blog', 'contact', 'games', 'funstuff'];
+const deskIcons = ['about', 'resume', 'experience', 'projects', 'blog', 'analytics', 'contact', 'games', 'funstuff'];
 // every position is a percentage of the little screen
-const iconAt = k => ({ x: 3 + Math.floor(k / 4) * 12, y: 4 + (k % 4) * 21 });
+const iconAt = k => ({ x: 3 + Math.floor(k / 5) * 12, y: 3 + (k % 5) * 18 });
 const scenes = [
   { id: 'contact', kind: 'arcade', x: 36, y: 10, w: 36, h: 66 },
   { id: 'games', kind: 'folder', x: 34, y: 16, w: 46, h: 48, items: ['snake', 'minesweeper', 'reversi', '2048'] },

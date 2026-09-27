@@ -19,6 +19,7 @@ export const apps = [
   app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('projects', 'Projects', 'folder', 720, 480, 430, 310),
   app('blog', 'Blog', 'notebook', 720, 580),
+  app('analytics', 'Analytics', 'chart', 720, 640),
   app('contact', 'Contact', 'contact', 460, 680, 340, 520),
   app('games', 'Games', 'games', 440, 350, 300, 270),
   app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
@@ -28,7 +29,6 @@ export const apps = [
   app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
   app('music', 'CD Player', 'music', 360, 490, 335, 312),
-  app('analytics', 'Analytics', 'chart', 720, 640),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
   app('reversi', 'Reversi', 'reversi', 420, 660, 320, 480),
@@ -40,7 +40,7 @@ export const apps = [
 // the apps that live inside the games and fun stuff folders instead of on the desktop
 export const folders = {
   games: ['minesweeper', 'snake', 'reversi', '2048'],
-  funstuff: ['pictures', 'stickies', 'music', 'analytics'],
+  funstuff: ['pictures', 'stickies', 'music'],
 };
 const tucked = ['settings', 'mail', 'computer', ...Object.values(folders).flat()];
 // all apps holds everything, including what's inside the other folders
