@@ -10,6 +10,7 @@ import RetroIcon from './components/RetroIcon.vue';
 import VolumeControl from './components/VolumeControl.vue';
 import Calendar from './components/Calendar.vue';
 import MenuGlyph from './components/MenuGlyph.vue';
+import ClippyArt from './components/ClippyArt.vue';
 import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
 import {
   clampBounds,
@@ -279,6 +280,58 @@ function taskbarPointerDown(event) {
   if (nearEdge(event.clientX, event.clientY, 28)) showTaskbar();
   else if (taskbarShown.value) hideTaskbarSoon(0);
 }
+
+// on a phone the taskbar also swipes: up from the bottom of the screen to bring it
+// out, down on the taskbar to put it away. only mostly-vertical swipes count, and
+// swipes up have to start near the bottom so scrolling a window doesn't catch it
+let swipe = null;
+
+function swipeStart(event) {
+  swipe = null;
+  if (!autoHide.value || !compact.value || event.touches.length !== 1) return;
+  const touch = event.touches[0];
+  const onTaskbar = taskbarShown.value && event.target.closest('.taskbar');
+  const fromBottom = !taskbarShown.value && touch.clientY >= innerHeight - 44;
+  if (onTaskbar || fromBottom) swipe = { x: touch.clientX, y: touch.clientY, up: !!fromBottom };
+}
+
+function swipeMove(event) {
+  if (!swipe) return;
+  const touch = event.touches[0];
+  const dy = touch.clientY - swipe.y;
+  if (Math.abs(touch.clientX - swipe.x) > Math.abs(dy)) return;
+  if (swipe.up && dy < -24) {
+    showTaskbar();
+    swipe = null;
+  } else if (!swipe.up && dy > 24) {
+    clearTimeout(hideTimer);
+    taskbarShown.value = false;
+    swipe = null;
+  }
+}
+
+function swipeEnd() {
+  swipe = null;
+}
+
+// the first time on a phone, clippy peeks up from under the bottom edge to say the
+// taskbar is down there. once someone has brought it out, he never shows up again
+const swipeHint = ref(false);
+let hintTimer;
+function offerSwipeHint() {
+  if (read('taskbar-swiped', '') === 'yes') return;
+  hintTimer = setTimeout(() => {
+    if (!compact.value || !autoHide.value || taskbarShown.value) return;
+    swipeHint.value = true;
+    hintTimer = setTimeout(() => { swipeHint.value = false; }, 10000);
+  }, 3000);
+}
+watch(taskbarShown, shown => {
+  if (!shown || !compact.value) return;
+  swipeHint.value = false;
+  clearTimeout(hintTimer);
+  save('taskbar-swiped', 'yes');
+});
 
 // picking something from the start menu on a phone puts the taskbar away too.
 // started in onMounted, since volumeOpen is declared further down
@@ -845,6 +898,10 @@ onMounted(() => {
   document.addEventListener('click', clickSound, true);
   document.addEventListener('pointerover', hoverSound);
   watchMenus();
+  offerSwipeHint();
+  document.addEventListener('touchstart', swipeStart, { passive: true });
+  document.addEventListener('touchmove', swipeMove, { passive: true });
+  document.addEventListener('touchend', swipeEnd, { passive: true });
   document.addEventListener('pointermove', taskbarPointerMove);
   document.addEventListener('pointerdown', taskbarPointerDown);
   window.addEventListener('hashchange', hashOpen);
@@ -861,6 +918,10 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', pressSound, true);
   document.removeEventListener('click', clickSound, true);
   document.removeEventListener('pointerover', hoverSound);
+  document.removeEventListener('touchstart', swipeStart);
+  document.removeEventListener('touchmove', swipeMove);
+  document.removeEventListener('touchend', swipeEnd);
+  clearTimeout(hintTimer);
   document.removeEventListener('pointermove', taskbarPointerMove);
   document.removeEventListener('pointerdown', taskbarPointerDown);
   clearTimeout(hideTimer);
@@ -1074,6 +1135,15 @@ onBeforeUnmount(() => {
       <button role="menuitem" :disabled="compact || get(taskMenu.id).fixedSize || get(taskMenu.id).maximized" @click="taskMenuAction('maximize')"><MenuGlyph name="maximize"/>Maximize</button>
       <hr>
       <button role="menuitem" data-sound="none" @click="taskMenuAction('close')"><MenuGlyph name="close"/><strong>Close</strong></button>
+    </div>
+
+    <!-- clippy peeking up from under the bottom edge, with a bobbing pixel arrow -->
+    <div v-if="swipeHint" class="swipe-hint" role="status">
+      <p class="swipe-hint-balloon">
+        <svg viewBox="0 0 7 8" aria-hidden="true"><path d="M3 0h1v1h1v1h1v1h1v1H5v4H2V4H0V3h1V2h1V1h1z"/></svg>
+        Swipe up from the bottom for the taskbar
+      </p>
+      <div class="swipe-hint-peek"><ClippyArt :shadow="false"/></div>
     </div>
 
     <div
