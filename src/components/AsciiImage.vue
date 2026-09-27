@@ -312,7 +312,7 @@ onBeforeUnmount(() => {
       v-if="mediaType === 'image' && enabled && !failed"
       class="ascii-reset raised"
       :class="{ spinning }"
-      title="Bring the letters back"
+      title="Restore canvas"
       aria-label="Bring the ASCII letters back"
       @pointerdown.stop
       @pointermove.stop

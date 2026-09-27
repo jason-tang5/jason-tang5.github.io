@@ -311,7 +311,8 @@ input[type="checkbox"]:focus-visible {
 
 .ascii-mode-controls .raised {
   padding: 3px 8px;
-  font-size: 11px;
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
   min-height: 25px;
 }
 

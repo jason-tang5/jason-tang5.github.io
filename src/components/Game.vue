@@ -11,6 +11,7 @@ import { createBackdrop } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
 import { beatContact, contactBeaten, contactBoardCleared, resetContactBoard } from '../unlocks.js';
 import { track, trackOnce } from '../analytics.js';
+import { play } from '../sound.js';
 import RetroIcon from './RetroIcon.vue';
 
 const props = defineProps({ active: Boolean });
@@ -109,7 +110,7 @@ onBeforeUnmount(() => {
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
         <span>Restart</span>
       </button>
-      <button v-if="beaten" class="ie-button go-to-mail" title="Open the mail window and send me a message" @click="openMail">
+      <button v-if="beaten" class="ie-button go-to-mail" title="Open the mail window and send me a message" @pointerenter="play('letter')" @click="openMail">
         <RetroIcon name="mail"/>
         <span>Go to Mail</span>
       </button>
