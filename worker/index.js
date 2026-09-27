@@ -1,3 +1,5 @@
+export { LiveStats } from './live-stats.mjs';
+import { liveStats } from './live-stats.mjs';
 // cloudflare worker for jasontang.dev. everything is the static site in dist/,
 // except /api/*: /api/contact emails the mail window's messages to me through
 // cloudflare email routing (the SEND_EMAIL binding in wrangler.jsonc), and
@@ -50,6 +52,11 @@ async function contact(request, env) {
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
+    if (pathname === '/api/stats') {
+      if (request.method !== 'GET') return json({ error: 'Method not allowed.' }, 405);
+      if (!env.LIVE_STATS) return json({ error: 'Stats unavailable.' }, 503);
+      return liveStats(env).fetch(new Request('https://stats/'));
+    }
     if (pathname === '/api/contact') return contact(request, env);
     if (pathname === '/api/analytics' || pathname === '/api/event' || pathname === '/api/admin/analytics') return analytics(request, env);
     if (pathname === '/api/blog' || pathname.startsWith('/api/blog/') || pathname.startsWith('/api/admin/')) return blog(request, env);

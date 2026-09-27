@@ -1,3 +1,4 @@
+import { liveStats } from './live-stats.mjs';
 // visitor analytics, stored in workers analytics engine (the EVENTS binding in
 // wrangler.jsonc). the site sends small anonymous events (src/analytics.js):
 //
@@ -15,6 +16,7 @@ export const dataset = 'jasontang_events';
 
 // every event the site sends. anything else is ignored
 export const eventNames = [
+  'heartbeat', 'leave',
   'snake-score', // score reached during play
   'minesweeper-win', // each completed board
   'breakout-complete', // each completed board, including replays
@@ -74,6 +76,8 @@ async function record(request, env) {
   }
   const point = validateEvent(body);
   if (!point) return json({ error: 'Invalid event.' }, 400);
+  if (env.LIVE_STATS) await liveStats(env).fetch(new Request('https://stats/', { method: 'POST', body: JSON.stringify(body) }));
+  if (body.name === 'heartbeat' || body.name === 'leave') return new Response(null, { status: 204 });
   if (!env.EVENTS) return json({ error: 'Analytics is not configured.' }, 503);
   env.EVENTS.writeDataPoint(point);
   return new Response(null, { status: 204 });

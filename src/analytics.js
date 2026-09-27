@@ -38,6 +38,9 @@ function start() {
 }
 
 if (live) {
+  setInterval(() => { if (visit && !document.hidden) send({ name: 'heartbeat' }); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (visit) send({ name: document.hidden ? 'leave' : 'heartbeat' }); });
+  addEventListener('pagehide', () => { if (visit) send({ name: 'leave' }); });
   for (const type of ['pointerdown', 'keydown']) addEventListener(type, start, { once: true, capture: true });
 }
 

@@ -6,6 +6,8 @@
 	"name": "jasontang-dev",
 	"main": "worker/index.js",
 	"compatibility_date": "2026-09-25",
+	"durable_objects": { "bindings": [{ "name": "LIVE_STATS", "class_name": "LiveStats" }] },
+	"migrations": [{ "tag": "v1-live-stats", "new_sqlite_classes": ["LiveStats"] }],
 	"observability": {
 		"logs": {
 			"enabled": true,

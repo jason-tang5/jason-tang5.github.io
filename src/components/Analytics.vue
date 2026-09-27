@@ -1,4 +1,5 @@
 <script setup>
+import Leaderboard from './Leaderboard.vue';
 import { computed, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 const days = ref(30);
@@ -10,7 +11,7 @@ const privateError = ref('');
 const admin = ref(false);
 const number = value => Number(value || 0).toLocaleString();
 const cards = computed(() => data.value ? [
-  { label: 'Total viewers', value: data.value.visitors, icon: 'person' },
+  { label: 'Visits in period', value: data.value.visitors, icon: 'person' },
   { label: 'Snake high score', value: data.value.snakeHighScore, icon: 'snake' },
   { label: 'Minesweeper beaten', value: data.value.minesweeperWins, icon: 'mine' },
   { label: 'Breakout beaten', value: data.value.breakoutWins, icon: 'game' },
@@ -68,6 +69,7 @@ onMounted(async () => {
       <a href="/api/admin/login?next=analytics">{{ admin ? 'Signed in' : 'Admin sign in' }}</a>
     </div>
     <main class="content-scroll document pixel-headings analytics-page" :aria-busy="busy">
+      <Leaderboard/>
       <h1>A little bit of site history</h1>
       <p>People dropping by, snakes getting longer, and a few games finally beaten.</p>
       <p v-if="busy" role="status">Loading the scoreboard...</p>
@@ -97,7 +99,7 @@ onMounted(async () => {
       </template>
       <p v-if="privateError" role="status">{{ privateError }}</p>
       <template v-if="privateData">
-        <h2>Behind the scenes</h2><p>Private analytics · {{ number(privateData.breakout.losses) }} lost balls · {{ privateData.breakout.averageWinSeconds ?? '—' }} seconds to win on average · {{ number(privateData.mail.failed) }} failed messages.</p>
+        <h2>Behind the scenes</h2><p>Private analytics Â· {{ number(privateData.breakout.losses) }} lost balls Â· {{ privateData.breakout.averageWinSeconds ?? 'â€”' }} seconds to win on average Â· {{ number(privateData.mail.failed) }} failed messages.</p>
         <section v-for="[title, rows] in sections" :key="title">
           <h2>{{ title }}</h2><p v-if="!rows.length">No events yet.</p>
           <div v-for="row in rows" :key="row.label" class="analytics-bar-row">
@@ -107,7 +109,7 @@ onMounted(async () => {
         </section>
       </template>
     </main>
-    <div class="status-bar">Anonymous events · no analytics cookies · updates after processing</div>
+    <div class="status-bar">Anonymous events Â· no analytics cookies Â· updates after processing</div>
   </div>
 </template>
 

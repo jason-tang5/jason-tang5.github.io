@@ -1,4 +1,5 @@
 <script setup>
+import Leaderboard from './Leaderboard.vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { columns, rows, directions, newSnake, stepSnake } from '../snake.mjs';
 import { read, save } from '../storage.js';
@@ -241,6 +242,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="snake-speaker" aria-hidden="true"/>
       </div>
+      <Leaderboard/>
     </div>
     <span class="sr-only" role="status">{{ status }}</span>
   </div>

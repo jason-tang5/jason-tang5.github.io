@@ -91,3 +91,12 @@ than invented numbers. Official setup: https://developers.cloudflare.com/analyti
 For a JSON report, set `CLOUDFLARE_ACCOUNT_ID` and `ANALYTICS_TOKEN` in your environment
 and run `node scripts/analytics-report.mjs 30`. Do not commit the token or report.
 Run `npm test`, `npm run build`, and `node tests/analytics-browser.mjs` to verify.
+
+### All-time game stats and presence
+
+`LIVE_STATS` is a SQLite Durable Object configured with the `v1-live-stats` migration.
+Deploying the worker provisions it automatically. `/api/stats` exposes aggregate visit
+and game totals, online tabs (90-second expiry), and the top ten anonymous Snake
+session scores. Totals start with this deployment; earlier Analytics Engine history
+is still available in the period charts and is not backfilled. Scores are reported
+by browsers, so this is a casual scoreboard, not a cheat-proof competition.
