@@ -51,6 +51,7 @@ for (const a of apps) {
   a.menu = !tucked.includes(a.id); // shows up in the start menu
   a.fixedSize = false;
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
+  a.sheet = a.id in folders; // on a phone, opens partway up the screen instead of filling it
 }
 
 // old links used #app=breakout, the game lives in contact now

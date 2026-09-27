@@ -108,6 +108,16 @@ export function toggleMaximize(w, area) {
   }
 }
 
+// on a phone every window is full width and runs down to the bottom of the screen,
+// but its top can be dragged up and down by the title bar (phoneTop). folders
+// (sheet) start partway up, tall enough for their icons, so what's behind still shows.
+// the title bar always stays on screen
+export const phoneTitle = 60;
+export function phoneTop(w, area) {
+  const top = w.phoneTop ?? (w.sheet ? Math.max(area.height * 0.2, area.height - w.height - 40) : 0);
+  return Math.round(Math.max(0, Math.min(top, area.height - phoneTitle)));
+}
+
 // the topmost window that isn't minimized, or null if there isn't one
 export function nextVisible(windows) {
   const open = windows.filter(w => !w.minimized).sort((a, b) => b.z - a.z);

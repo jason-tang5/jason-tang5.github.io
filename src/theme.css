@@ -1655,6 +1655,27 @@ input[type="checkbox"]:focus-visible {
 }
 
 
+/* the ▸ on a folder that flies out its own menu, and the folder stays lit while it's out */
+.start-sub-arrow {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  fill: currentColor;
+}
+
+.start-entries button.sub-open {
+  background: var(--navy);
+  color: white;
+}
+
+/* the flyout sits beside the start menu wherever the taskbar is (App.vue places it) */
+.start-menu.start-submenu {
+  position: fixed;
+  bottom: auto;
+  right: auto;
+  max-height: calc(100dvh - 8px);
+}
+
 /* ---- about ---- */
 
 .about-content {
@@ -5815,6 +5836,27 @@ label.mail-label {
 .pictures-app.compact .picture-subtitle {
   display: block !important;
   max-width: calc(100% - 20px);
+}
+
+/* the about portrait always has its ascii controls in a toolbar over the photo,
+   the same row as my pictures' (AppContent.vue moves them there) */
+.portrait-toolbar {
+  flex: none;
+  margin-bottom: 5px;
+}
+
+/* the toolbar can wrap to two rows, so the hint sits at the bottom of the photo */
+.portrait-frame .portrait-hint {
+  top: auto;
+  bottom: 15px;
+  right: 15px;
+  left: auto;
+}
+
+@media (max-width: 700px) {
+  .portrait-frame {
+    padding-bottom: 3px;
+  }
 }
 
 .about-copy h1 { font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif; }

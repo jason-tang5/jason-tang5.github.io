@@ -193,6 +193,9 @@ const resumeUrl =`${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
 const portraitAscii = ref(read('portrait-ascii', 'on') !== 'off');
+// the portrait's ascii / normal buttons, sliders and reset sit in a toolbar over it,
+// like my pictures' toolbar, instead of on the photo
+const portraitControls = ref(null);
 
 
 // the cd at the bottom of the about page. hovering it spins it, plays a little
@@ -457,6 +460,7 @@ function balloonDone(event, id) {
         </Teleport>
         <div class="about-grid">
           <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
+            <div ref="portraitControls" class="pictures-controls portrait-toolbar"/>
             <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
             <AsciiImage
               class="portrait-ascii"
@@ -464,6 +468,7 @@ function balloonDone(event, id) {
               description="Jason in a golden mirrored room"
               :enabled="portraitAscii"
               :visible="visible"
+              :controls-to="portraitControls"
               @update:enabled="setPortraitAscii"
             />
           </div>

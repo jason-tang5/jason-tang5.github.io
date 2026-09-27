@@ -4,7 +4,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 import MenuGlyph from './MenuGlyph.vue';
-import { bounds, clampBounds, resizeBounds } from '../window-state.mjs';
+import { bounds, clampBounds, phoneTitle, phoneTop, resizeBounds } from '../window-state.mjs';
 
 const props = defineProps({
   win: Object,
@@ -26,7 +26,11 @@ let gesture = null;
 const edges = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
 const style = computed(() => {
-  const full = props.compact || props.win.maximized;
+  if (props.compact) {
+    const top = phoneTop(props.win, props.area);
+    return { left: '0px', top: `${top}px`, width: '100%', height: `calc(100% - ${top}px)`, zIndex: props.win.z };
+  }
+  const full = props.win.maximized;
   return {
     left: full ? '0px' : `${props.win.x}px`,
     top: full ? '0px' : `${props.win.y}px`,
@@ -40,10 +44,25 @@ function focus() {
   emit('focus', props.win.id);
 }
 
-// starts a drag. no edge means we're moving the whole window by the title bar
+// starts a drag. no edge means we're moving the whole window by the title bar.
+// on a phone the title bar only drags the window up and down
 function start(event, edge = '') {
-  if (event.button !== 0 || props.compact || (props.win.maximized && edge)) return;
+  if (event.button !== 0 || (props.compact && edge) || (props.win.maximized && edge)) return;
   if (event.target.closest('button')) return;
+  if (props.compact) {
+    focus();
+    menu.value = false;
+    gesture = {
+      phone: true,
+      y: event.clientY,
+      top: phoneTop(props.win, props.area),
+      target: event.currentTarget,
+      pointer: event.pointerId,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    return;
+  }
 
   focus();
   menu.value = false;
@@ -71,6 +90,10 @@ function down(event) {
 function move(event) {
   if (!gesture) return;
   if (event.pointerId !== gesture.pointer) return;
+  if (gesture.phone) {
+    props.win.phoneTop = Math.max(0, Math.min(gesture.top + event.clientY - gesture.y, props.area.height - phoneTitle));
+    return;
+  }
   if (gesture.maximized) {
     // Keep clicks and double-clicks maximized until a deliberate downward drag.
     if (event.clientY - gesture.y < 6) return;
@@ -99,7 +122,16 @@ function end() {
   if (gesture?.target.hasPointerCapture(gesture.pointer)) {
     gesture.target.releasePointerCapture(gesture.pointer);
   }
+  // on a phone, let go near the top and it fills the screen, pulled nearly off the
+  // bottom and it minimizes (and opens at its usual height next time)
+  const phone = gesture?.phone;
   gesture = null;
+  if (!phone || props.win.phoneTop == null) return;
+  if (props.win.phoneTop < 30) props.win.phoneTop = 0;
+  else if (props.win.phoneTop > props.area.height - 120) {
+    props.win.phoneTop = null;
+    emit('minimize', props.win.id);
+  }
 }
 
 // arrow keys, home and end move through the window menu

@@ -85,7 +85,7 @@ try {
   await expect.poll(() => wallpaper.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(0);
 
   // the portrait's normal/ascii choice should survive a reload
-  const portraitButtons = page.locator('.portrait-ascii').getByRole('group', { name: 'Photo rendering' });
+  const portraitButtons = page.locator('.portrait-frame').getByRole('group', { name: 'Photo rendering' });
   await expect(page.locator('.portrait-ascii canvas')).toHaveCount(1);
   await portraitButtons.getByRole('button', { name: 'Normal', exact: true }).click();
   await expect(page.locator('.portrait-ascii canvas')).toHaveCount(0);

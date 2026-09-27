@@ -11,12 +11,13 @@ import VolumeControl from './components/VolumeControl.vue';
 import Calendar from './components/Calendar.vue';
 import MenuGlyph from './components/MenuGlyph.vue';
 import ClippyArt from './components/ClippyArt.vue';
-import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
+import { registry, shortcuts, menuApps, canonicalApp, folders, projectApps } from './registry.js';
 import {
   clampBounds,
   createWindow,
   isSavedBounds,
   nextVisible,
+  phoneTop,
   placeBeside,
   restoreWindow,
   presetBounds,
@@ -85,8 +86,10 @@ function get(id) {
   return windows.find(w => w.id === id);
 }
 
+// on a phone a window only shows while no full screen window sits on top of it
 function visible(win) {
-  return !win.minimized && (!compact.value || active.value === win.id);
+  if (win.minimized) return false;
+  return !compact.value || !windows.some(other => other.z > win.z && !other.minimized && phoneTop(other, area) === 0);
 }
 
 function focus(id) {
@@ -741,6 +744,7 @@ function reset() {
 
 async function toggleStart() {
   startOpen.value = !startOpen.value;
+  startSub.value = null;
   calendar.value = false;
   if (startOpen.value) {
     await nextTick();
@@ -750,7 +754,65 @@ async function toggleStart() {
 
 function dismissStart(returnFocus = true) {
   startOpen.value = false;
+  startSub.value = null;
   if (returnFocus) start.value?.focus();
+}
+
+// projects, games and fun stuff fly out a second menu of what's inside them, like the
+// programs menu in windows 98, with the folder itself at the top
+const startSub = ref(null);
+const startSubEl = ref(null);
+const subStyle = ref({});
+const subFolders = {
+  projects: projectApps,
+  games: folders.games.map(id => registry[id]),
+  funstuff: folders.funstuff.map(id => registry[id]),
+};
+
+async function openSub(id, button, focusFirst = false) {
+  if (startSub.value !== id) {
+    // beside the start menu, lined up with the folder's row. if there's no room on
+    // the right (a right taskbar, or a phone) it goes on the left, or over the menu
+    const menu = startMenu.value.getBoundingClientRect();
+    const row = button.getBoundingClientRect();
+    const width = 210;
+    const height = (subFolders[id].length + 1) * row.height + 16;
+    let left = menu.right - 3;
+    if (left + width > innerWidth) left = menu.left - width + 3 >= 0 ? menu.left - width + 3 : innerWidth - width - 4;
+    const top = Math.max(4, Math.min(row.top - 3, innerHeight - height - 4));
+    subStyle.value = { left: `${left}px`, top: `${top}px`, width: `${width}px` };
+    startSub.value = id;
+  }
+  if (focusFirst) {
+    await nextTick();
+    startSubEl.value?.querySelector('[role="menuitem"]')?.focus();
+  }
+}
+
+function subClick(id, event) {
+  if (startSub.value === id && event.pointerType !== 'mouse') startSub.value = null;
+  else openSub(id, event.currentTarget, event.detail === 0);
+}
+
+function subKeys(event) {
+  const items = [...startSubEl.value.querySelectorAll('[role="menuitem"]')];
+  const i = items.indexOf(document.activeElement);
+  if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+    let next;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = items.length - 1;
+    else next = (i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[next]?.focus();
+  } else if (event.key === 'ArrowLeft' || event.key === 'Escape') {
+    const id = startSub.value;
+    startSub.value = null;
+    startMenu.value.querySelector(`[data-folder="${id}"]`)?.focus();
+  } else if (event.key === 'Tab') {
+    dismissStart(false);
+    return;
+  } else return;
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 // arrow keys, home and end move through the menu, wrapping around at the ends
@@ -767,12 +829,17 @@ function menuKeys(event) {
     items[next]?.focus();
   }
 
+  if (event.key === 'ArrowRight' && document.activeElement?.dataset.folder) {
+    event.preventDefault();
+    openSub(document.activeElement.dataset.folder, document.activeElement, true);
+  }
+
   if (event.key === 'Tab') dismissStart(false);
 }
 
 // clicking anywhere else closes the start menu, calendar and volume popup
 function outside(event) {
-  const inMenu = startMenu.value?.contains(event.target) || start.value?.contains(event.target);
+  const inMenu = startMenu.value?.contains(event.target) || startSubEl.value?.contains(event.target) || start.value?.contains(event.target);
   if (startOpen.value && !inMenu) dismissStart(false);
   if (!taskMenuEl.value?.contains(event.target)) taskMenu.value = null;
   if (!contextMenuEl.value?.contains(event.target)) contextMenu.value = null;
@@ -1149,10 +1216,31 @@ onBeforeUnmount(() => {
         <span>Jason<span class="identity-light">Tang</span><small>PORTFOLIO</small></span>
       </div>
       <div class="start-entries">
-        <button v-for="app in menuApps" :key="app.id" role="menuitem" @click="open(app.id)">
-          <RetroIcon :name="app.icon"/>
-          <span>{{ app.label }}</span>
-        </button>
+        <template v-for="app in menuApps" :key="app.id">
+          <button
+            v-if="subFolders[app.id]"
+            role="menuitem"
+            aria-haspopup="menu"
+            :aria-expanded="startSub === app.id"
+            :data-folder="app.id"
+            :class="{ 'sub-open': startSub === app.id }"
+            @pointerenter="$event.pointerType === 'mouse' && openSub(app.id, $event.currentTarget)"
+            @click="subClick(app.id, $event)"
+          >
+            <RetroIcon :name="app.icon"/>
+            <span>{{ app.label }}</span>
+            <svg class="start-sub-arrow" viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path d="M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z"/></svg>
+          </button>
+          <button
+            v-else
+            role="menuitem"
+            @pointerenter="$event.pointerType === 'mouse' && (startSub = null)"
+            @click="open(app.id)"
+          >
+            <RetroIcon :name="app.icon"/>
+            <span>{{ app.label }}</span>
+          </button>
+        </template>
         <hr>
         <button role="menuitem" @click="open('computer')">
           <RetroIcon name="computer"/>
@@ -1165,6 +1253,28 @@ onBeforeUnmount(() => {
         <button role="menuitem" @click="reset">
           <RetroIcon name="reset"/>
           <span>Reset Desktop</span>
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-if="startOpen && startSub"
+      ref="startSubEl"
+      class="start-menu start-submenu raised"
+      role="menu"
+      :aria-label="registry[startSub].label"
+      :style="subStyle"
+      @keydown="subKeys"
+    >
+      <div class="start-entries">
+        <button role="menuitem" @click="open(startSub)">
+          <RetroIcon :name="registry[startSub].icon"/>
+          <span>Open {{ registry[startSub].label }}</span>
+        </button>
+        <hr>
+        <button v-for="item in subFolders[startSub]" :key="item.id" role="menuitem" @click="open(item.id)">
+          <RetroIcon :name="item.icon"/>
+          <span>{{ item.label }}</span>
         </button>
       </div>
     </div>
