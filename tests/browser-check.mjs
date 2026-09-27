@@ -360,10 +360,10 @@ try {
 
   // spotify has no volume control, so muting the site pauses the cd player instead
   await page.getByRole('button', { name: 'Volume', exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Mute' }).check();
+  await page.getByRole('group', { name: 'Volume control' }).getByRole('checkbox', { name: 'Mute' }).check();
   await expect(cd.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   assert.equal((await page.evaluate(() => window.__cdCalls)).at(-1), 'pause');
-  await page.getByRole('checkbox', { name: 'Mute' }).uncheck();
+  await page.getByRole('group', { name: 'Volume control' }).getByRole('checkbox', { name: 'Mute' }).uncheck();
   await page.keyboard.press('Escape');
 
   // minimizing keeps the player alive, closing destroys it
@@ -478,7 +478,7 @@ try {
   await expect(volume).toHaveAttribute('aria-valuenow', '50');
 
   // muted: clicking around makes no sound, and it all stays after a refresh
-  await noisy.getByRole('checkbox', { name: 'Mute' }).check();
+  await noisy.getByRole('group', { name: 'Volume control' }).getByRole('checkbox', { name: 'Mute' }).check();
   await expect(noisy.getByRole('button', { name: 'Volume (muted)', exact: true })).toBeVisible();
   const tonesBefore = await tones();
   await noisy.locator('.desktop-shortcut', { hasText: 'Projects' }).dblclick();
@@ -486,7 +486,7 @@ try {
   assert.equal(await tones(), tonesBefore, 'no sounds while muted');
   await noisy.reload();
   await noisy.getByRole('button', { name: 'Volume (muted)', exact: true }).click();
-  await expect(noisy.getByRole('checkbox', { name: 'Mute' })).toBeChecked();
+  await expect(noisy.getByRole('group', { name: 'Volume control' }).getByRole('checkbox', { name: 'Mute' })).toBeChecked();
   await expect(noisy.getByRole('slider', { name: 'Volume' })).toHaveAttribute('aria-valuenow', '50');
   await noisy.locator('.volume-popup').screenshot({ path: 'tmp/qa/volume-popup.png' });
   await noisy.close();

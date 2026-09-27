@@ -1000,7 +1000,8 @@ input[type="checkbox"]:focus-visible {
   vector-effect: non-scaling-stroke;
 }
 
-.taskbar-autohide-option {
+/* a checkbox with its label, like mute and auto-hide in desktop settings */
+.settings-check {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2157,6 +2158,79 @@ fieldset {
 .swatches {
   display: flex;
   gap: 10px;
+}
+
+/* the volume slider in desktop settings, drawn like the win98 one: a sunken
+   groove and a raised grey thumb */
+.settings-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.settings-volume input {
+  flex: 1;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: var(--classic-pointer);
+}
+
+.settings-volume input::-webkit-slider-runnable-track {
+  height: 4px;
+  border: 1px solid;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  background: var(--edge);
+}
+
+.settings-volume input::-moz-range-track {
+  height: 4px;
+  border: 1px solid;
+  border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+  background: var(--edge);
+}
+
+.settings-volume input::-webkit-slider-thumb {
+  width: 11px;
+  height: 21px;
+  margin-top: -10px;
+  border: 2px solid;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  background: var(--surface);
+  -webkit-appearance: none;
+}
+
+.settings-volume input::-moz-range-thumb {
+  width: 7px;
+  height: 17px;
+  border: 2px solid;
+  border-color: var(--light) var(--edge) var(--edge) var(--light);
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.settings-volume input:disabled {
+  opacity: 0.5;
+}
+
+.settings-volume-level {
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* no empty space after the last box */
+.settings-content fieldset:last-child {
+  margin-bottom: 0;
+}
+
+/* reset wallpaper sits under the colours it resets */
+.settings-reset {
+  margin-top: 12px;
+  padding: 4px 12px;
 }
 
 .swatch {
@@ -3466,7 +3540,7 @@ label.mail-label {
 
   .toolbar button,
   .toolbar a,
-  .settings-content > button,
+  .settings-reset,
   .project-preview button {
     min-height: 44px;
     display: inline-flex;

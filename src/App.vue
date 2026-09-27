@@ -793,6 +793,12 @@ function setLevel(value) {
   setSoundLevel(value);
 }
 
+// desktop settings has a volume slider too, so follow changes made there
+function soundChanged(event) {
+  sound.value = event.detail.enabled;
+  level.value = event.detail.level;
+}
+
 // a few listeners for the whole page instead of wiring up every button.
 // things marked data-sound="none" play their own sound (or none at all)
 function soundTarget(el) {
@@ -906,6 +912,7 @@ onMounted(() => {
   document.addEventListener('pointerdown', taskbarPointerDown);
   window.addEventListener('hashchange', hashOpen);
   window.addEventListener('site-notice', noticeEvent);
+  window.addEventListener('site-sound', soundChanged);
 });
 
 onBeforeUnmount(() => {
@@ -927,6 +934,7 @@ onBeforeUnmount(() => {
   clearTimeout(hideTimer);
   window.removeEventListener('hashchange', hashOpen);
   window.removeEventListener('site-notice', noticeEvent);
+  window.removeEventListener('site-sound', soundChanged);
 });
 </script>
 

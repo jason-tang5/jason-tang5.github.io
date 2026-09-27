@@ -17,7 +17,7 @@ import InlineText from './InlineText.vue';
 import TechList from './TechList.vue';
 import { read, save, remove } from '../storage.js';
 import { noteGlyphs, noteColors } from '../notes.mjs';
-import { play } from '../sound.js';
+import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from '../sound.js';
 import { theme, setTheme } from '../theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from '../wallpaper.js';
 import { autoHide, edges, setAutoHide, setTaskbarEdge, taskbarEdge } from '../taskbar.js';
@@ -37,6 +37,16 @@ defineProps({
 const emit = defineEmits(['open', 'close', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
+
+// the volume in desktop settings, kept in step with the taskbar's speaker
+const sound = ref(soundEnabled());
+const level = ref(soundLevel());
+function soundChanged(event) {
+  sound.value = event.detail.enabled;
+  level.value = event.detail.level;
+}
+addEventListener('site-sound', soundChanged);
+onBeforeUnmount(() => removeEventListener('site-sound', soundChanged));
 // the about window's side pane, each place with the path it'd have on the computer.
 // hovering one shows its path in the address bar, like explorer
 const places = [
@@ -510,8 +520,28 @@ function setPortraitAscii(value) {
             <span v-if="wallpaper === color">✓</span>
           </button>
         </div>
+        <button class="raised settings-reset" @click="emit('wallpaper', defaultWallpaper)">Reset wallpaper</button>
       </fieldset>
-      <button class="raised" @click="emit('wallpaper', defaultWallpaper)">Reset wallpaper</button>
+      <fieldset>
+        <legend>Sound</legend>
+        <div class="settings-volume">
+          <RetroIcon :name="sound && level ? 'sound' : 'mute'" small/>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            :value="level"
+            aria-label="Volume"
+            :disabled="!sound"
+            @input="setSoundLevel(Number($event.target.value))"
+          >
+          <span class="settings-volume-level">{{ sound ? level : 'Off' }}</span>
+        </div>
+        <label class="settings-check">
+          <input type="checkbox" :checked="!sound" @change="setSoundEnabled(!$event.target.checked)">
+          Mute
+        </label>
+      </fieldset>
       <fieldset>
         <legend>Taskbar</legend>
         <!-- phones always keep it at the bottom, so the edge choice is desktop only -->
@@ -531,7 +561,7 @@ function setPortraitAscii(value) {
             {{ e.label }}
           </button>
         </div>
-        <label class="taskbar-autohide-option">
+        <label class="settings-check">
           <input type="checkbox" :checked="autoHide" @change="setAutoHide($event.target.checked)">
           Automatically hide the taskbar
         </label>

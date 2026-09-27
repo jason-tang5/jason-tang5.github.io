@@ -19,7 +19,7 @@ export const apps = [
   app('resume', 'Resume', 'document', 740, 650),
   app('contact', 'Contact', 'contact', 440, 540, 340, 400),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
-  app('settings', 'Desktop Settings', 'settings', 470, 610),
+  app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
   app('music', 'CD Player', 'music', 306, 264, 306, 264),
   app('blog', 'Blog', 'notebook', 720, 580),
