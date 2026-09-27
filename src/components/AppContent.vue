@@ -604,7 +604,8 @@ function balloonDone(event, id) {
       </button>
     </div>
     <article class="content-scroll document pixel-headings">
-      <p class="eyebrow">{{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
+      <!-- a breadcrumb back up to the folder, so the way back is in the page too -->
+      <p class="eyebrow"><button class="crumb-back" title="Back to the projects folder" @click="emit('open', 'projects')">← Projects</button> / {{ win.project.kind }}<template v-if="win.project.date"> / {{ win.project.date }}</template></p>
       <h1>{{ win.project.name }}</h1>
       <p class="intro">{{ win.project.summary }}</p>
       <p class="tech-line"><TechList :items="win.project.tech" chips/></p>

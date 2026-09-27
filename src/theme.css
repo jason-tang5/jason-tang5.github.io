@@ -2118,6 +2118,23 @@ input[type="checkbox"]:focus-visible {
   margin: 0 0 10px;
 }
 
+/* the ← projects at the start of a project's breadcrumb, a link in the eyebrow's type */
+.crumb-back {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--d-link, #000080);
+  text-decoration: underline;
+  cursor: var(--classic-pointer);
+}
+
+.crumb-back:hover {
+  color: var(--ink);
+}
+
 .role {
   border-bottom: 1px solid var(--d-rule, #ccc);
   padding-bottom: 12px;
