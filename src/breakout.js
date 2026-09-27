@@ -292,8 +292,12 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     ctx.fillText(String(value).padStart(3, '0'), x, 15);
   }
 
-  // three hearts, lit for each try left. the one just lost blinks before it goes dark
+  // three hearts, lit for each try left. the one just lost blinks before it goes dark.
+  // they're drawn over the dimming so they stay readable, but faded to sit back with
+  // the rest of the board while it's paused
   function drawLives(palette) {
+    ctx.save();
+    if (!running && !complete) ctx.globalAlpha = 0.5;
     const blinking = performance.now() - lifeLostAt < lifeBlink;
     const blinkOn = Math.floor((performance.now() - lifeLostAt) / 150) % 2 === 0;
     for (let i = 0; i < triesPerCoin; i++) {
@@ -304,6 +308,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
         if (cell === 'X') ctx.fillRect(left + x * 1.5, 16 + y * 1.5, 1.5, 1.5);
       }));
     }
+    ctx.restore();
   }
 
   // a css effect on the screen itself: a shake for a lost ball, a longer one for
@@ -321,7 +326,7 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     ctx.clearRect(0, 0, 300, boardHeight);
     const palette = colors();
 
-    // score on the left, lives on the right (drawn last, so dimming doesn't hide them)
+    // score on the left, lives on the right (drawn last, see drawLives)
     ctx.fillStyle = palette.score;
     drawScore(score, 20);
 

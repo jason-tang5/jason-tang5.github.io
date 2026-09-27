@@ -3101,7 +3101,10 @@ fieldset {
   /* from the cabinet's outer edge to the screen's bezel, inside the waist */
   --inner: calc(var(--cut) + var(--band) + 4px);
   --marq: clamp(50px, 12cqh, 84px);
-  --deck: clamp(72px, 10cqh, 86px);
+  /* the deck: the slab the buttons stand on, then the yellow-framed front lip */
+  --slab: clamp(56px, 7.8cqh, 67px);
+  --lip: clamp(48px, 6.6cqh, 57px);
+  --deck: calc(var(--slab) + var(--lip));
   --arcade-trim: #ffd21f;
   --cab-lit: #ffd21f;
   --cab-shade: #d9a300;
@@ -3326,7 +3329,6 @@ fieldset {
    the coin slot is set into the slab at the right. the cut-out deck is drawn by
    .arcade-deck-shell behind them, so the buttons aren't clipped to it */
 .arcade-deck {
-  --slab: 78%;
   position: relative;
   isolation: isolate;
   z-index: 1;
@@ -3342,20 +3344,24 @@ fieldset {
 .arcade-deck-shell::after {
   clip-path: polygon(calc(var(--cut) + var(--o)) 0, calc(100% - var(--cut) - var(--o)) 0, calc(100% - var(--o)) var(--slab), calc(100% - var(--o)) 100%, var(--o) 100%, var(--o) var(--slab));
 }
-/* the slab darker at the back under the screen and lit toward the front, with a
-   pale lip along its front edge, then the dark lip below */
 /* the shell is laid behind everything on the deck, a section like the others */
 .arcade-deck-shell {
   position: absolute;
   z-index: -1;
   inset: 0;
 }
+/* the slab darker at the back under the screen and lit toward the front, with a
+   pale lip along its front edge. below it the front lip is framed in yellow like
+   the side panels, around a black strip with two rows of dots and a blue stripe */
 .arcade-deck-shell::after {
   background:
     linear-gradient(#0006, transparent 5px),
-    radial-gradient(circle, var(--arcade-trim) 0 1.5px, transparent 2px) 0 calc(100% - 9px) / 8px 4px repeat-x,
-    linear-gradient(#3cc2ff, #3cc2ff) 0 calc(100% - 3px) / 100% 2px no-repeat,
-    linear-gradient(#34343c, #62626f calc(var(--slab) - 3px), #b4b4c2 calc(var(--slab) - 3px) calc(var(--slab) - 1px), #111 calc(var(--slab) - 1px) var(--slab), #0a0a0c var(--slab), #131316);
+    radial-gradient(circle, var(--arcade-trim) 0 1.5px, transparent 2px) left 9px top calc(var(--slab) + 10px) / 8px 4px repeat-x,
+    linear-gradient(#3cc2ff, #3cc2ff) left 10px top calc(var(--slab) + var(--lip) / 2 - 1px) / calc(100% - 20px) 3px no-repeat,
+    radial-gradient(circle, var(--arcade-trim) 0 1.5px, transparent 2px) left 13px bottom 10px / 8px 4px repeat-x,
+    linear-gradient(#0a0a0c, #131316) left 6px bottom 5px / calc(100% - 12px) calc(var(--lip) - 10px) no-repeat,
+    linear-gradient(var(--cab-lit), var(--cab-lit)) left 0 bottom 0 / 100% var(--lip) no-repeat,
+    linear-gradient(#34343c, #62626f calc(var(--slab) - 3px), #b4b4c2 calc(var(--slab) - 3px) calc(var(--slab) - 1px), #111 calc(var(--slab) - 1px) var(--slab));
 }
 .arcade-controls {
   position: relative;
@@ -3393,10 +3399,10 @@ fieldset {
    and drawn in the same perspective, with a blinking COIN beside the slot.
    the whole plate is the button */
 .arcade-door {
-  /* the plate is 40% of the deck tall, centered on the slab (78%), so these keep its
-     right side parallel to the deck's right edge (cut across the slab's height) at
+  /* the plate is half the slab tall and centered on it, so these keep its right
+     side parallel to the deck's right edge (cut across the slab's height) at
      any size. its left side leans the same way but less, as it's nearer the middle */
-  --kr: calc(var(--cut) * .4 / .78);
+  --kr: calc(var(--cut) * .5);
   --kl: calc(var(--kr) * .55);
   /* what's on the plate leans with it, halfway between its two sides. a browser
      that can't divide one length by another gets the usual angle */
@@ -3406,8 +3412,8 @@ fieldset {
   grid-column: 3;
   justify-self: end;
   box-sizing: border-box;
-  height: calc(var(--deck) * .4);
-  margin-top: calc(var(--deck) * .19);
+  height: calc(var(--slab) * .5);
+  margin-top: calc(var(--slab) * .25);
   display: flex;
   align-items: stretch;
   padding: 0 calc(6px + var(--kr) / 2) 0 calc(6px + var(--kl) / 2);
@@ -3438,7 +3444,7 @@ fieldset {
   clip-path: polygon(2px 2px, calc(100% - var(--kr) - 2px) 2px, calc(100% - 3px) calc(100% - 2px), calc(var(--kl) + 3px) calc(100% - 2px));
 }
 @supports (scale: calc(2px / 1px)) {
-  .arcade-door { --lean: atan(var(--cut) * .775 / (var(--deck) * .78)); }
+  .arcade-door { --lean: atan(var(--cut) * .775 / var(--slab)); }
 }
 .arcade-coin {
   position: relative;
