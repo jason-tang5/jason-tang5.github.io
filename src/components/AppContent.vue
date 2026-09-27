@@ -260,6 +260,15 @@ const aboutApp = ref(null);
 const balloons = ref([]);
 let balloonId = 0;
 function launchBalloons() {
+  // reduced motion stops every animation, so they'd never float up. say why instead of
+  // letting them sit invisible under the window
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.dispatchEvent(new CustomEvent('site-notice', { detail: {
+      title: 'No balloons?',
+      message: 'They need motion to float up. Turn off Reduce motion in your device settings to see them.',
+    } }));
+    return;
+  }
   play('balloons');
   const rise = (aboutApp.value?.offsetHeight ?? 600) + 120;
   const count = 7;
