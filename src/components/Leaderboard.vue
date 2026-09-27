@@ -55,7 +55,7 @@ function pick(id) {
   --cart: #bcbcc3;
   --cart-light: #dcdce2;
   --cart-dark: #8e8e98;
-  width: min(100%, 290px);
+  width: min(100%, 240px);
   box-sizing: border-box;
   margin: 0;
   padding: 8px 16px 14px;
@@ -69,7 +69,7 @@ function pick(id) {
 .cart-grip { height: 12px; margin: 0 26px 10px 4px; background: repeating-linear-gradient(90deg, var(--cart-dark) 0 2px, transparent 2px 7px); }
 /* the sticker, with a printed band across the top */
 .cart-label { padding: 0 0 8px; background: #f3efe2; color: #1b1d33; border-radius: 3px; box-shadow: inset 0 0 0 2px var(--cart-dark), 2px 2px 0 var(--cart-light); overflow: hidden; }
-.cart-label-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--gb-ink, #26307f); color: #fff; }
+.cart-label-top { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 6px 10px; background: var(--gb-ink, #26307f); color: #fff; }
 .cart-label-top h2 { margin: 0; font: bold 16px 'Pixel MS Sans Serif', Tahoma, sans-serif; letter-spacing: 1px; -webkit-font-smoothing: none; }
 .cart-label-top h2 span { font-size: 11px; font-weight: normal; }
 .cart-label-top p { margin: 0; font-size: 11px; white-space: nowrap; }

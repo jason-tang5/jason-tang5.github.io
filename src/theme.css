@@ -4093,12 +4093,18 @@ label.mail-label {
 }
 
 .snake-handheld-wrap {
+  position: relative;
   width: min(100%, 330px);
   flex: none;
 }
 
 .snake-stage .snake-cart {
   flex: none;
+  margin-left: min(48px, 8%);
+}
+
+@container (min-width: 700px) {
+  .snake-stage .snake-cart { margin-left: 0; }
 }
 
 /* the handheld sits in front, so a tucked cartridge looks like it's in the slot */
@@ -4109,33 +4115,46 @@ label.mail-label {
 /* the top of a tucked cartridge, poking just out of the back of the handheld with
    an arrow to pull it by. --pull is how far it's being dragged */
 .cart-peek {
-  position: relative;
+  position: absolute;
+  top: -24px;
+  right: 22px;
   display: grid;
   place-items: start center;
-  width: 240px;
-  height: 42px;
-  margin: 0 auto -18px;
+  width: min(150px, 62%);
+  height: 170px;
+  margin: 0;
   padding: 5px 0 0;
   border: 0;
-  border-radius: 4px 0 0 0;
+  border-radius: 4px 0 12px 12px;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
   background:
     repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) 10px 7px / 30px 10px no-repeat,
     repeating-linear-gradient(90deg, #8e8e98 0 2px, transparent 2px 7px) calc(100% - 24px) 7px / 30px 10px no-repeat,
     #bcbcc3;
-  box-shadow: inset 3px 3px 0 #dcdce2;
+  box-shadow: inset 3px 3px 0 #dcdce2, inset -3px -3px 0 #8e8e98;
   color: #26307f;
   font: bold 11px/1.2 Tahoma, sans-serif;
   letter-spacing: 1px;
   cursor: grab;
   touch-action: none;
   transform: translateY(calc(var(--pull, 0px) * -1));
-  transition: transform .12s;
+  transition: transform .24s cubic-bezier(.22, 1, .36, 1);
 }
 
 .cart-peek.pulling {
   cursor: grabbing;
   transition: none;
+}
+
+.cart-peek-art {
+  position: absolute;
+  top: 38px;
+  left: 18px;
+  width: calc(100% - 36px);
+  height: auto;
+  background: #f3efe2;
+  border: 2px solid #8e8e98;
+  border-radius: 3px;
 }
 
 /* the arrow nudges upward on its own now and then, asking to be pulled */
@@ -4171,11 +4190,13 @@ label.mail-label {
 
 /* the handheld gives a small bump as the cartridge latches in */
 .snake-handheld.seated {
-  animation: cart-seat .26s steps(3, end);
+  animation: cart-seat .18s ease-out;
 }
 
 @keyframes cart-seat {
-  40% { transform: translateY(3px); }
+  30% { transform: translateY(2px); }
+  65% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
 }
 
 /* tucking slides the cartridge down into the slot, pulling it out slides it back up */
@@ -4183,17 +4204,25 @@ label.mail-label {
 .cart-peek-leave-active,
 .cart-out-enter-active,
 .cart-out-leave-active {
-  transition: transform .22s steps(4, end), opacity .22s steps(4, end);
+  transition: transform .34s cubic-bezier(.22, 1, .36, 1), opacity .2s ease-out;
+}
+
+.cart-peek-leave-to {
+  opacity: 0;
 }
 
 .cart-peek-enter-from,
 .cart-peek-leave-to {
-  transform: translateY(40px);
+  transform: translateY(-146px);
 }
 
-.cart-out-enter-from,
-.cart-out-leave-to {
+.cart-out-enter-from {
   transform: translateY(-24px);
+  opacity: 0;
+}
+
+.cart-out-leave-to {
+  transform: translateY(24px);
   opacity: 0;
 }
 

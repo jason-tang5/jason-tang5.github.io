@@ -133,12 +133,24 @@ defineProps({ name: { type: String, default: 'document' }, small: Boolean });
         <path fill="#fff" d="M19 19h3v3h-3z"/>
         <path fill="#5de5ee" d="M9 25h12v2H9z"/>
       </g>
-      <g v-else-if="name === 'snake'">
-        <path fill="#173825" d="M2 2h28v28H2z"/>
-        <path fill="none" stroke="#8cdf84" stroke-width="4" d="M8 23h14v-7H10V9h10"/>
-        <path fill="#b2f29d" d="M19 6h7v6h-7z"/>
-        <path stroke="none" fill="#111" d="M23 7h2v2h-2z"/>
-        <path fill="#ef9e68" d="M6 5h4v4H6z"/>
+      <g v-else-if="name === 'snake'" stroke="none">
+        <!-- A tall miniature of the playable handheld, on the same pixel grid. -->
+        <path fill="#555" d="M7 1h18v1h1v25h-1v2h-2v2H7v-1H6V2h1z"/>
+        <path fill="#d6d3c9" d="M7 2h18v24h-1v2h-2v2H7z"/>
+        <path fill="#efece4" d="M7 2h18v1H8v26H7z"/>
+        <path fill="#aaa69a" d="M24 3h1v23h-1v2h-2v2H8v-1h14v-2h2z"/>
+        <path fill="#5c5d6b" d="M9 5h14v11h-1v1H9z"/>
+        <path fill="#173825" d="M11 7h10v7H11z"/>
+        <path fill="#8cdf84" d="M12 12h6v-2h-4V8h5v1h-4v1h4v3h-7z"/>
+        <path fill="#b2f29d" d="M18 8h2v2h-2z"/>
+        <path fill="#ef9e68" d="M12 8h1v1h-1z"/>
+        <path fill="#26307f" d="M9 18h5v1H9z"/>
+        <path fill="#3b5bdb" d="M15 20h2v2h-2z"/>
+        <path fill="#2f9e44" d="M12 22h2v2h-2z"/>
+        <path fill="#e03131" d="M18 22h2v2h-2z"/>
+        <path fill="#f2c318" d="M15 24h2v2h-2z"/>
+        <path fill="#5f5d66" d="M11 27h3v1h-3zM16 27h3v1h-3z"/>
+        <path fill="#a29e92" d="M21 24h1v3h-1zM23 23h1v3h-1z"/>
       </g>
       <!-- a green board with the four opening discs in the middle -->
       <g v-else-if="name === 'reversi'">

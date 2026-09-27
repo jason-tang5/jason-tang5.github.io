@@ -40,15 +40,22 @@ function setCart(tucked) {
 }
 // tucking it in latches with a click, a buzz and a little bump of the handheld
 const seated = ref(false);
+let seatTimer;
 function tuckIn() {
-  play('cartIn');
-  buzz([15, 40, 60]);
+  clearTimeout(seatTimer);
+  seated.value = false;
   setCart(true);
-  seated.value = true;
-  setTimeout(() => { seated.value = false; }, 260);
 }
-// the tucked cartridge's tab can be dragged up: it follows the pointer, ticks as it
-// slides and pops out once it's pulled far enough. a plain click pulls it out too
+function latchCart() {
+  if (!cartTucked.value) return;
+  play('cartIn');
+  buzz([12, 18, 35]);
+  seated.value = true;
+  clearTimeout(seatTimer);
+  seatTimer = setTimeout(() => { seated.value = false; }, 180);
+}
+// The tab follows the pointer for the whole drag, even past the catch.
+// Release past the catch to pull it out, or short of it to slide it back in.
 const pull = ref(0);
 const pullOutAt = 30;
 let pullFrom = null;
@@ -68,17 +75,18 @@ function peekDown(event) {
 }
 function peekMove(event) {
   if (pullFrom === null) return;
-  const distance = Math.max(0, Math.min(pullOutAt, pullFrom - event.clientY));
+  const distance = Math.max(0, pullFrom - event.clientY);
   if (distance > 3) dragged = true;
-  if (Math.floor(distance / 10) > Math.floor(pull.value / 10)) buzz(8);
+  // a firmer buzz when it clears the catch, light ticks the rest of the way
+  if (distance >= pullOutAt && pull.value < pullOutAt) buzz(25);
+  else if (Math.floor(distance / 10) !== Math.floor(pull.value / 10)) buzz(8);
   pull.value = distance;
-  if (distance >= pullOutAt) pullOut();
 }
 function peekUp() {
   if (pullFrom === null) return;
   pullFrom = null;
-  if (dragged) pull.value = 0;
-  else pullOut();
+  if (!dragged || pull.value >= pullOutAt) pullOut();
+  else pull.value = 0;
 }
 const nameIssue = computed(() => nameProblem(playerName.value));
 // enter or escape in the name line hands the keys back to the game
@@ -285,6 +293,7 @@ window.addEventListener('blur', padUp);
 document.addEventListener('visibilitychange', visibility);
 onBeforeUnmount(() => {
   pause();
+  clearTimeout(seatTimer);
   clearInterval(blinkTimer);
   clearInterval(attractTimer);
   backdrop?.destroy();
@@ -302,10 +311,17 @@ onBeforeUnmount(() => {
       <div class="snake-stage">
       <div class="snake-handheld-wrap">
       <!-- tucked in, just the top of the cartridge sticks out of the back -->
-      <Transition name="cart-peek">
+      <Transition name="cart-peek" @after-enter="latchCart">
         <button v-if="cartTucked" class="cart-peek" :class="{ pulling: pull }" :style="{ '--pull': `${pull}px` }" aria-label="Pull out the hi-score cartridge" title="Pull out the hi-scores"
           @pointerdown="peekDown" @pointermove="peekMove" @pointerup="peekUp" @pointercancel="peekUp" @click="$event.detail === 0 && pullOut()">
           <span aria-hidden="true"><b>&#9650;</b> HI-SCORES</span>
+          <svg class="cart-peek-art" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true">
+            <path fill="#173825" d="M2 2h28v28H2z"/>
+            <path fill="none" stroke="#8cdf84" stroke-width="4" d="M8 23h14v-7H10V9h10"/>
+            <path fill="#b2f29d" d="M19 6h7v6h-7z"/>
+            <path fill="#111" d="M23 7h2v2h-2z"/>
+            <path fill="#ef9e68" d="M6 5h4v4H6z"/>
+          </svg>
         </button>
       </Transition>
       <div class="snake-handheld" :class="{ seated }">
