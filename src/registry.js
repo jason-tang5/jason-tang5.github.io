@@ -25,7 +25,7 @@ export const apps = [
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
-  app('music', 'CD Player', 'music', 306, 264, 306, 264),
+  app('music', 'CD Player', 'music', 360, 490, 306, 312),
   app('analytics', 'Analytics', 'chart', 720, 640),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
@@ -44,7 +44,7 @@ const tucked = ['settings', 'mail', ...Object.values(folders).flat()];
 for (const a of apps) {
   a.desktop = !tucked.includes(a.id); // gets a desktop icon
   a.menu = !tucked.includes(a.id); // shows up in the start menu
-  a.fixedSize = a.id === 'music';
+  a.fixedSize = false;
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
 }
 

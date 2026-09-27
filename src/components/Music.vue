@@ -2,15 +2,18 @@
 // the cd player. it drives spotify's embed through their iframe api, which only
 // loads the first time you press play. while it plays, little pixel notes float
 // up off the disc.
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { albumUrl, tracks } from '../music.mjs';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { tracks as originalTracks } from '../music.mjs';
+import { musicDiscs } from '../music.mjs';
 import { loadSpotifyApi } from '../spotify.js';
 import { createPlaybackEndTracker } from '../playback-end.mjs';
 import { noteGlyphs, noteColors } from '../notes.mjs';
 import MusicVisualizer from './MusicVisualizer.vue';
-import { registry } from '../registry.js';
+import { play } from '../sound.js';
+import { buzz } from '../haptics.js';
+import { read, save } from '../storage.js';
 
-const props = defineProps({ win: Object });
+defineProps({ win: Object });
 
 const selected = ref(0);
 const position = ref(0);
@@ -21,22 +24,89 @@ const ready = ref(false);
 const showSpotify = ref(true);
 const message = ref('');
 const notes = ref([]);
+const repeatTrack = ref(read('cd-repeat', 'off') === 'on');
+function toggleRepeat() {
+  repeatTrack.value = !repeatTrack.value;
+  save('cd-repeat', repeatTrack.value ? 'on' : 'off');
+  buzz(8);
+}
 
 // template refs
 const embedHost = ref(null);
-const panel = ref(null);
 const disc = ref(null);
+const discEjected = ref(false);
+function discOffset(index) {
+  const count = discs.length;
+  return ((index - browsing.value + count + Math.floor(count / 2)) % count) - Math.floor(count / 2);
+}
+let swipeFrom = null;
+let rackSwiped = false;
+function rackDown(event) { swipeFrom = event.clientX; rackSwiped = false; }
+function rackUp(event) {
+  if (swipeFrom === null) return;
+  const delta = event.clientX - swipeFrom;
+  swipeFrom = null;
+  if (Math.abs(delta) > 30) { rackSwiped = true; rotateDisc(delta < 0 ? 1 : -1); }
+}
+function pickDisc(index, event) {
+  if (rackSwiped && event.detail !== 0) return;
+  browsing.value = index;
+}
+const discs = musicDiscs;
+const inserted = ref(0);
+const browsing = ref(0);
+const activeDisc = computed(() => discs[inserted.value]);
+const albumUrl = computed(() => activeDisc.value.url);
+const tracks = computed(() => inserted.value === 0 ? originalTracks : [{ uri: activeDisc.value.uri, title: activeDisc.value.title, duration: 0 }]);
+let insertTimer;
+let insertPending = false;
+function rotateDisc(direction) {
+  browsing.value = (browsing.value + direction + discs.length) % discs.length;
+  play('release');
+  buzz(8);
+}
+function toggleDisc() {
+  clearTimeout(insertTimer);
+  if (!discEjected.value) {
+    insertPending = false;
+    discEjected.value = true;
+    browsing.value = inserted.value;
+    if (controller) pause();
+    paused.value = true;
+    play('cartOut');
+  } else {
+    if (!discs[browsing.value].uri) return;
+    const changed = inserted.value !== browsing.value;
+    inserted.value = browsing.value;
+    if (changed) { selected.value = 0; position.value = 0; duration.value = 0; }
+    playbackEnd.reset();
+    discEjected.value = false;
+    insertPending = true;
+    // Reduced motion has no transitionend; the timer also covers interrupted transitions.
+    insertTimer = setTimeout(finishInsert, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420);
+  }
+  buzz(12);
+}
+function finishInsert() {
+  if (!insertPending || discEjected.value || disposed) return;
+  insertPending = false;
+  clearTimeout(insertTimer);
+  play('cartIn'); buzz([12, 18, 25]);
+  if (controller) { controller.loadUri(current.value.uri); requestPlay(); }
+  else initialize();
+}
+function discSeated(event) {
+  if (event.propertyName === 'transform') finishInsert();
+}
 
 let controller;
 let disposed = false;
 let startupTimer;
 let noteTimer;
 let noteId = 0;
-let baseHeight;
-let panelObserver;
 
 const playbackEnd = createPlaybackEndTracker();
-const current = computed(() => tracks[selected.value]);
+const current = computed(() => tracks.value[selected.value]);
 // spotify only tells us the duration once it's playing, until then use ours
 const length = computed(() => duration.value || current.value.duration);
 
@@ -47,27 +117,29 @@ function time(ms) {
 
 function update({ data }) {
   // ignore stale updates from the track we just switched away from
-  if (disposed || (data.playingURI && data.playingURI !== current.value.uri)) return;
+  if (disposed || discEjected.value) return;
+  if (inserted.value === 0 && data.playingURI && data.playingURI !== current.value.uri) return;
 
   const ended = playbackEnd.update(data);
   paused.value = data.isPaused;
   position.value = data.position || 0;
   duration.value = data.duration || 0;
 
-  const index = tracks.findIndex(t => t.uri === data.playingURI);
+  const index = tracks.value.findIndex(t => t.uri === data.playingURI);
   if (index >= 0) selected.value = index;
 
   if (!data.isPaused) {
     clearTimeout(startupTimer);
     message.value = '';
   }
-  if (ended) choose(selected.value + 1);
+  if (ended && inserted.value === 0) choose(repeatTrack.value ? selected.value : selected.value + 1);
 }
 
 // spotify's play() always restarts from 0:00, so after a pause we have to use resume().
 // browsers sometimes block autoplay in the iframe, so if nothing starts after a few
 // seconds we open the real spotify player and ask the user to press play there.
 function requestPlay(resume = false) {
+  if (discEjected.value) return;
   if (resume) controller?.resume();
   else controller?.play();
 
@@ -128,10 +200,11 @@ async function initialize() {
 function pause() {
   clearTimeout(startupTimer);
   playbackEnd.pause();
-  controller.pause();
+  controller?.pause();
 }
 
 function togglePlay() {
+  if (discEjected.value) return toggleDisc();
   if (!controller) initialize();
   else if (paused.value) requestPlay(position.value > 0);
   else pause();
@@ -146,8 +219,9 @@ function siteSound({ detail }) {
 
 // wraps around in both directions
 function choose(index) {
+  if (discEjected.value || inserted.value !== 0) return;
   playbackEnd.reset();
-  selected.value = (index + tracks.length) % tracks.length;
+  selected.value = (index + tracks.value.length) % tracks.value.length;
   position.value = 0;
   duration.value = 0;
   if (controller) {
@@ -205,42 +279,16 @@ watch(paused, isPaused => {
   }
 });
 
-// ---- window size ----
-// the window is fixed size, so it grows to fit the spotify panel and shrinks back when it's hidden.
-// the base is the registry size (player plus visualizer), not a size saved from before
-// the visualizer existed, which would cut it off
-
-async function fitWindow() {
-  await nextTick();
-  const win = props.win;
-  if (!win || !panel.value || innerWidth <= 700) return;
-
-  baseHeight ??= registry.music.height;
-  const height = showSpotify.value ? baseHeight + Math.ceil(panel.value.offsetHeight) : baseHeight;
-  if (height === win.height) return;
-  Object.assign(win, { height, minHeight: height });
-
-  const desktop = document.querySelector('.desktop')?.getBoundingClientRect();
-  if (desktop) win.y = Math.max(0, Math.min(win.y, desktop.height - height));
-}
-
-watch(showSpotify, fitWindow);
-
 onMounted(() => {
-  panelObserver = new ResizeObserver(() => {
-    if (showSpotify.value) fitWindow();
-  });
-  panelObserver.observe(panel.value);
-  fitWindow();
   window.addEventListener('site-sound', siteSound);
 });
 
 onBeforeUnmount(() => {
   disposed = true;
+  clearTimeout(insertTimer);
   window.removeEventListener('site-sound', siteSound);
   clearTimeout(startupTimer);
   clearInterval(noteTimer);
-  panelObserver?.disconnect();
   controller?.destroy();
 });
 </script>
@@ -248,10 +296,19 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout cd-app">
     <div class="cd-face">
-      <span ref="disc" class="cd-disc" :class="{ spinning: !paused }" aria-hidden="true"/>
+      <button class="cd-disc-slot" :class="{ ejected: discEjected }"
+        :aria-label="discEjected ? 'Insert CD' : 'Eject CD'" :aria-pressed="discEjected" :disabled="discEjected && !discs[browsing].uri" @click="toggleDisc">
+        <span class="cd-disc-carriage" @transitionend="discSeated">
+          <span ref="disc" class="cd-disc" :class="{ spinning: !paused && !discEjected }" aria-hidden="true"/>
+        </span>
+        <span class="cd-slot-front" aria-hidden="true">
+          <svg viewBox="0 0 7 9" shape-rendering="crispEdges"><path d="M3 0h1v1H3zM2 1h3v1H2zM1 2h5v1H1zM0 3h7v1H0zM0 6h7v2H0z"/></svg>
+          {{ discEjected ? 'INSERT' : 'EJECT' }}
+        </span>
+      </button>
 
       <div class="cd-controls">
-        <select class="cd-track inset" aria-label="Track" :value="selected" @change="choose(Number($event.target.value))">
+        <select class="cd-track inset" aria-label="Track" :disabled="discEjected || inserted !== 0" :value="selected" @change="choose(Number($event.target.value))">
           <option v-for="(track, i) in tracks" :key="track.uri" :value="i">{{ i + 1 }} of {{ tracks.length }}: {{ track.title }}</option>
         </select>
 
@@ -264,20 +321,25 @@ onBeforeUnmount(() => {
             :max="length"
             step="1000"
             :value="position"
-            :disabled="!ready"
+            :disabled="!ready || discEjected"
             @change="seek"
           >
           <output aria-label="Track duration">{{ time(length) }}</output>
         </div>
 
         <div class="cd-transport">
-          <button class="raised" aria-label="Previous track" @click="choose(selected - 1)">
+          <button class="raised cd-repeat" :class="{ pressed: repeatTrack }" :aria-pressed="repeatTrack"
+            :aria-label="repeatTrack ? 'Disable repeat' : 'Enable repeat'" title="Repeat current track"
+            :disabled="inserted !== 0" @click="toggleRepeat">
+            <svg viewBox="0 0 20 14" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 2h10V0h2v1h1v1h1v2h-1v1h-1v1h-2V4H4v3H2V4h1V3h1zM16 12H6v2H4v-1H3v-1H2v-2h1V9h1V8h2v2h10V7h2v3h-1v1h-1z"/></svg>
+          </button>
+          <button class="raised" aria-label="Previous track" :disabled="discEjected || inserted !== 0" @click="choose(selected - 1)">
             <svg viewBox="0 0 20 14" aria-hidden="true"><path d="M9 2 2 7l7 5V2zm8 0-7 5 7 5V2z"/></svg>
           </button>
           <button
             class="raised"
-            :aria-label="loading ? 'Loading Spotify' : paused ? 'Play' : 'Pause'"
-            :disabled="loading"
+            :aria-label="loading ? 'Loading Spotify' : discEjected ? 'Insert selected CD' : paused ? 'Play' : 'Pause'"
+            :disabled="loading || (discEjected && !discs[browsing].uri)"
             @click="togglePlay"
           >
             <svg viewBox="0 0 20 14" aria-hidden="true">
@@ -285,7 +347,7 @@ onBeforeUnmount(() => {
               <path v-else d="M5 2h4v10H5zm7 0h4v10h-4z"/>
             </svg>
           </button>
-          <button class="raised" aria-label="Next track" @click="choose(selected + 1)">
+          <button class="raised" aria-label="Next track" :disabled="discEjected || inserted !== 0" @click="choose(selected + 1)">
             <svg viewBox="0 0 20 14" aria-hidden="true"><path d="m3 2 7 5-7 5V2zm8 0 7 5-7 5V2z"/></svg>
           </button>
           <button
@@ -312,8 +374,29 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <Transition name="cd-rack">
+      <section v-if="discEjected" class="cd-disc-rack inset" aria-label="CD carousel">
+        <div class="cd-rack-header"><strong>DISC SELECT</strong><span>{{ browsing + 1 }} / {{ discs.length }}</span></div>
+        <div class="cd-rack-stage" @pointerdown="rackDown" @pointerup="rackUp" @pointercancel="swipeFrom = null">
+          <button v-for="(item, index) in discs" :key="index" class="cd-rack-disc"
+            :class="{ selected: browsing === index, empty: !item.uri }"
+            :style="{ '--disc-offset': discOffset(index), '--disc-color': item.color, zIndex: discs.length - Math.abs(discOffset(index)) }"
+            :aria-label="item.title" :aria-pressed="browsing === index" @click="pickDisc(index, $event)">
+            <span class="cd-disc" aria-hidden="true"/>
+            <span class="cd-rack-number" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+          </button>
+        </div>
+        <div class="cd-rack-navigation">
+          <button class="raised" aria-label="Previous disc" @click="rotateDisc(-1)"><svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 0h1v7H4zM3 1h1v5H3zM2 2h1v3H2zM1 3h1v1H1z"/></svg></button>
+          <div aria-live="polite"><strong>{{ discs[browsing].title }}</strong><small>{{ discs[browsing].uri ? 'Ready to play' : 'Album coming soon' }}</small></div>
+          <button class="raised" aria-label="Next disc" @click="rotateDisc(1)"><svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z"/></svg></button>
+        </div>
+        <button class="raised cd-rack-insert" :disabled="!discs[browsing].uri" @click="toggleDisc">INSERT DISC</button>
+      </section>
+    </Transition>
+
     <!-- the Spotify panel is open by default; playback still starts on request -->
-    <div id="cd-spotify" ref="panel" class="cd-spotify" :class="{ expanded: showSpotify }" :inert="!showSpotify">
+    <div id="cd-spotify" class="cd-spotify" :class="{ expanded: showSpotify }" :inert="!showSpotify">
       <p v-if="message" role="status">{{ message }}</p>
       <div ref="embedHost" class="cd-embed"/>
       <a :href="albumUrl" target="_blank" rel="noopener">Open in Spotify</a>

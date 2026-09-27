@@ -1,147 +1,165 @@
 <script setup>
-// a rainbow of segmented pixel bars with a reflection, filling the empty space under
-// the cd player on phones. the music plays inside spotify's embed, which a page
-// isn't allowed to listen to, so the bars can't follow the real audio. instead they
-// bounce to a made up beat while it plays (stronger in the bass bars on the left)
-// and settle down when it's paused
+// Spotify exposes playback state, not audio samples: these are simulated displays.
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { read, save } from '../storage.js';
+import { buzz } from '../haptics.js';
 
 const props = defineProps({ playing: Boolean });
-
+const modes = ['bars', 'wave', 'scope'];
+const savedMode = read('cd-display', 'bars');
+const mode = ref(modes.includes(savedMode) ? savedMode : 'bars');
 const canvas = ref(null);
-const barCount = 20;
-// purple through red, yellow and green to blue, like a classic equalizer
-const hues = Array.from({ length: barCount }, (_, i) => (280 + i * 320 / (barCount - 1)) % 360);
-const levels = new Float32Array(barCount); // 0 to 1, what's drawn
-const peaks = new Float32Array(barCount); // the lighter block that falls slowly
-let beat = 0;
-let lastBeat = 0;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const levels = new Float32Array(20);
+const peaks = new Float32Array(20);
 let frame = 0;
 let observer;
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let visible = true;
+let visibilityObserver;
+let lastTime = 0;
+let energy = props.playing ? 1 : 0;
+let ripples = [];
+let wake = 0;
 
-function targetFor(i, now) {
-  if (!props.playing) return 0.08 + 0.03 * Math.sin(now / 900 + i * 0.6);
-  if (reducedMotion.matches) return 0.35 + 0.25 * Math.sin(i * 0.9);
-  // a few slow waves at different speeds, plus a kick on every beat that hits the
-  // bass hardest and fades toward the treble
-  const t = now / 1000;
-  const wave = 0.35
-    + 0.18 * Math.sin(t * 2.1 + i * 0.7)
-    + 0.12 * Math.sin(t * 3.7 - i * 1.3)
-    + 0.08 * Math.sin(t * 6.3 + i * 2.1);
-  const kick = beat * (1 - i / barCount) * 0.45;
-  return Math.max(0.05, Math.min(1, wave + kick + (Math.random() - 0.5) * 0.12));
+function choose(value) {
+  mode.value = value;
+  save('cd-display', value);
+  buzz(8);
+  render(performance.now());
 }
-
-function draw(now) {
+function ripple(event) {
+  const rect = canvas.value.getBoundingClientRect();
+  const x = event.detail === 0 ? 0.5 : (event.clientX - rect.left) / rect.width;
+  ripples.push({ x: Math.max(0, Math.min(1, x)), time: performance.now() });
+  ripples = ripples.slice(-5);
+  buzz(8);
+  start();
+}
+function render(now) {
   const el = canvas.value;
-  if (!el) return;
+  if (!el || !el.width || !el.height) return;
   const ctx = el.getContext('2d');
-  const scale = window.devicePixelRatio || 1;
-  const width = el.width;
-  const height = el.height;
+  const w = el.width, h = el.height;
+  const dt = Math.min(50, now - (lastTime || now - 16));
+  lastTime = now;
+  energy += ((props.playing ? 1 : 0) - energy) * (1 - Math.exp(-dt / 220));
+  const still = reducedMotion.matches;
+  const t = still ? 0 : now / 1000;
+  const amplitude = still ? (props.playing ? 0.65 : 0) : energy;
+  ctx.fillStyle = '#090e10';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#172326';
+  for (let x = 8; x < w; x += 16) for (let y = 8; y < h; y += 12) ctx.fillRect(x, y, 1, 1);
+  ripples = still ? [] : ripples.filter(r => now - r.time < 850);
+  const pulse = x => ripples.reduce((sum, r) => {
+    const age = (now - r.time) / 850;
+    return sum + Math.exp(-Math.pow((Math.abs(x - r.x) - age * 0.8) * 18, 2)) * (1 - age);
+  }, 0);
 
-  // a beat roughly every 470ms (about 128bpm) that decays between hits
-  if (now - lastBeat > 470) {
-    lastBeat = now;
-    beat = 1;
-  }
-  beat *= 0.9;
-
-  ctx.fillStyle = '#0b0b10';
-  ctx.fillRect(0, 0, width, height);
-
-  const gap = Math.max(2, Math.round(3 * scale));
-  const barWidth = Math.floor((width - gap * (barCount + 1)) / barCount);
-  const left = Math.floor((width - (barWidth * barCount + gap * (barCount - 1))) / 2);
-  // the bars sit on a line about two thirds down, the reflection goes below it
-  const floor = Math.round(height * 0.68);
-  const block = Math.max(3, Math.round(barWidth * 0.42));
-  const rows = Math.floor((floor - gap * 2) / (block + gap));
-
-  for (let i = 0; i < barCount; i++) {
-    const target = targetFor(i, now);
-    // rise quickly, fall a little slower, like a real meter
-    levels[i] += (target - levels[i]) * (target > levels[i] ? 0.45 : 0.18);
-    const lit = Math.max(1, Math.round(levels[i] * rows));
-    peaks[i] = Math.max(peaks[i] - 0.012, lit / rows);
-    const peakRow = Math.min(rows - 1, Math.round(peaks[i] * rows) - 1);
-
-    const x = left + i * (barWidth + gap);
-    const hue = hues[i];
-    for (let row = 0; row < rows; row++) {
-      const on = row < lit;
-      const peak = row === peakRow && !on;
-      if (!on && !peak) continue;
-      const y = floor - (row + 1) * (block + gap) + gap;
-      const light = peak ? 72 : 52 + row / rows * 8;
-      ctx.fillStyle = `hsl(${hue} 85% ${light}%)`;
-      ctx.fillRect(x, y, barWidth, block);
-      // a small highlight on the top left of each block for the pixel look
-      ctx.fillStyle = `hsl(${hue} 90% ${light + 18}%)`;
-      ctx.fillRect(x, y, Math.max(1, Math.round(barWidth * 0.3)), Math.max(1, Math.round(scale)));
-
-      // the reflection: the same block mirrored under the line, fading out
-      const mirrorY = floor + (floor - y - block) + gap;
-      const fade = 0.28 * (1 - (mirrorY - floor) / (height - floor));
-      if (fade > 0.02) {
-        ctx.globalAlpha = fade;
-        ctx.fillStyle = `hsl(${hue} 85% ${light}%)`;
-        ctx.fillRect(x, mirrorY, barWidth, block);
-        ctx.globalAlpha = 1;
+  if (mode.value === 'bars') {
+    const gap = 2, bw = Math.max(2, Math.floor((w - 12) / 20) - gap);
+    const left = Math.floor((w - 20 * (bw + gap) + gap) / 2);
+    const rows = Math.max(2, Math.floor((h - 10) / 5));
+    for (let i = 0; i < 20; i++) {
+      const target = Math.min(1, 0.035 + amplitude * (0.4 + 0.2 * Math.sin(t * 4 + i * 0.7) + 0.16 * Math.sin(t * 7 - i * 0.3)) + pulse(i / 19) * 0.65);
+      levels[i] += (target - levels[i]) * (still ? 1 : 1 - Math.exp(-dt / (target > levels[i] ? 45 : 150)));
+      peaks[i] = Math.max(levels[i], peaks[i] - dt / 1700);
+      const lit = Math.round(levels[i] * rows);
+      const hue = (280 + i * 320 / 19) % 360;
+      for (let row = 0; row < rows; row++) {
+        const x = left + i * (bw + gap), y = h - 5 - (row + 1) * 5;
+        ctx.fillStyle = row < lit ? `hsl(${hue} 78% 57%)` : '#182326';
+        ctx.fillRect(x, y, bw, 3);
+        if (row < lit) {
+          ctx.fillStyle = `hsl(${hue} 85% 76%)`;
+          ctx.fillRect(x, y, Math.max(1, bw / 3 | 0), 1);
+        }
       }
+      ctx.fillStyle = '#d8f1df';
+      ctx.fillRect(left + i * (bw + gap), h - 5 - Math.max(1, Math.ceil(peaks[i] * rows)) * 5, bw, 1);
+    }
+  } else {
+    ctx.fillStyle = mode.value === 'wave' ? '#83e5ac' : '#ffc36c';
+    const mid = h / 2;
+    for (let x = 4; x < w - 4; x += 2) {
+      const u = x / w;
+      const signal = mode.value === 'wave'
+        ? Math.sin(u * 24 - t * 4) * (0.55 + 0.3 * Math.sin(u * 9 + t * 2)) + 0.15 * Math.sin(u * 65 + t * 6)
+        : Math.sin(u * 16 - t * 3) * Math.sin(u * 5 + t * 0.8);
+      const y = Math.round(mid + signal * (amplitude * h * 0.36) + Math.sin(u * 40 - t * 10) * pulse(u) * h * 0.22);
+      ctx.fillRect(x, y, 2, 2);
+      ctx.globalAlpha = 0.15;
+      ctx.fillRect(x, y + 3, 2, 2);
+      ctx.globalAlpha = 1;
     }
   }
+  // A subtle sweep when the display wakes; tap rings are shared by all modes.
+  if (!still && now - wake < 450) {
+    ctx.fillStyle = '#d4ffe522';
+    ctx.fillRect(Math.round((now - wake) / 450 * w), 0, 3, h);
+  }
+  for (const r of ripples) {
+    const age = (now - r.time) / 850;
+    ctx.strokeStyle = `rgba(190,235,215,${(1 - age) * 0.45})`;
+    ctx.strokeRect(Math.round(r.x * w - age * w / 2), Math.round(h / 2 - age * h / 2), Math.round(age * w), Math.round(age * h));
+  }
 }
-
 function loop(now) {
-  draw(now);
-  frame = requestAnimationFrame(loop);
-}
-
-function start() {
-  if (!frame && !document.hidden) frame = requestAnimationFrame(loop);
-}
-
-function stop() {
-  cancelAnimationFrame(frame);
   frame = 0;
+  render(now);
+  if (!reducedMotion.matches && (props.playing || energy > 0.005 || ripples.length)) start();
 }
-
+function start() {
+  if (!frame && visible && !document.hidden) frame = requestAnimationFrame(loop);
+}
+function stop() { cancelAnimationFrame(frame); frame = 0; }
 function resize() {
   const el = canvas.value;
-  if (!el) return;
-  const scale = window.devicePixelRatio || 1;
-  el.width = Math.round(el.clientWidth * scale);
-  el.height = Math.round(el.clientHeight * scale);
-  draw(performance.now());
+  // Render on a deliberately small pixel grid, then scale it with crisp edges.
+  el.width = Math.max(1, Math.round(el.clientWidth / 2));
+  el.height = Math.max(1, Math.round(el.clientHeight / 2));
+  render(performance.now());
 }
-
-function visibility() {
-  if (document.hidden) stop();
-  else start();
-}
-
-watch(() => props.playing, () => draw(performance.now()));
-
+function visibility() { if (document.hidden) stop(); else start(); }
+function motionChange() { stop(); start(); }
+watch(() => props.playing, playing => { if (playing) wake = performance.now(); start(); });
 onMounted(() => {
   observer = new ResizeObserver(resize);
   observer.observe(canvas.value);
+  visibilityObserver = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible) start(); else stop();
+  });
+  visibilityObserver.observe(canvas.value);
   document.addEventListener('visibilitychange', visibility);
+  reducedMotion.addEventListener('change', motionChange);
   resize();
   start();
 });
-
 onBeforeUnmount(() => {
   stop();
   observer?.disconnect();
+  visibilityObserver?.disconnect();
   document.removeEventListener('visibilitychange', visibility);
+  reducedMotion.removeEventListener('change', motionChange);
 });
 </script>
 
 <template>
-  <div class="cd-visualizer inset" aria-hidden="true">
-    <canvas ref="canvas"/>
-  </div>
+  <section class="cd-visualizer raised" aria-label="TANGO stereo display">
+    <div class="cd-visualizer-heading">
+      <span class="cd-visualizer-screw" aria-hidden="true"/>
+      <strong>TANGO <span>STEREO DISPLAY</span></strong>
+      <span class="cd-visualizer-state"><i :class="{ on: playing }" aria-hidden="true"/>{{ playing ? 'PLAY' : 'PAUSED' }}</span>
+      <span class="cd-visualizer-screw" aria-hidden="true"/>
+    </div>
+    <button class="cd-visualizer-screen inset" aria-label="Send a ripple through the visualizer" @click="ripple">
+      <canvas ref="canvas" aria-hidden="true"/>
+      <span class="cd-visualizer-hint" aria-hidden="true">TAP TO RIPPLE</span>
+    </button>
+    <div class="cd-visualizer-controls" role="group" aria-label="Visualizer display mode">
+      <button v-for="value in modes" :key="value" class="raised" :class="{ pressed: mode === value }" :aria-pressed="mode === value" @click="choose(value)">{{ value.toUpperCase() }}</button>
+      <span class="cd-visualizer-vents" aria-hidden="true"/>
+    </div>
+  </section>
 </template>

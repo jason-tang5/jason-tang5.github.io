@@ -2436,6 +2436,7 @@ fieldset {
 }
 
 .cd-face {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: 100px minmax(0, 1fr);
   align-items: start;
@@ -2445,6 +2446,82 @@ fieldset {
 }
 
 /* the disc is a 12 frame sprite sheet, stepped through to fake a spin */
+.cd-disc-slot {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: var(--surface);
+}
+.cd-disc-carriage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(34px);
+  transition: transform .38s cubic-bezier(.22, 1, .36, 1);
+}
+.cd-disc-slot.ejected .cd-disc-carriage { transform: translateY(0); }
+.cd-disc-slot .cd-disc { transform: scale(.78); transform-origin: top center; }
+.cd-slot-front {
+  position: absolute;
+  z-index: 1;
+  inset: 80px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-top: 3px solid var(--edge);
+  box-shadow: inset 0 1px var(--light);
+  background: var(--surface);
+  font: bold 8px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  letter-spacing: 1px;
+}
+.cd-slot-front svg { width: 7px; height: 9px; fill: currentColor; }
+.cd-disc-slot:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
+.cd-disc-rack {
+  flex: none;
+  margin: 0 10px 10px;
+  padding: 8px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.cd-rack-header { display: flex; justify-content: space-between; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; color: var(--muted); letter-spacing: 1px; }
+.cd-rack-stage { position: relative; height: 115px; perspective: 500px; touch-action: pan-y; }
+.cd-rack-disc {
+  position: absolute;
+  top: 10px;
+  left: calc(50% - 50px);
+  width: 100px;
+  height: 100px;
+  border: 0;
+  padding: 0;
+  background: none;
+  transform: translateX(calc(var(--disc-offset) * 66px)) rotateY(calc(var(--disc-offset) * -28deg)) scale(.72);
+  opacity: .55;
+  transition: transform .36s cubic-bezier(.22, 1, .36, 1), opacity .25s;
+}
+.cd-rack-disc.selected { transform: translateX(0) rotateY(0) scale(1); opacity: 1; }
+.cd-rack-disc .cd-disc { animation-play-state: running; animation-duration: 5s; }
+.cd-rack-disc.empty .cd-disc { opacity: .7; }
+.cd-rack-disc:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
+.cd-rack-number { position: absolute; top: 64px; left: 31px; width: 38px; padding: 2px; background: var(--disc-color); color: #172326; font: bold 10px 'Courier New', monospace; box-shadow: 1px 1px #555; }
+.cd-rack-navigation { display: flex; align-items: center; gap: 8px; }
+.cd-rack-navigation > div { flex: 1; min-width: 0; text-align: center; }
+.cd-rack-navigation strong { display: block; overflow-wrap: anywhere; font-size: 11px; }
+.cd-rack-navigation small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.cd-rack-navigation button { width: 32px; height: 32px; flex: none; }
+.cd-rack-navigation svg { display: block; width: 7px; height: 7px; margin: auto; fill: currentColor; }
+.cd-rack-insert { display: block; margin: 8px auto 0; min-height: 32px; padding: 4px 16px; font: bold 10px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.cd-rack-enter-active, .cd-rack-leave-active { transition: opacity .2s, transform .28s ease-out; }
+.cd-rack-enter-from, .cd-rack-leave-to { opacity: 0; transform: translateY(-12px); }
+@media (prefers-reduced-motion: reduce) {
+  .cd-disc-carriage { transition: none; }
+  .cd-rack-disc, .cd-rack-enter-active, .cd-rack-leave-active { transition: none; }
+  .cd-rack-disc .cd-disc { animation: none; }
+}
+
 .cd-disc {
   display: block;
   width: 100px;
@@ -2718,8 +2795,9 @@ fieldset {
 }
 
 .cd-transport {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 36px));
+  justify-content: center;
   gap: 6px;
   padding: 0 5px;
 }
@@ -2727,11 +2805,14 @@ fieldset {
 .cd-transport .raised {
   display: grid;
   place-items: center;
-  width: 36px;
+  width: 100%;
+  min-width: 0;
   height: 25px;
-  padding: 3px 6px;
+  padding: 3px 2px;
   min-height: 0;
 }
+
+.cd-repeat[aria-pressed="true"] { color: var(--navy); background: var(--hilite); }
 
 .cd-transport svg {
   display: block;
@@ -2750,6 +2831,7 @@ fieldset {
 }
 
 .cd-spotify.expanded {
+  flex-shrink: 0;
   position: static;
   width: auto;
   height: auto;
@@ -3692,8 +3774,10 @@ label.mail-label {
     margin-top: 15px;
   }
 
+  .cd-transport { grid-template-columns: repeat(5, minmax(0, 44px)); }
+
   .cd-transport .raised {
-    width: 48px;
+    width: 100%;
     height: 36px;
   }
 
@@ -4580,11 +4664,30 @@ label.mail-label {
    a strip under the controls on desktop (the window is sized for it in registry.js).
    on phones the cd player gets the whole screen, so it takes all the height that's left */
 .cd-visualizer {
-  flex: none;
-  height: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+  flex: 1 0 144px;
+  min-height: 144px;
   margin: 0 10px 8px;
-  background: #0b0b10;
+  background: var(--surface);
 }
+
+.cd-visualizer-heading { display: flex; align-items: center; gap: 7px; font: 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.cd-visualizer-heading strong { flex: 1; letter-spacing: 1px; }
+.cd-visualizer-heading strong span { font-size: 8px; letter-spacing: 0; color: var(--muted); }
+.cd-visualizer-screw { width: 5px; height: 5px; background: linear-gradient(135deg, var(--shadow) 40%, var(--light) 40% 60%, var(--shadow) 60%); box-shadow: 1px 1px var(--light); }
+.cd-visualizer-state { display: flex; align-items: center; gap: 4px; font-size: 8px; }
+.cd-visualizer-state i { width: 5px; height: 5px; background: #405247; box-shadow: inset 1px 1px #17261c; }
+.cd-visualizer-state i.on { background: #83e5ac; box-shadow: 0 0 4px #83e5ac66; }
+.cd-visualizer-screen { position: relative; display: block; flex: 1; min-height: 0; width: 100%; padding: 2px; background: #090e10; overflow: hidden; }
+.cd-visualizer-screen:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
+.cd-visualizer-hint { position: absolute; bottom: 5px; right: 6px; color: #8caba0; background: #090e10cc; padding: 1px 3px; font: 7px 'Courier New', monospace; letter-spacing: 1px; pointer-events: none; }
+.cd-visualizer-controls { display: flex; align-items: center; gap: 5px; }
+.cd-visualizer-controls button { min-width: 48px; min-height: 22px; padding: 3px 8px; font: bold 9px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+.cd-visualizer-controls button[aria-pressed="true"] { color: var(--navy); }
+.cd-visualizer-vents { flex: 1; height: 10px; margin-left: 10px; background: repeating-linear-gradient(90deg, var(--shadow) 0 2px, transparent 2px 5px); }
 
 .cd-visualizer canvas {
   display: block;
@@ -4600,6 +4703,8 @@ label.mail-label {
     min-height: 180px;
     margin: 4px 10px 10px;
   }
+  .cd-visualizer-controls button { min-height: 36px; flex: 1; }
+  .cd-visualizer-vents { flex: 0 0 28px; margin-left: 3px; }
 }
 
 
