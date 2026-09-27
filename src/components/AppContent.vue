@@ -554,7 +554,10 @@ function balloonDone(event, id) {
       <aside class="project-preview">
         <div class="preview-title">
           <RetroIcon :name="selected.icon"/>
-          <h2>{{ selected.name }}</h2>
+          <div>
+            <h2>{{ selected.name }}</h2>
+            <time>{{ selected.date }}</time>
+          </div>
         </div>
         <p>{{ selected.summary }}</p>
         <div class="preview-actions">

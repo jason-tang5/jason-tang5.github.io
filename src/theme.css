@@ -1922,9 +1922,17 @@ input[type="checkbox"]:focus-visible {
   flex: none;
 }
 
-.preview-title h2 {
+.preview-title > div {
   flex: 1;
   min-width: 0;
+}
+
+/* when it was made, small under the name */
+.preview-title time {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--d-muted, #4c4c4c);
 }
 
 .project-preview p {
