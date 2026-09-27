@@ -2603,27 +2603,45 @@ fieldset {
 }
 
 /* the cd in the top right of the about page, the same size as the envelope beside it.
-   it spins while hovered, in steps so it turns like pixel art */
+   while hovered it plays its own 32px sprite sheet, drawn to match its icon (the
+   first frame is the icon), so the shine turns without resizing the player's discs */
 .about-cd-disc {
+  position: relative;
   display: block;
 }
 
 .about-cd-disc .retro-icon {
   display: block;
-  animation: about-cd-spin 1.2s steps(12) infinite paused;
+}
+
+.about-cd-sprite {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background: url(../assets/about-cd-frames.png) 0 0 / 384px 32px no-repeat;
+  image-rendering: pixelated;
+  animation: about-cd-frames 1.2s steps(12) infinite;
 }
 
 .about-cd-disc.spinning .retro-icon {
-  animation-play-state: running;
+  visibility: hidden;
 }
 
-@keyframes about-cd-spin {
-  to { transform: rotate(360deg); }
+.about-cd-disc.spinning .about-cd-sprite {
+  display: block;
+}
+
+@keyframes about-cd-frames {
+  to { background-position: -384px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .about-cd-disc.spinning .retro-icon {
-    animation-play-state: paused;
+    visibility: visible;
+  }
+
+  .about-cd-disc.spinning .about-cd-sprite {
+    display: none;
   }
 }
 

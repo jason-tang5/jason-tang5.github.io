@@ -284,7 +284,7 @@ function setPortraitAscii(value) {
             @focus="startCd"
             @blur="stopCd"
           >
-            <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"><RetroIcon name="music"/></span>
+            <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"><RetroIcon name="music"/><span class="about-cd-sprite"/></span>
             <span>CD Player</span>
           </button>
         </div>
