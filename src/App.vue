@@ -410,15 +410,21 @@ const settling = ref(null);
 let iconDrag = null;
 let dragEndedAt = 0;
 
-// grid pitch matches .desktop-grid in theme.css: 86px columns + 12px gap, 83px rows + 5px
-// gap, inset 14px from the left and 16px from the top with 50px kept clear at the bottom
-const cellX = 98;
-const cellY = 88;
+// the grid matches .desktop-grid and .desktop-shortcut in theme.css. on a desktop the
+// icons are 86x83 with 12px and 5px gaps, on a phone 85x90 with 4px and 10px gaps. room
+// is kept at the bottom for the taskbar, or just its sliver when it hides itself
+const gridSize = computed(() => (compact.value
+  ? { width: 85, height: 90, x: 89, y: 100, left: 12, top: 12 }
+  : { width: 86, height: 83, x: 98, y: 88, left: 14, top: 16 }));
 
-const gridFits = () => ({
-  cols: Math.max(1, Math.floor((area.width - 14 - 86) / cellX) + 1),
-  rows: Math.max(1, Math.floor((area.height - 16 - 50 - 83) / cellY) + 1),
-});
+const gridFits = () => {
+  const g = gridSize.value;
+  const bottom = autoHide.value ? 4 : 50;
+  return {
+    cols: Math.max(1, Math.floor((area.width - g.left - g.width) / g.x) + 1),
+    rows: Math.max(1, Math.floor((area.height - g.top - bottom - g.height) / g.y) + 1),
+  };
+};
 
 // the free cell closest to where an icon wants to be
 function nearestFree(taken, want, { cols, rows }) {
@@ -458,7 +464,7 @@ const iconLayout = computed(() => {
 });
 
 function iconDown(event, id) {
-  if (compact.value || event.button !== 0 || event.pointerType === 'touch') return;
+  if (event.button !== 0) return;
   const el = event.currentTarget;
   settling.value = null;
   iconDrag = {
@@ -481,9 +487,9 @@ function iconMove(event) {
   let dx = event.clientX - iconDrag.x;
   let dy = event.clientY - iconDrag.y;
 
-  // small dead zone so a sloppy click doesn't count as a drag
+  // small dead zone so a sloppy click (or a tap on a phone) doesn't count as a drag
   if (!dragging.value) {
-    if (Math.hypot(dx, dy) < 5) return;
+    if (Math.hypot(dx, dy) < (event.pointerType === 'touch' ? 10 : 5)) return;
     dragging.value = iconDrag.id;
     selected.value = iconDrag.id;
   }
@@ -499,9 +505,10 @@ function snapIcon({ id }) {
   // the first drag pins every icon where it is, so the others don't close the gap
   for (const [other, cell] of Object.entries(iconLayout.value)) iconCells[other] ??= { ...cell };
   const from = iconLayout.value[id];
+  const { x, y } = gridSize.value;
   const want = {
-    col: Math.max(0, Math.round((from.col * cellX + dragShift.value.x) / cellX)),
-    row: Math.max(0, Math.round((from.row * cellY + dragShift.value.y) / cellY)),
+    col: Math.max(0, Math.round((from.col * x + dragShift.value.x) / x)),
+    row: Math.max(0, Math.round((from.row * y + dragShift.value.y) / y)),
   };
   const taken = new Set(
     Object.entries(iconLayout.value).filter(([other]) => other !== id).map(([, c]) => `${c.col},${c.row}`),
@@ -518,8 +525,8 @@ function iconUp() {
     // start the icon exactly where it was dropped, then let it slide into the cell
     settling.value = {
       id,
-      x: (from.col - to.col) * cellX + dragShift.value.x,
-      y: (from.row - to.row) * cellY + dragShift.value.y,
+      x: (from.col - to.col) * gridSize.value.x + dragShift.value.x,
+      y: (from.row - to.row) * gridSize.value.y + dragShift.value.y,
       still: true,
     };
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -532,16 +539,16 @@ function iconUp() {
   dragShift.value = { x: 0, y: 0 };
 }
 
-// on a phone the css grid lays the icons out. on a desktop each one is placed in its cell
+// each icon is placed in its cell, on a phone as well as a desktop
 function iconStyle(id) {
-  if (compact.value) return null;
   const cell = iconLayout.value[id];
+  const { x, y } = gridSize.value;
   const settle = settling.value?.id === id ? settling.value : null;
   const shift = dragging.value === id ? dragShift.value : settle || { x: 0, y: 0 };
   return {
     position: 'absolute',
-    left: `${cell.col * cellX}px`,
-    top: `${cell.row * cellY}px`,
+    left: `${cell.col * x}px`,
+    top: `${cell.row * y}px`,
     transform: shift.x || shift.y ? `translate(${shift.x}px, ${shift.y}px)` : null,
     transition: settle?.still ? 'none' : null,
   };

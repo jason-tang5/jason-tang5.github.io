@@ -3161,23 +3161,17 @@ label.mail-label {
   }
 
   /* icons go down the left side like on a desktop, starting another column only
-     when the first one runs out of room */
+     when the first one runs out of room. App.vue places each one in its cell */
   .desktop-grid {
-    inset: 15px 12px 50px;
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    grid-template-rows: repeat(auto-fill, 90px);
-    grid-auto-columns: 85px;
-    justify-content: start;
-    align-content: start;
-    gap: 10px 4px;
-    overflow: auto;
+    inset: 12px 12px 4px;
   }
 
+  /* a finger on an icon drags it rather than scrolling or zooming the page */
   .desktop-shortcut {
     height: 90px;
     width: 85px;
     padding-top: 8px;
+    touch-action: none;
   }
 
   .desktop-shortcut span {
