@@ -112,6 +112,18 @@ export async function sql(query, { accountId, token, fetcher = fetch }) {
   return (await response.json()).data ?? [];
 }
 
+// each sticky note is its own window with a random id (sticky-<uuid>), so they're
+// added together into one row instead of a row per note
+export const stickyNotes = 'sticky notes';
+function foldStickies(opens) {
+  const folded = new Map();
+  for (const [label, count] of opens) {
+    const key = label.startsWith('sticky-') ? stickyNotes : label;
+    folded.set(key, (folded.get(key) || 0) + count);
+  }
+  return folded;
+}
+
 const sortedEntries = map => [...map].sort((a, b) => b[1] - a[1]).map(([label, count]) => ({ label, count }));
 
 // turns the raw rows into what the analytics window and the report show
@@ -138,7 +150,7 @@ export function summarize(rows, daily = []) {
     minesweeperWins: n('minesweeper-win'),
     breakoutWins: n('breakout-complete'),
     daily: daily.map(row => ({ day: String(row.day).slice(0, 10), visits: Math.round(Number(row.visits)) })),
-    windows: sortedEntries(opens),
+    windows: sortedEntries(foldStickies(opens)),
     blogPosts: sortedEntries(by('blog-post', 'detail')),
     devices: sortedEntries(by('visit', 'device')),
     referrers: sortedEntries(by('visit', 'referrer')).map(({ label, count: c }) => ({ label: label || 'direct', count: c })),

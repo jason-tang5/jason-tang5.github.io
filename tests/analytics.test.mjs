@@ -60,3 +60,13 @@ test('the summary route returns everything and rejects invalid periods and metho
   assert.throws(() => queries('30 OR 1=1'), RangeError);
   assert.match(queries(30).events, /MAX\(double1\)/);
 });
+
+test('sticky note windows are added together into one row', () => {
+  const result = summarize([
+    { name: 'open', detail: 'about', count: 3, total: 0 },
+    { name: 'open', detail: 'sticky-28cb688e-5697-4ef6-945d-46413ffcfe6f', count: 2, total: 0 },
+    { name: 'open', detail: 'sticky-11111111-2222-3333-4444-555555555555', count: 2, total: 0 },
+    { name: 'open', detail: 'stickies', count: 1, total: 0 },
+  ]);
+  assert.deepEqual(result.windows, [{ label: 'sticky notes', count: 4 }, { label: 'about', count: 3 }, { label: 'stickies', count: 1 }]);
+});

@@ -194,9 +194,10 @@ onMounted(load);
           <section v-for="[title, rows, color] in sections" :key="title">
             <h2>{{ title }}</h2><p v-if="!rows.length">No events yet.</p>
             <div v-for="row in rows" :key="row.label" class="analytics-bar-row" :style="{ '--bar': `var(--bar-${color})` }">
-              <div><span>{{ row.label || 'Unknown' }}</span><strong>{{ number(row.count) }}</strong></div>
+              <div><span>{{ row.label || 'Unknown' }}{{ row.label === 'sticky notes' ? '*' : '' }}</span><strong>{{ number(row.count) }}</strong></div>
               <div class="analytics-bar"><span :style="{ width: `${row.count / Math.max(1, ...rows.map(r => r.count)) * 100}%` }"/></div>
             </div>
+            <p v-if="rows.some(row => row.label === 'sticky notes')" class="analytics-note">*Every sticky note is its own window, so they're added together here.</p>
           </section>
         </template>
       </template>
