@@ -250,12 +250,12 @@ function setPortraitAscii(value) {
         </template>
       </nav>
       <div v-if="favoritesLeft || favoritesRight" class="favorites-scroll-cue">
-        <button class="raised" aria-label="Scroll shortcuts left" :disabled="!favoritesLeft" @click="scrollFavorites(-1)">&#9664;</button>
+        <button class="raised" aria-label="Scroll shortcuts left" :disabled="!favoritesLeft" @click="scrollFavorites(-1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path d="M4 0h1v7H4zM3 1h1v5H3zM2 2h1v3H2zM1 3h1v1H1z"/></svg></button>
         <input class="favorites-scroll-track" type="range" aria-label="Scroll shortcuts"
           min="0" :max="favoritesScrollMax" :value="favoritesScroll"
           :style="{ '--scroll-thumb': `${favoritesThumb}%` }"
           @input="favoritesStrip.scrollLeft = Number($event.target.value)">
-        <button class="raised" aria-label="Scroll shortcuts right" :disabled="!favoritesRight" @click="scrollFavorites(1)">&#9654;</button>
+        <button class="raised" aria-label="Scroll shortcuts right" :disabled="!favoritesRight" @click="scrollFavorites(1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path d="M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z"/></svg></button>
       </div>
       </div>
       <div class="content-scroll about-content">

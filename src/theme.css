@@ -5447,6 +5447,14 @@ label.mail-label {
     cursor: default;
   }
 
+  .favorites-scroll-cue button svg {
+    display: block;
+    width: 7px;
+    height: 7px;
+    margin: auto;
+    fill: currentColor;
+  }
+
   .favorites-scroll-track {
     appearance: none;
     flex: 1;
