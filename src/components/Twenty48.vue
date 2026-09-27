@@ -312,7 +312,15 @@ function padDown(event, direction) {
   if (event.button !== 0) return;
   event.preventDefault();
   held.value = direction;
+  pressedAt = performance.now();
   move(direction);
+}
+// a quick click can be over before the cap is painted, so it stays down at least 100ms
+let pressedAt = 0;
+function padUp() {
+  const at = pressedAt, wait = 100 - (performance.now() - at);
+  if (wait <= 0) keyUp();
+  else setTimeout(() => { if (pressedAt === at) keyUp(); }, wait);
 }
 function padClick(event, direction) {
   if (event.detail === 0) move(direction);
@@ -553,7 +561,7 @@ onBeforeUnmount(() => {
           <div class="t48-keys" role="group" aria-label="Push buttons">
             <div v-for="k in keys" :key="k.n" class="t48-key">
               <button :class="['snake-pad-button', { held: held === k.direction }]" :aria-label="`KEY${k.n}: slide ${k.direction} (${k.key})`"
-                @pointerdown="padDown($event, k.direction)" @pointerup="keyUp" @pointercancel="keyUp" @pointerleave="keyUp" @click="padClick($event, k.direction)">
+                @pointerdown="padDown($event, k.direction)" @pointerup="padUp" @pointercancel="padUp" @pointerleave="padUp" @click="padClick($event, k.direction)">
                 <svg viewBox="0 0 16 18" shape-rendering="crispEdges" aria-hidden="true">
                   <path :d="keyShape.outline" fill="#111"/>
                   <path :d="keyShape.side" fill="#454a52"/>
@@ -832,7 +840,7 @@ onBeforeUnmount(() => {
 .t48-key .snake-pad-button svg,
 .t48-key .snake-pad-button:hover svg,
 .t48-key .snake-pad-button.held svg { width: 40px; height: 45px; filter: none; transition: none; }
-.t48-key .snake-pad-cap { will-change: transform; transition: transform .08s steps(1); }
+.t48-key .snake-pad-cap { will-change: transform; transition: transform .08s steps(1, jump-start); }
 /* a narrow board (on a phone) packs its ports and buttons tighter */
 @container (max-width: 290px) {
   .t48-ports { gap: 4px; margin-left: 2px; margin-right: 2px; }
