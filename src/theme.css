@@ -1894,15 +1894,26 @@ input[type="checkbox"]:focus-visible {
   line-height: 1.6;
 }
 
-.project-preview > small {
+/* the tech chips and the view project button share a row, the button on the right,
+   and the button drops under the chips only when they don't leave it room */
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 16px;
+}
+
+.preview-actions > small {
   display: block;
   line-height: 1.65;
   font-size: 11px;
   color: var(--d-muted, #4c4c4c);
-  margin: 16px 0 24px;
 }
 
-.project-preview > button {
+.preview-actions > button {
+  flex: none;
   font-size: 12px;
 }
 
@@ -4561,8 +4572,8 @@ label.mail-label {
     display: none;
   }
 
-  .project-preview > small {
-    margin: 10px 0 14px;
+  .preview-actions {
+    margin-top: 10px;
   }
 
 
@@ -4574,7 +4585,7 @@ label.mail-label {
   .toolbar button,
   .toolbar a,
   .settings-reset,
-  .project-preview > button {
+  .preview-actions > button {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
