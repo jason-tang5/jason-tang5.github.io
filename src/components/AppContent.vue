@@ -35,6 +35,30 @@ defineProps({
 const emit = defineEmits(['open', 'close', 'unlock', 'wallpaper']);
 
 const selected = ref(projects[0]);
+// the about window's side pane, each place with the path it'd have on the computer.
+// hovering one shows its path in the address bar, like explorer
+const places = [
+  {
+    title: 'Favorites',
+    star: true,
+    items: [
+      { id: 'projects', path: 'Portfolio:\\Projects' },
+      { id: 'experience', path: 'Portfolio:\\Experience.txt' },
+      { id: 'resume', path: 'Portfolio:\\Jason_Tang_Resume.pdf' },
+      { id: 'blog', path: 'Portfolio:\\Blog' },
+    ],
+  },
+  {
+    title: 'Other places',
+    items: [
+      { id: 'pictures', path: 'Portfolio:\\My Pictures' },
+      { id: 'games', path: 'Portfolio:\\Games' },
+      { id: 'stickies', path: 'Portfolio:\\Sticky Notes' },
+    ],
+  },
+];
+const hoveredPlace = ref(null);
+
 const resumeUrl = `${import.meta.env.BASE_URL}assets/Jason_Tang_Resume.pdf`;
 const portraitUrl = new URL('../../assets/profile.jpg', import.meta.url).href;
 const portraitHint = ref(true);
@@ -105,82 +129,116 @@ function setPortraitAscii(value) {
 <template>
   <!-- about -->
   <div v-if="win.type === 'about'" class="app-layout about-app">
-    <div class="content-scroll about-content">
-      <!-- contact and the cd player as two toolbar icons in the top right.
-           the envelope wiggles on hover, the cd spins, plays a tune and puffs out notes -->
-      <div class="about-shortcuts raised">
-        <button class="about-shortcut ie-button about-contact" @click="emit('open', 'contact')">
-          <RetroIcon name="mail" />
-          <span>Contact</span>
-        </button>
-        <button
-          class="about-shortcut ie-button"
-          @click="emit('open', 'music')"
-          @pointerenter="startCd"
-          @pointerleave="stopCd"
-          @focus="startCd"
-          @blur="stopCd"
-        >
-          <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"/>
-          <span>CD Player</span>
-        </button>
-      </div>
-      <Teleport to=".desktop">
-        <span
-          v-for="n in hoverNotes"
-          :key="n.id"
-          class="cd-note cd-note-small"
-          :style="n.style"
-          aria-hidden="true"
-          @animationend="hoverNotes = hoverNotes.filter(h => h.id !== n.id)"
-        >
-          <svg :viewBox="`0 0 ${n.glyph.w} ${n.glyph.h}`" :width="n.glyph.w * 1.5" :height="n.glyph.h * 1.5" shape-rendering="crispEdges">
-            <path :d="n.glyph.d" fill="currentColor"/>
-          </svg>
-        </span>
-      </Teleport>
-      <div class="about-grid">
-        <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
-          <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
-          <AsciiImage
-            class="portrait-ascii"
-            :source="portraitUrl"
-            description="Jason in a golden mirrored room"
-            :enabled="portraitAscii"
-            :visible="visible"
-            @update:enabled="setPortraitAscii"
-          />
+    <div class="address-bar">
+      <span>Address</span>
+      <div class="inset">{{ hoveredPlace?.path || 'Portfolio:\\About Jason' }}</div>
+    </div>
+    <div class="about-explorer">
+      <!-- the left pane of an explorer window, like browsing my computer to get to things -->
+      <nav class="about-favorites inset" aria-label="Favorites">
+        <template v-for="group in places" :key="group.title">
+          <p class="favorites-head" aria-hidden="true">
+            <svg v-if="group.star" viewBox="0 0 16 16"><path d="M7 1h2v4h5v2h-1v1h-1v1h-1v2h1v4h-1v-1h-1v-1H9v-1H7v1H6v1H5v1H4v-4h1V9H4V8H3V7H2V5h5z"/></svg>
+            <RetroIcon v-else name="computer" small/>
+            {{ group.title }}
+          </p>
+          <button
+            v-for="place in group.items"
+            :key="place.id"
+            class="favorite"
+            :title="place.path"
+            @click="emit('open', place.id)"
+            @pointerenter="hoveredPlace = place"
+            @pointerleave="hoveredPlace = null"
+            @focus="hoveredPlace = place"
+            @blur="hoveredPlace = null"
+          >
+            <RetroIcon :name="registry[place.id].icon" small/>
+            <span>{{ registry[place.id].label }}</span>
+          </button>
+        </template>
+      </nav>
+      <div class="content-scroll about-content">
+        <!-- linkedin, github, contact and the cd player as toolbar icons in the top right.
+             the envelope wiggles on hover, the cd spins, plays a tune and puffs out notes -->
+        <div class="about-shortcuts raised">
+          <a class="about-shortcut ie-button" :href="profile.links.linkedin" target="_blank" rel="noopener" title="LinkedIn (opens in a new tab)">
+            <RetroIcon name="linkedin"/>
+            <span>LinkedIn</span>
+          </a>
+          <a class="about-shortcut ie-button" :href="profile.links.github" target="_blank" rel="noopener" title="GitHub (opens in a new tab)">
+            <RetroIcon name="github"/>
+            <span>GitHub</span>
+          </a>
+          <button class="about-shortcut ie-button about-contact" @click="emit('open', 'contact')">
+            <RetroIcon name="contact"/>
+            <span>Contact</span>
+          </button>
+          <button
+            class="about-shortcut ie-button"
+            @click="emit('open', 'music')"
+            @pointerenter="startCd"
+            @pointerleave="stopCd"
+            @focus="startCd"
+            @blur="stopCd"
+          >
+            <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"><RetroIcon name="music"/></span>
+            <span>CD Player</span>
+          </button>
         </div>
-        <div class="about-copy">
-          <h1>{{ profile.name }}</h1>
-          <p class="subtitle">{{ profile.subtitle }}</p>
-          <p class="intro">{{ profile.intro }}</p>
-          <p class="intro">{{ profile.bio }}</p>
-          <div class="about-bottom">
-            <!-- the lifts box stretches to exactly the width of the button row above it -->
-            <div class="about-links">
-              <div class="button-row ie-toolbar">
-                <button v-for="id in ['projects', 'experience', 'resume', 'blog']" :key="id" class="ie-button" @click="emit('open', id)">
-                  <RetroIcon :name="registry[id].icon"/>
-                  <span>{{ registry[id].label }}</span>
-                </button>
+        <Teleport to=".desktop">
+          <span
+            v-for="n in hoverNotes"
+            :key="n.id"
+            class="cd-note cd-note-small"
+            :style="n.style"
+            aria-hidden="true"
+            @animationend="hoverNotes = hoverNotes.filter(h => h.id !== n.id)"
+          >
+            <svg :viewBox="`0 0 ${n.glyph.w} ${n.glyph.h}`" :width="n.glyph.w * 1.5" :height="n.glyph.h * 1.5" shape-rendering="crispEdges">
+              <path :d="n.glyph.d" fill="currentColor"/>
+            </svg>
+          </span>
+        </Teleport>
+        <div class="about-grid">
+          <div class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
+            <span v-if="portraitHint" class="portrait-hint">Try clicking me!</span>
+            <AsciiImage
+              class="portrait-ascii"
+              :source="portraitUrl"
+              description="Jason in a golden mirrored room"
+              :enabled="portraitAscii"
+              :visible="visible"
+              @update:enabled="setPortraitAscii"
+            />
+          </div>
+          <div class="about-copy">
+            <h1>{{ profile.name }}</h1>
+            <p class="subtitle">{{ profile.subtitle }}</p>
+            <p class="intro">{{ profile.intro }}</p>
+            <p class="intro">{{ profile.bio }}</p>
+            <div class="about-bottom">
+              <div class="about-links">
+                <!-- a windows group box, the etched frame with its title in the border -->
+                <fieldset class="lift-box">
+                  <legend>lifts (lb)</legend>
+                  <dl>
+                    <div v-for="[lift, weight] in profile.lifts" :key="lift">
+                      <dt>{{ lift }}</dt>
+                      <dd>{{ weight }}</dd>
+                    </div>
+                  </dl>
+                </fieldset>
               </div>
-              <!-- a windows group box, the etched frame with its title in the border -->
-              <fieldset class="lift-box">
-                <legend>lifts (lb)</legend>
-                <dl>
-                  <div v-for="[lift, weight] in profile.lifts" :key="lift">
-                    <dt>{{ lift }}</dt>
-                    <dd>{{ weight }}</dd>
-                  </div>
-                </dl>
-              </fieldset>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <footer class="status-bar"><span>{{ projects.length }} projects</span></footer>
+    <footer class="status-bar">
+      <span>{{ hoveredPlace ? registry[hoveredPlace.id].label : 'About Jason' }}</span>
+      <span>{{ projects.length }} projects</span>
+    </footer>
   </div>
 
   <!-- projects folder, explorer style -->

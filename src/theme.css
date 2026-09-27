@@ -1222,7 +1222,7 @@ input[type="checkbox"]:focus-visible {
 .about-grid {
   display: grid;
   flex: 1 0 auto;
-  grid-template-columns: 390px minmax(0, 1fr);
+  grid-template-columns: clamp(250px, 46%, 390px) minmax(0, 1fr);
   gap: 25px;
   align-items: stretch;
 }
@@ -1297,28 +1297,14 @@ input[type="checkbox"]:focus-visible {
   font-size: 12px;
 }
 
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.button-row button {
-  font-size: 12px;
-  min-height: 31px;
-}
-
-/* the buttons and the lifts box under them share one column, sized by the buttons */
 .about-links {
   display: grid;
   gap: 20px;
 }
 
-/* the lifts, in a windows group box: an etched frame with the title in its border.
-   width 0 plus min-width 100% makes it take the button row's width without widening it */
+/* the lifts, in a windows group box: an etched frame with the title in its border */
 .lift-box {
-  width: 0;
-  min-width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   margin: 0;
   padding: 6px 12px 8px;
@@ -1350,7 +1336,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 /* stack the portrait on top when the about window is narrow */
-@container (max-width: 700px) {
+@container (max-width: 560px) {
   .about-grid {
     flex: none;
     grid-template-columns: 1fr;
@@ -1365,8 +1351,12 @@ input[type="checkbox"]:focus-visible {
     aspect-ratio: 1525 / 1940;
   }
 
-  /* the contact and cd box covers the photo's top right corner here, so the hint
-     moves to the left, next to the reset button */
+  /* the box sits over the photo here instead, so the name gets its room back */
+  .about-copy {
+    padding-top: 0;
+  }
+
+  /* and the hint moves to the left, next to the reset button */
   .portrait-hint {
     right: auto;
     left: 46px;
@@ -1971,32 +1961,32 @@ fieldset {
   animation: cd-note-float 3s steps(24) forwards;
 }
 
-/* the cd in the top right of the about page, the same 32px as the envelope beside it.
-   it spins while hovered */
+/* the cd in the top right of the about page, the same size as the envelope beside it.
+   it spins while hovered, in steps so it turns like pixel art */
 .about-cd-disc {
   display: block;
-  width: 32px;
-  height: 32px;
-  background: url(../assets/cd-disc-frames.png) 0 0 / 384px 32px no-repeat;
-  image-rendering: pixelated;
+}
+
+.about-cd-disc .retro-icon {
+  display: block;
   animation: about-cd-spin 1.2s steps(12) infinite paused;
 }
 
-.about-cd-disc.spinning {
+.about-cd-disc.spinning .retro-icon {
   animation-play-state: running;
 }
 
 @keyframes about-cd-spin {
-  to { background-position: -384px 0; }
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .about-cd-disc.spinning {
+  .about-cd-disc.spinning .retro-icon {
     animation-play-state: paused;
   }
 }
 
-/* contact and the cd player in the top right of the about window, like desktop icons.
+/* linkedin, github, contact and the cd player in the top right of the about window, like desktop icons.
    they sit in the same raised grey box as the ascii sliders, so they still read as
    controls when a narrow window puts the photo right under them */
 .about-content {
@@ -2012,6 +2002,11 @@ fieldset {
   gap: 2px;
   padding: 3px 4px;
   background: var(--surface);
+}
+
+/* beside the photo, the text starts under that box so it never covers the name */
+.about-copy {
+  padding-top: 56px;
 }
 
 .about-shortcut {
@@ -2977,15 +2972,12 @@ label.mail-label {
     margin-top: 18px;
   }
 
-  .button-row {
+  .about-links {
     width: 100%;
-    gap: 6px;
   }
 
-  .button-row button {
-    padding: 8px;
-    flex: 1;
-    min-height: 44px;
+  .about-favorites .favorite {
+    min-height: 40px;
   }
 
   /* only the first status bar section fits */
@@ -4149,7 +4141,202 @@ label.mail-label {
   outline: 1px dotted var(--ink);
 }
 
-.button-row.ie-toolbar .ie-button {
+/* toolbars made of these sit a little tighter than the text button ones */
+.toolbar.ie-toolbar {
+  padding: 3px 5px;
+}
+
+/* ---- the about window as an explorer window ----
+   an address bar on top, a white places pane down the left (favorites under a
+   star, then other places) and the page itself on the right. rows underline like
+   links on hover, the way explorer's web view did */
+
+.about-app {
+  container: about / inline-size;
+}
+
+.about-explorer {
+  display: flex;
+  flex: 1;
   min-height: 0;
+}
+
+.about-explorer .about-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.about-favorites {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 158px;
+  gap: 1px;
+  padding: 6px 4px;
+  overflow-y: auto;
+  background: var(--paper);
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+}
+
+.favorites-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 3px;
+  padding: 3px 4px 4px;
+  font-weight: bold;
+  color: var(--ink);
+  border-bottom: 1px solid var(--d-line, #888);
+}
+
+.favorite + .favorites-head {
+  margin-top: 12px;
+}
+
+.favorites-head svg {
+  width: 16px;
+  height: 16px;
+  shape-rendering: crispEdges;
+  fill: #e0b020;
+}
+
+.about-favorites .favorite {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px dotted transparent;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: var(--classic-pointer, pointer);
+}
+
+.about-favorites .favorite span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.about-favorites .favorite:hover span {
+  color: var(--d-link, #000080);
+  text-decoration: underline;
+}
+
+.about-favorites .favorite:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.about-favorites .favorite:active {
+  background: var(--navy);
+}
+
+.about-favorites .favorite:active span {
+  color: #fff;
+  text-decoration: none;
+}
+
+/* a narrow window folds the pane into a strip of places above the page */
+@container about (max-width: 620px) {
+  .about-explorer {
+    flex-direction: column;
+  }
+
+  .about-favorites {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .favorites-head {
+    display: none;
+  }
+
+  .about-favorites .favorite {
+    flex-shrink: 0;
+  }
+}
+
+/* ---- the projects folder's files, as big icons like a my computer window ----
+   click selects (the whole tile gets the navy highlight), double click opens, and
+   hovering or selecting one shows an open button under it */
+
+.project-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 104px);
+  align-content: start;
+  gap: 6px;
+  padding: 14px 10px;
+  min-width: 0;
+}
+
+.project-item {
+  position: relative;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 30px;
+}
+
+.project-file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 4px;
+  border: 1px dotted transparent;
+  background: none;
+  color: var(--ink);
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  cursor: var(--classic-pointer);
+}
+
+.project-file span {
+  padding: 1px 3px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.project-file:hover span {
+  color: var(--d-link, #000080);
+  text-decoration: underline;
+}
+
+.project-item.selected .project-file {
+  background: var(--navy);
+}
+
+.project-item.selected .project-file,
+.project-item.selected .project-file span,
+.project-item.selected .project-file small {
+  color: #fff;
+  text-decoration: none;
+}
+
+.project-file:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.project-item.selected .project-file:focus-visible {
+  border-color: #fff;
+}
+
+.row-open {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 10px;
   font-size: 11px;
 }

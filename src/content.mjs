@@ -4,6 +4,10 @@ export const profile = {
   name: 'Jason Tang',
   subtitle: 'Computer Engineering @ UofT',
   intro: 'Hi, I’m Jason — a Computer Engineering student at UofT and former software engineering intern at AMD. I like building useful tools, learning new technologies, and digging into hard technical problems.',
+  links: {
+    linkedin: 'https://www.linkedin.com/in/jason-tang-uoft/',
+    github: 'https://github.com/jason-tang5',
+  },
   bio: 'When I’m not coding, I’m usually playing badminton or volleyball, at the gym, or trying out another sport.',
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],
