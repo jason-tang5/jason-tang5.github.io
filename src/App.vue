@@ -8,6 +8,7 @@ import DesktopWindow from './components/DesktopWindow.vue';
 import AppContent from './components/AppContent.vue';
 import RetroIcon from './components/RetroIcon.vue';
 import VolumeControl from './components/VolumeControl.vue';
+import Calendar from './components/Calendar.vue';
 import { registry, shortcuts, menuApps, canonicalApp } from './registry.js';
 import {
   clampBounds,
@@ -729,10 +730,7 @@ onBeforeUnmount(() => {
         >
           <time :datetime="clock.toISOString()">{{ timeLabel }}</time>
         </button>
-        <div v-if="calendar" class="calendar raised">
-          <strong>{{ dateLabel }}</strong>
-          <p>Your local time</p>
-        </div>
+        <Calendar v-if="calendar" :now="clock"/>
       </div>
     </nav>
 

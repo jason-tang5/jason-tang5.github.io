@@ -988,19 +988,88 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
+/* the clock's month calendar, like the win95 date/time properties one */
 .calendar {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
-  width: 235px;
-  padding: 15px;
-  font-size: 13px;
-  line-height: 1.5;
+  z-index: 10;
+  width: 232px;
+  padding: 6px;
+  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
 }
 
-.calendar p {
-  font-size: 11px;
-  margin-bottom: 0;
+.calendar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 2px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.calendar-title strong {
+  font-size: 12px;
+}
+
+.calendar-step.raised {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+}
+
+.calendar-step svg {
+  width: 4px;
+  height: 7px;
+  fill: var(--ink);
+  shape-rendering: crispEdges;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 3px;
+  background: var(--paper);
+  text-align: center;
+}
+
+.calendar-weekday {
+  padding: 2px 0 3px;
+  border-bottom: 1px solid var(--shadow);
+  margin-bottom: 2px;
+  color: var(--d-link, #000080);
+  font-weight: bold;
+}
+
+.calendar-day {
+  padding: 3px 0;
+  line-height: 14px;
+}
+
+.calendar-day.outside {
+  color: var(--shadow);
+}
+
+:root[data-theme="dark"] .calendar-day.outside {
+  color: var(--muted);
+  opacity: .5;
+}
+
+.calendar-day.today {
+  background: var(--navy);
+  color: #fff;
+  outline: 1px dotted var(--ink);
+  outline-offset: -1px;
+}
+
+.calendar-today {
+  margin: 6px 2px 0;
+  color: var(--ink);
 }
 
 
