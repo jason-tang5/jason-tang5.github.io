@@ -1217,7 +1217,7 @@ input[type="checkbox"]:focus-visible {
 .about-grid {
   display: grid;
   flex: 1 0 auto;
-  grid-template-columns: clamp(250px, 46%, 390px) minmax(0, 1fr);
+  grid-template-columns: clamp(250px, 46%, 640px) minmax(0, 1fr);
   gap: 25px;
   align-items: stretch;
 }
@@ -1952,11 +1952,34 @@ fieldset {
 
 /* beside the photo, the text starts under that box so it never covers the name */
 .about-copy {
-  padding-top: 56px;
+  padding-top: 64px;
 }
 
 .about-shortcut {
   cursor: var(--classic-pointer);
+}
+
+/* toolbar icons are usually squeezed to 24px, but these four animate, and at 3/4 size
+   their pixel rows round unevenly and flicker (the octocat's tail broke into stray
+   bars). at their real 32px every pixel lands on a whole screen pixel */
+.about-shortcut.ie-button .retro-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* when the window is narrow and the photo stacks on top, the box stops floating over
+   the photo and sits above it on the left, and the text goes straight under the
+   photo with no gap left for the box */
+@container (max-width: 560px) {
+  .about-shortcuts {
+    position: static;
+    align-self: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .about-copy {
+    padding-top: 0;
+  }
 }
 
 .about-shortcut:focus-visible {
@@ -1982,6 +2005,62 @@ fieldset {
   .about-contact:hover .retro-icon,
   .about-contact:focus-visible .retro-icon {
     animation: none;
+  }
+}
+
+/* the octocat's tail wags. its two frames stay hidden until the github shortcut is
+   hovered, then the tail flicks between curled up and swept out */
+.retro-icon .gh-wag-up,
+.retro-icon .gh-wag-down {
+  visibility: hidden;
+}
+
+.about-shortcut:is(:hover, :focus-visible) .gh-rest {
+  visibility: hidden;
+}
+
+.about-shortcut:is(:hover, :focus-visible) .gh-wag-up {
+  animation: gh-wag 0.36s step-end infinite;
+}
+
+.about-shortcut:is(:hover, :focus-visible) .gh-wag-down {
+  animation: gh-wag 0.36s step-end -0.18s infinite;
+}
+
+@keyframes gh-wag {
+  0% { visibility: visible; }
+  50% { visibility: hidden; }
+}
+
+/* the letters of linkedin's "in" hop one after another: the dot, the i, then the n.
+   step-end jumps a whole pixel at a time instead of sliding */
+.about-shortcut:is(:hover, :focus-visible) :is(.li-dot, .li-i, .li-n) {
+  animation: li-bounce 0.9s step-end infinite;
+}
+
+.about-shortcut:is(:hover, :focus-visible) .li-i {
+  animation-delay: 0.1s;
+}
+
+.about-shortcut:is(:hover, :focus-visible) .li-n {
+  animation-delay: 0.2s;
+}
+
+@keyframes li-bounce {
+  0% { transform: translateY(0); }
+  10% { transform: translateY(-2px); }
+  20% { transform: translateY(-3px); }
+  30% { transform: translateY(-2px); }
+  40%, 100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-shortcut :is(.li-dot, .li-i, .li-n, .gh-wag-up, .gh-wag-down) {
+    animation: none !important;
+  }
+
+  .about-shortcut .gh-rest {
+    visibility: visible !important;
   }
 }
 
@@ -4463,6 +4542,13 @@ label.mail-label {
     padding: 3px 4px;
     overflow-x: auto;
     overflow-y: hidden;
+    /* the inset's light bottom edge vanishes against the page, so the strip ends in a
+       win98 etched line instead, a shadow pixel over a highlight pixel, to separate
+       it from the page scrolling under it */
+    border-bottom: 1px solid var(--shadow);
+    box-shadow: inset 1px 1px var(--edge), 0 1px 0 var(--light);
+    position: relative;
+    z-index: 1;
   }
 
   .favorites-head {

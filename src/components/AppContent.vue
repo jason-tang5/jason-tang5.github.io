@@ -210,17 +210,19 @@ function setPortraitAscii(value) {
       </nav>
       <div class="content-scroll about-content">
         <!-- linkedin, github, contact and the cd player as toolbar icons in the top right.
-             the envelope wiggles on hover, the cd spins, plays a tune and puffs out notes -->
+             each has its own hover: linkedin's letters bounce with a ping, the octocat wags
+             its tail and meows, the envelope wiggles with a paper swish, and the cd spins,
+             plays a tune and puffs out notes -->
         <div class="about-shortcuts raised">
-          <a class="about-shortcut ie-button" :href="profile.links.linkedin" target="_blank" rel="noopener" title="LinkedIn (opens in a new tab)">
+          <a class="about-shortcut ie-button" :href="profile.links.linkedin" target="_blank" rel="noopener" title="LinkedIn (opens in a new tab)" @pointerenter="play('ping')">
             <RetroIcon name="linkedin"/>
             <span>LinkedIn</span>
           </a>
-          <a class="about-shortcut ie-button" :href="profile.links.github" target="_blank" rel="noopener" title="GitHub (opens in a new tab)">
+          <a class="about-shortcut ie-button" :href="profile.links.github" target="_blank" rel="noopener" title="GitHub (opens in a new tab)" @pointerenter="play('meow')">
             <RetroIcon name="github"/>
             <span>GitHub</span>
           </a>
-          <button class="about-shortcut ie-button about-contact" @click="emit('open', 'contact')">
+          <button class="about-shortcut ie-button about-contact" @pointerenter="play('letter')" @click="emit('open', 'contact')">
             <RetroIcon name="contact"/>
             <span>Contact</span>
           </button>

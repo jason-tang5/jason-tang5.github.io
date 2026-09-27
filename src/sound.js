@@ -22,7 +22,7 @@ const xylophone = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.5];
 let note = 0;
 
 // minimum ms between repeats, so sweeping the mouse or dragging doesn't turn into a buzz
-const throttle = { hover: 60, crumble: 70, brick: 30 };
+const throttle = { hover: 60, crumble: 70, brick: 30, letter: 300, meow: 400, ping: 300 };
 
 export const soundEnabled = () => enabled;
 export const soundLevel = () => level;
@@ -113,6 +113,29 @@ function burst(ac, { freq, q = 1, start = 0, length = 0.012, volume }) {
   src.stop(t + length + 0.02);
 }
 
+// noise that swells in and out while its pitch slides, like paper drawn across paper
+function swish(ac, { from, to, q = 1.2, start = 0, length, volume }) {
+  burst(ac, { freq: from, length: 0.001, volume: 0.0001 }); // makes sure the noise exists
+  const t = ac.currentTime + start;
+  const src = ac.createBufferSource();
+  const filter = ac.createBiquadFilter();
+  const gain = ac.createGain();
+
+  src.buffer = noise;
+  src.loop = true;
+  filter.type = 'bandpass';
+  filter.Q.value = q;
+  filter.frequency.setValueAtTime(from, t);
+  filter.frequency.exponentialRampToValueAtTime(to, t + length);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(volume, t + length * 0.4);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+  src.connect(filter).connect(gain).connect(output(ac));
+  src.start(t, Math.random() * 0.15);
+  src.stop(t + length + 0.02);
+}
+
 const sounds = {
   // pressing a button down: a short snap with a soft low thump under it
   press: ac => {
@@ -177,6 +200,49 @@ const sounds = {
     blip(ac, { type: 'triangle', from: pitch * 2, length: 0.08, volume: 0.008 });
     // a soft low note on the downbeats
     if (step % 4 === 0) blip(ac, { type: 'sine', from: pitch / 4, length: 0.45, volume: 0.03 });
+  },
+
+  // hovering contact on the about page: a letter pulled out of its envelope. the
+  // sheet slides out with a papery swish that rises as it comes free, then gives
+  // the little flick of paper snapping straight
+  letter: ac => {
+    swish(ac, { from: 1400, to: 5200, length: 0.24, volume: 0.16 });
+    swish(ac, { from: 3000, to: 7000, q: 2, start: 0.03, length: 0.2, volume: 0.05 });
+    burst(ac, { freq: 3800, q: 1.4, start: 0.25, length: 0.025, volume: 0.1 });
+    burst(ac, { freq: 1800, q: 0.9, start: 0.255, length: 0.03, volume: 0.05 });
+  },
+
+  // hovering github: a small high meow. a buzzy tone through a filter that opens
+  // and closes like a mouth going "mi-ow", the pitch rising then falling away
+  meow: ac => {
+    const t = ac.currentTime;
+    const osc = ac.createOscillator();
+    const mouth = ac.createBiquadFilter();
+    const gain = ac.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(560, t);
+    osc.frequency.exponentialRampToValueAtTime(820, t + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(480, t + 0.36);
+    mouth.type = 'bandpass';
+    mouth.Q.value = 4;
+    mouth.frequency.setValueAtTime(900, t);
+    mouth.frequency.exponentialRampToValueAtTime(1800, t + 0.13);
+    mouth.frequency.exponentialRampToValueAtTime(700, t + 0.36);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.09, t + 0.04);
+    gain.gain.setValueAtTime(0.09, t + 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    osc.connect(mouth).connect(gain).connect(output(ac));
+    osc.start(t);
+    osc.stop(t + 0.4);
+  },
+
+  // hovering linkedin: a friendly two note ping, like a new message coming in
+  ping: ac => {
+    [783.99, 1174.66].forEach((freq, i) => {
+      blip(ac, { type: 'sine', from: freq, start: i * 0.09, length: 0.28, volume: 0.045 });
+      blip(ac, { type: 'sine', from: freq * 2.76, start: i * 0.09, length: 0.06, volume: 0.008 });
+    });
   },
 
   // snake eating: a quick upward chirp, the same pitch every time
