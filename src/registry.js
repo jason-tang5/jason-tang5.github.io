@@ -19,9 +19,11 @@ export const apps = [
   app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('projects', 'Projects', 'folder', 720, 480, 430, 310),
   app('blog', 'Blog', 'notebook', 720, 580),
-  app('contact', 'Contact', 'contact', 440, 540, 340, 400),
+  app('contact', 'Contact', 'contact', 460, 680, 340, 520),
   app('games', 'Games', 'games', 440, 350, 300, 270),
   app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
+  // opened from the start menu, shows every app in one folder view
+  app('computer', 'All Apps', 'computer', 480, 440, 300, 270),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
@@ -39,7 +41,9 @@ export const folders = {
   games: ['minesweeper', 'snake', 'reversi'],
   funstuff: ['pictures', 'stickies', 'music', 'analytics'],
 };
-const tucked = ['settings', 'mail', ...Object.values(folders).flat()];
+const tucked = ['settings', 'mail', 'computer', ...Object.values(folders).flat()];
+// all apps holds everything, including what's inside the other folders
+folders.computer = apps.map(a => a.id).filter(id => id !== 'computer');
 
 for (const a of apps) {
   a.desktop = !tucked.includes(a.id); // gets a desktop icon

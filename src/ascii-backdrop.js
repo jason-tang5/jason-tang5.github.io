@@ -493,7 +493,8 @@ function createSweepField(canvas, { running, scene }) {
     wait -= dt;
     if (wait <= 0 && !queue.length) {
       click();
-      wait = running() ? 250 + Math.random() * 250 : 600 + Math.random() * 700;
+      // a new patch opens every 167-333ms mid game, 400-867ms idle
+      wait = running() ? 167 + Math.random() * 167 : 400 + Math.random() * 467;
       const safe = field.filter(c => !c.mine).length;
       if (field.filter(c => c.open).length > safe * 0.6) boomAt = now;
     }

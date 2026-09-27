@@ -2210,6 +2210,11 @@ input[type="checkbox"]:focus-visible {
   clip-path: polygon(40% 0, 60% 0, 60% 20%, 80% 20%, 80% 40%, 100% 40%, 100% 60%, 80% 60%, 80% 80%, 60% 80%, 60% 100%, 40% 100%, 40% 80%, 20% 80%, 20% 60%, 0 60%, 0 40%, 20% 40%, 20% 20%, 40% 20%);
 }
 
+/* the snake cartridge's printed label brings its own heading, without the divider */
+.fancy-dividers .snake-cart h2 { padding-bottom: 0; }
+.fancy-dividers .snake-cart h2::before,
+.fancy-dividers .snake-cart h2::after { content: none; }
+
 /* a pixel diamond in the gap, stepped two pixels at a time */
 .blog-list li::before {
   content: '';
@@ -3080,34 +3085,527 @@ fieldset {
   pointer-events: none;
 }
 
-/* the invitation sits right on top of the board, as wide as it, like a marquee */
-.contact-game .contact-invitation {
-  position: relative;
-  box-sizing: border-box;
-  width: min(100cqw, 100cqh - var(--invite-height));
-  height: var(--invite-height);
-  margin: 0;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--navy);
-  color: #fff;
-  font: bold 12px 'Pixel MS Sans Serif', Tahoma, sans-serif;
-  -webkit-font-smoothing: none;
-  white-space: nowrap;
+/* ---- the arcade cabinet around the board ----
+   an upright cabinet seen straight on, standing on the bottom of the window with its
+   lower body running off the edge. yellow side panels run its full height: up past
+   the top of the marquee, cut in beside the screen, back out at the control deck, and
+   in again for the lower body. between them the front is black, with the screen set
+   back in the waist under a ceiling.
+   the chrome scales with the window so the screen keeps most of the room when it's
+   small: --cut is how far the waist cuts in, --band how wide the side panels are,
+   --marq and --deck the marquee and deck heights. the screen stays square and as big
+   as fits once all of that is taken off */
+.contact-game .game-content {
+  --cut: clamp(10px, 5cqw, 26px);
+  --band: clamp(6px, 2cqw, 10px);
+  /* from the cabinet's outer edge to the screen's bezel, inside the waist */
+  --inner: calc(var(--cut) + var(--band) + 4px);
+  --marq: clamp(50px, 12cqh, 84px);
+  --deck: clamp(72px, 10cqh, 86px);
+  --arcade-trim: #ffd21f;
+  --cab-lit: #ffd21f;
+  --cab-shade: #d9a300;
+  --cab-front: #1a1a1f;
+  /* the screen's rounded corners, which the bezel around it follows */
+  --crt-radius: clamp(10px, var(--screen) * .06, 22px);
+  /* --screen is the screen's width, its height is 4/5 of that. the biggest screen
+     that leaves the whole top half of the cabinet in view... */
+  --fit: min(100cqw - 2 * var(--inner) - 20px, (100cqh - var(--marq) - var(--deck) - var(--cut) - 106px) * 1.25);
+  /* ...but never under 55% of the height tall: in a small window the screen wins
+     and the deck slides off the bottom instead */
+  --screen: min(100cqw - 2 * var(--inner) - 20px, max(var(--fit), 68.75cqh));
+  /* the lower body is as tall as a real cabinet's, about the screen's width */
+  --lower: max(280px, var(--screen) * .95);
+  /* the whole machine stands on the bottom of the window when it fits. when it
+     doesn't, the top stays in view and the bottom is cropped off instead */
+  justify-content: safe flex-end;
+  padding-bottom: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* always square, as big as fits under the invitation */
+.arcade-cabinet {
+  position: relative;
+  box-sizing: border-box;
+  /* the screen, its bezel, and the waist either side */
+  width: calc(var(--screen) + 2 * var(--inner) + 20px);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  /* a dark outline all the way round the silhouette, and a shadow off the right */
+  filter: drop-shadow(2px 0 #111) drop-shadow(-2px 0 #111) drop-shadow(0 -2px #111) drop-shadow(4px 0 #0004);
+}
+
+/* every section below the marquee is drawn the same way, so the edges line up where
+   they meet: the section itself is the side panels (lit on the left, shaded on the
+   right) cut to the silhouette, ::before is a dark seam just inside them, and ::after
+   the black front. all three share one outline, pulled in from the sides by --o */
+.arcade-alcove,
+.arcade-deck-shell,
+.arcade-lower {
+  --o: 0px;
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(90deg, var(--cab-lit) 50%, var(--cab-shade) 50%);
+}
+.arcade-alcove::before,
+.arcade-alcove::after,
+.arcade-deck-shell::before,
+.arcade-deck-shell::after,
+.arcade-lower::before,
+.arcade-lower::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+.arcade-alcove::before,
+.arcade-deck-shell::before,
+.arcade-lower::before {
+  --o: calc(var(--band) - 2px);
+  background: #111;
+}
+.arcade-alcove::after,
+.arcade-deck-shell::after,
+.arcade-lower::after {
+  --o: var(--band);
+  background: var(--cab-front);
+}
+
+/* the lit sign up top, between the side panels, which stand a little proud of it.
+   white and backlit, with the title in chunky slanted yellow letters like an old
+   logo and the game's name under it */
+.arcade-marquee {
+  --cap: 4px;
+  position: relative;
+  z-index: 2;
+  height: var(--marq);
+  box-sizing: border-box;
+  display: flex;
+  padding: var(--cap) calc(var(--band) - 2px) 0;
+  background: linear-gradient(90deg, var(--cab-lit) 50%, var(--cab-shade) 50%);
+  clip-path: polygon(0 0, var(--band) 0, var(--band) var(--cap), calc(100% - var(--band)) var(--cap), calc(100% - var(--band)) 0, 100% 0, 100% 100%, 0 100%);
+}
+.arcade-sign {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2px, var(--marq) * .06, 5px);
+  /* lit from behind: bright in the middle, falling off to the ends */
+  background: radial-gradient(ellipse at center, #fff, #f1ead2 70%, #d8cfae);
+  border: 2px solid #111;
+  box-shadow: inset 0 0 0 2px #e2261c, inset 0 0 0 3px #111, inset 0 -6px 8px -4px #0003;
+}
+.arcade-marquee .arcade-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--cab-lit);
+  font: bold clamp(18px, var(--marq) * .4, 34px) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  line-height: 1;
+  letter-spacing: 3px;
+  -webkit-font-smoothing: none;
+  transform: skewX(-12deg);
+  /* a black pixel outline, then a stacked red drop shadow for depth */
+  text-shadow: 1px 0 #111, -1px 0 #111, 0 1px #111, 0 -1px #111, 2px 2px #111, 3px 3px #e2261c, 4px 4px #e2261c, 5px 5px #111;
+}
+/* the title's letters hop one after another in a wave every few seconds, each
+   flashing white as it goes up, and the game's name under it lights up letter by
+   letter in a chase while the stars twinkle */
+.arcade-title span,
+.arcade-subtitle span {
+  display: inline-block;
+}
+.arcade-title span {
+  animation: marquee-hop 8s steps(1) infinite;
+  animation-delay: calc(var(--i) * .09s);
+}
+/* each hop takes about .4s, then the letter rests for the rest of the 8s */
+@keyframes marquee-hop {
+  0%, 4.8% { translate: 0; color: var(--cab-lit); }
+  1.2% { translate: 0 -2px; }
+  2.4% { translate: 0 -3px; color: #fff8d0; }
+  3.6% { translate: 0 -1px; }
+}
+.arcade-subtitle span {
+  animation: marquee-chase 5s steps(1) infinite;
+  animation-delay: calc(var(--i) * .12s);
+}
+/* each letter is lit for about a quarter second as the chase passes */
+@keyframes marquee-chase {
+  0%, 5% { color: #6fa8ff; text-shadow: 1px 1px #0b2a70, 0 0 4px #6fa8ff; }
+  5.2%, 100% { color: #1f5fe0; text-shadow: 1px 1px #0b2a70; }
+}
+.arcade-subtitle .star {
+  animation: marquee-twinkle 3s steps(1) infinite;
+}
+.arcade-subtitle .star + span ~ .star { animation-delay: 1.5s; }
+@keyframes marquee-twinkle {
+  0%, 20% { color: #e2261c; }
+  20.1%, 100% { color: #1f5fe0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade-title span,
+  .arcade-subtitle span,
+  .arcade-subtitle .star { animation: none; }
+}
+.arcade-subtitle {
+  color: #1f5fe0;
+  font: bold clamp(8px, var(--marq) * .14, 11px) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  line-height: 1;
+  letter-spacing: 2px;
+  -webkit-font-smoothing: none;
+  text-shadow: 1px 1px #0b2a70;
+}
+
+/* the waist the screen sits in: cut in under the marquee and straight down to the
+   deck, which flares back out. the lower body is cut the same way */
+.arcade-alcove {
+  padding: 0 var(--inner) 10px;
+}
+.arcade-alcove,
+.arcade-alcove::before,
+.arcade-alcove::after,
+.arcade-lower,
+.arcade-lower::before,
+.arcade-lower::after {
+  clip-path: polygon(var(--o) 0, calc(100% - var(--o)) 0, calc(100% - var(--cut) - var(--o)) var(--cut), calc(100% - var(--cut) - var(--o)) 100%, calc(var(--cut) + var(--o)) 100%, calc(var(--cut) + var(--o)) var(--cut));
+}
+.arcade-alcove::after {
+  background: linear-gradient(#232329, var(--cab-front));
+}
+/* the ceiling under the marquee, the darkest face, narrowing to the waist */
+.arcade-ceiling {
+  position: relative;
+  height: var(--cut);
+  margin: 0 calc(-1 * var(--inner));
+  background: linear-gradient(#060608, #111114);
+  clip-path: polygon(var(--band) 0, calc(100% - var(--band)) 0, calc(100% - var(--inner)) 100%, var(--inner) 100%);
+}
+
+/* two speaker grilles on the back wall above the screen */
+.arcade-speakers {
+  height: 14px;
+  margin-top: 4px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.arcade-speakers i {
+  width: 28px;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, #000 0 2px, #44444c 2px 4px);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+}
+
+/* the black surround the screen sits in, its corners rounded to match the screen's
+   so the dotted line around it follows them too */
+.arcade-bezel {
+  margin-top: 4px;
+  padding: 8px;
+  background: #0c0c0e;
+  border: 2px solid #000;
+  border-radius: calc(var(--crt-radius) + 10px);
+  /* shadowed along the top and left, catching light on the bottom, and framed by a
+     flat dotted line */
+  box-shadow: inset 3px 3px #000, inset -2px -2px #2c2c33;
+  outline: 2px dotted var(--arcade-trim);
+  outline-offset: 3px;
+}
+/* the control deck. its top is a lit slab the buttons and coin slot stand on,
+   narrow at the back where it meets the walls and widening toward you in
+   perspective to a bright front edge, and the side panels flare out along its
+   edges. below that a front lip, full width, with a row of dots and a blue stripe
+   printed on it. the buttons sit in the middle of the slab, tipped to lie on the
+   slope and standing tall enough to rise in front of the bottom of the screen, and
+   the coin slot is set into the slab at the right. the cut-out deck is drawn by
+   .arcade-deck-shell behind them, so the buttons aren't clipped to it */
+.arcade-deck {
+  --slab: 78%;
+  position: relative;
+  isolation: isolate;
+  z-index: 1;
+  height: var(--deck);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  padding: 0 calc(var(--band) + var(--cut) + 4px);
+}
+.arcade-deck-shell,
+.arcade-deck-shell::before,
+.arcade-deck-shell::after {
+  clip-path: polygon(calc(var(--cut) + var(--o)) 0, calc(100% - var(--cut) - var(--o)) 0, calc(100% - var(--o)) var(--slab), calc(100% - var(--o)) 100%, var(--o) 100%, var(--o) var(--slab));
+}
+/* the slab darker at the back under the screen and lit toward the front, with a
+   pale lip along its front edge, then the dark lip below */
+/* the shell is laid behind everything on the deck, a section like the others */
+.arcade-deck-shell {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+}
+.arcade-deck-shell::after {
+  background:
+    linear-gradient(#0006, transparent 5px),
+    radial-gradient(circle, var(--arcade-trim) 0 1.5px, transparent 2px) 0 calc(100% - 9px) / 8px 4px repeat-x,
+    linear-gradient(#3cc2ff, #3cc2ff) 0 calc(100% - 3px) / 100% 2px no-repeat,
+    linear-gradient(#34343c, #62626f calc(var(--slab) - 3px), #b4b4c2 calc(var(--slab) - 3px) calc(var(--slab) - 1px), #111 calc(var(--slab) - 1px) var(--slab), #0a0a0c var(--slab), #131316);
+}
+.arcade-controls {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  display: flex;
+  gap: 18px;
+  margin-top: -34px;
+}
+
+/* the same round arcade buttons as the snake handheld's pad, a size up */
+.arcade-button {
+  width: 64px;
+  height: 72px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: var(--classic-pointer);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* tipped back in perspective so they lie on the deck's sloped top */
+.arcade-button svg { display: block; width: 64px; height: 72px; transition: filter .08s; transform: perspective(120px) rotateX(38deg); transform-origin: 50% 80%; filter: drop-shadow(0 3px 0 #0006); }
+.arcade-button-cap { transition: transform .08s; }
+@media (hover: hover) {
+  .arcade-button:hover .arcade-button-cap { transform: translateY(-1px); }
+  .arcade-button:hover svg { filter: drop-shadow(0 3px 0 #0006) brightness(1.1); }
+}
+.arcade-button.held .arcade-button-cap { transform: translateY(2px); }
+.arcade-button:focus-visible { outline: 1px dotted #fff; outline-offset: 2px; }
+
+/* the coin mech, a small riveted plate set flush into the deck's slab at the right
+   and drawn in the same perspective, with a blinking COIN beside the slot.
+   the whole plate is the button */
+.arcade-door {
+  /* the plate is 40% of the deck tall, centered on the slab (78%), so these keep its
+     right side parallel to the deck's right edge (cut across the slab's height) at
+     any size. its left side leans the same way but less, as it's nearer the middle */
+  --kr: calc(var(--cut) * .4 / .78);
+  --kl: calc(var(--kr) * .55);
+  /* what's on the plate leans with it, halfway between its two sides. a browser
+     that can't divide one length by another gets the usual angle */
+  --lean: 14deg;
+  position: relative;
+  isolation: isolate;
+  grid-column: 3;
+  justify-self: end;
+  box-sizing: border-box;
+  height: calc(var(--deck) * .4);
+  margin-top: calc(var(--deck) * .19);
+  display: flex;
+  align-items: stretch;
+  padding: 0 calc(6px + var(--kr) / 2) 0 calc(6px + var(--kl) / 2);
+}
+/* drawn as a dark outline with the plate inside it, both cut to the trapezoid. only
+   these are clipped, so a coin can still come down into the slot from above */
+.arcade-door::before,
+.arcade-door::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+.arcade-door::before {
+  background: #111;
+  clip-path: polygon(0 0, calc(100% - var(--kr)) 0, 100% 100%, var(--kl) 100%);
+}
+/* sunk into the slab: shadowed along the top inside, with a rivet in each corner */
+.arcade-door::after {
+  background:
+    radial-gradient(circle, #c8c8d0 1px, #111 1.5px, transparent 2px) calc(var(--kl) * .15 + 4px) 4px / 6px 6px no-repeat,
+    radial-gradient(circle, #c8c8d0 1px, #111 1.5px, transparent 2px) calc(100% - var(--kr) - 4px) 4px / 6px 6px no-repeat,
+    radial-gradient(circle, #c8c8d0 1px, #111 1.5px, transparent 2px) calc(var(--kl) + 4px) calc(100% - 4px) / 6px 6px no-repeat,
+    radial-gradient(circle, #c8c8d0 1px, #111 1.5px, transparent 2px) calc(100% - 5px) calc(100% - 4px) / 6px 6px no-repeat,
+    linear-gradient(#0008, transparent 4px),
+    linear-gradient(#3a3a43, #4a4a54);
+  clip-path: polygon(2px 2px, calc(100% - var(--kr) - 2px) 2px, calc(100% - 3px) calc(100% - 2px), calc(var(--kl) + 3px) calc(100% - 2px));
+}
+@supports (scale: calc(2px / 1px)) {
+  .arcade-door { --lean: atan(var(--cut) * .775 / (var(--deck) * .78)); }
+}
+.arcade-coin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 4px;
+  transform: skewX(var(--lean));
+  border: 0;
+  background: none;
+  cursor: var(--classic-pointer);
+}
+.arcade-coin-slot {
+  position: relative;
+  width: 5px;
+  height: 16px;
+  background: #000;
+  box-shadow: 0 0 0 2px #a0a0aa, 0 0 0 3px #111;
+}
+.arcade-coin-label {
+  color: #ff9d3c;
+  font: bold 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  line-height: 11px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  animation: arcade-coin 1.2s steps(1) infinite;
+}
+/* the coin waits above the slot, hidden until it's dropped in */
+.arcade-coin-piece {
+  position: absolute;
+  z-index: 2;
+  left: -8px;
+  top: -22px;
+  width: 20px;
+  height: 20px;
+  background: #ffd23c;
+  clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
+  box-shadow: inset 3px 3px #fff4b0, inset -3px -3px #a8800c;
+  opacity: 0;
+  pointer-events: none;
+}
+.arcade-coin.dropping .arcade-coin-piece { animation: coin-drop .65s steps(10) forwards; }
+.arcade-door:has(.dropping) .arcade-coin-label { animation: none; color: #fff; text-shadow: 0 0 4px #ff9d3c; }
+.arcade-coin.nudge { animation: coin-nudge .3s steps(4); }
+.arcade-coin:focus-visible { outline: 1px dotted #fff; outline-offset: 2px; }
+@media (hover: hover) {
+  .arcade-coin:hover { filter: brightness(1.2); }
+}
+/* the coin turns edge-on over the slot and slides down into it */
+@keyframes coin-drop {
+  0% { opacity: 1; transform: translateY(-8px) scaleX(1); }
+  35% { opacity: 1; transform: translateY(6px) scaleX(.4); }
+  60% { opacity: 1; transform: translateY(16px) scaleX(.25); }
+  100% { opacity: 0; transform: translateY(28px) scaleX(.25); }
+}
+@keyframes coin-nudge {
+  25% { translate: -2px; }
+  75% { translate: 2px; }
+}
+@keyframes arcade-coin {
+  50% { color: #7a4a1c; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade-coin-label, .arcade-coin.nudge { animation: none; }
+  .arcade-coin.dropping .arcade-coin-piece { animation: none; }
+}
+
+/* the lower body, pinched in under the deck, down to a kick plate at the floor */
+.arcade-lower {
+  height: var(--lower);
+}
+/* a service door on the front: a recessed panel with a keyhole near its top, and a
+   faint dotted yellow line around it like the bezel's */
+.arcade-service {
+  position: absolute;
+  top: calc(var(--cut) + 20px);
+  left: 50%;
+  width: 46%;
+  translate: -50%;
+  height: calc(var(--lower) * .5);
+  box-sizing: border-box;
+  outline: 2px dotted #ffd21f59;
+  outline-offset: 4px;
+  border: 2px solid #0a0a0c;
+  box-shadow: inset 2px 2px #000, inset -1px -1px #3a3a43, 1px 1px #2c2c33;
+  background:
+    radial-gradient(circle, #c8c8d0 1.5px, #111 2px, transparent 2.5px) 50% 14px / 8px 8px no-repeat,
+    linear-gradient(#111, #111) 50% 20px / 2px 6px no-repeat,
+    linear-gradient(#1f1f25, #16161a);
+}
+/* the deck's shadow falling down the front, a faint row of yellow dots and a
+   pinstripe low down, then the kick plate along the floor */
+.arcade-lower::after {
+  background:
+    linear-gradient(#0008, transparent 14px),
+    radial-gradient(circle, #ffd21f73 0 1px, transparent 1.5px) 0 calc(100% - 40px) / 7px 4px repeat-x,
+    linear-gradient(#ffd21f40, #ffd21f40) 0 calc(100% - 48px) / 100% 1px no-repeat,
+    linear-gradient(#2c2c33, #2c2c33) 0 calc(100% - 26px) / 100% 2px no-repeat,
+    linear-gradient(#0a0a0c, #0a0a0c) 0 100% / 100% 26px no-repeat,
+    var(--cab-front);
+}
+/* the maker's badge in the marquee's top left corner, inside the red trim line */
+.arcade-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 1px 4px;
+  background: #e2261c;
+  color: #fff;
+  border: 1px solid #111;
+  box-shadow: inset 0 0 0 1px #ff8a80, 1px 1px 0 #0006;
+  font: bold 8px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  letter-spacing: 1px;
+}
+
+
+/* a 5:4 crt, a little wider than tall, as big as fits inside the cabinet, with
+   rounded corners */
 .contact-game .breakout-board {
+  --glow: #0003;
   position: relative;
   flex: none;
-  width: min(100cqw, 100cqh - var(--invite-height));
-  aspect-ratio: 1;
+  box-sizing: border-box;
+  width: var(--screen);
+  aspect-ratio: 5 / 4;
   background: #eeeee7;
+  border: 2px solid #000;
+  border-radius: var(--crt-radius);
+  overflow: hidden;
   container-type: inline-size;
+}
+/* the glass: the picture fades off softly at the rounded edges. it sits over the
+   canvas so the bricks never paint over it */
+.contact-game .breakout-board::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 calc(var(--screen) * .05) calc(var(--screen) * .01) var(--glow);
+  pointer-events: none;
+}
+
+/* what happens on the screen when a ball is lost (a quick shake with a red flash),
+   when the tries run out (a longer, harder shake and flicker), and when the board
+   is cleared (the glass glows gold a few times). breakout.js sets these */
+.contact-game .breakout-board.is-hit { animation: crt-shake .45s steps(9); }
+.contact-game .breakout-board.is-hit::after { animation: crt-flash .45s steps(3); --flash: #ff2a1a88; }
+.contact-game .breakout-board.is-over { animation: crt-shake .55s steps(11) 2, crt-flicker 1.1s steps(11); }
+.contact-game .breakout-board.is-over::after { animation: crt-flash 1.1s steps(6); --flash: #ff2a1aaa; }
+.contact-game .breakout-board.is-won::after { animation: crt-flash .6s steps(4) 3; --flash: #ffd21fcc; }
+@keyframes crt-shake {
+  20% { translate: -4px 1px; }
+  40% { translate: 4px -1px; }
+  60% { translate: -3px 0; }
+  80% { translate: 2px 1px; }
+}
+@keyframes crt-flash {
+  50% { box-shadow: inset 0 0 calc(var(--screen) * .08) calc(var(--screen) * .03) var(--flash); }
+}
+@keyframes crt-flicker {
+  30%, 70% { filter: brightness(.6); }
+  50% { filter: brightness(1.2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-game .breakout-board.is-hit,
+  .contact-game .breakout-board.is-over { animation: none; }
 }
 
 /* the email link hides behind the canvas until the board is cleared.
@@ -3116,9 +3614,9 @@ fieldset {
   /* how much of the board the email spans, breakout.js uses the same number */
   --email-span: .8;
   position: absolute;
-  /* the three brick rows: y 40 to 124 of the 300 unit board */
-  inset: 13.3333% 0 auto;
-  height: 28%;
+  /* the three brick rows: y 40 to 124 of the 240 unit tall board */
+  inset: 16.6667% 0 auto;
+  height: 35%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4564,6 +5062,33 @@ label.mail-label {
   --balloon: #f4f0b8;
 }
 
+/* the help button once it's been pressed too often: two copies of it cut along the
+   same jagged crack, snapping apart in stepped frames and staying slumped */
+.reversi-help-broken {
+  display: inline-grid;
+}
+.reversi-help-half {
+  grid-area: 1 / 1;
+  background: var(--surface);
+  border-color: var(--light) var(--shadow) var(--shadow) var(--light);
+  pointer-events: none;
+}
+.reversi-help-half.left {
+  clip-path: polygon(0 0, 54% 0, 44% 28%, 58% 52%, 45% 78%, 52% 100%, 0 100%);
+  transform-origin: bottom left;
+  animation: help-snap-left .3s steps(3) both;
+}
+.reversi-help-half.right {
+  clip-path: polygon(54% 0, 100% 0, 100% 100%, 52% 100%, 45% 78%, 58% 52%, 44% 28%);
+  transform-origin: bottom right;
+  animation: help-snap-right .3s steps(3) both;
+}
+@keyframes help-snap-left { to { transform: translate(-3px, 4px) rotate(-9deg); } }
+@keyframes help-snap-right { to { transform: translate(4px, 6px) rotate(12deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .reversi-help-half.left, .reversi-help-half.right { animation-duration: 0s; }
+}
+
 .reversi-record {
   margin-left: auto;
   padding: 0 8px;
@@ -5024,6 +5549,7 @@ label.mail-label {
 }
 
 :root[data-theme="dark"] .contact-game .breakout-board {
+  --glow: #ffffff26;
   background: #000;
 }
 

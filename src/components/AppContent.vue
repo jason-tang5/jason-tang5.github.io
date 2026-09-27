@@ -4,6 +4,7 @@
 import { defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue';
 import { profile, projects, roles } from '../content.mjs';
 import { folders, registry } from '../registry.js';
+import { isUnlocked } from '../unlocks.js';
 import AsciiImage from './AsciiImage.vue';
 import Analytics from './Analytics.vue';
 import Blog from './Blog.vue';
@@ -21,6 +22,9 @@ import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from '
 import { theme, setTheme } from '../theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from '../wallpaper.js';
 import { autoHide, edges, setAutoHide, setTaskbarEdge, taskbarEdge } from '../taskbar.js';
+
+// a folder's apps, leaving out locked ones (mail) until they're earned
+const folderItems = type => folders[type].filter(id => !registry[id].locked || isUnlocked(id));
 
 // the games only load when someone actually opens them
 const Game = defineAsyncComponent(() => import('./Game.vue'));
@@ -503,15 +507,15 @@ function setPortraitAscii(value) {
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>
   <Analytics v-else-if="win.type === 'analytics'"/>
   <Blog v-else-if="win.type === 'blog'"/>
-  <!-- the games and fun stuff folders: a big icon for each app inside -->
+  <!-- the games, fun stuff and all apps folders: a big icon for each app inside -->
   <div v-else-if="folders[win.type]" class="app-layout">
-    <div class="address-bar"><span>Address</span><div class="inset">Portfolio:\{{ win.label }}</div></div>
+    <div class="address-bar"><span>Address</span><div class="inset">{{ win.type === 'computer' ? 'All Apps' : `Portfolio:\\${win.label}` }}</div></div>
     <div class="content-scroll games-folder inset">
-      <button v-for="id in folders[win.type]" :key="id" class="game-shortcut" @click="emit('open', id)">
+      <button v-for="id in folderItems(win.type)" :key="id" class="game-shortcut" @click="emit('open', id)">
         <RetroIcon :name="registry[id].icon"/><span>{{ registry[id].label }}</span>
       </button>
     </div>
-    <footer class="status-bar"><span>{{ folders[win.type].length }} {{ win.type === 'games' ? 'games' : 'items' }}</span></footer>
+    <footer class="status-bar"><span>{{ folderItems(win.type).length }} {{ win.type === 'games' ? 'games' : 'items' }}</span></footer>
   </div>
   <Snake v-else-if="win.type === 'snake'" :active="active"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>

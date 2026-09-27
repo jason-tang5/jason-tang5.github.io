@@ -1153,12 +1153,16 @@ onBeforeUnmount(() => {
           <span>{{ app.label }}</span>
         </button>
         <hr>
+        <button role="menuitem" @click="open('computer')">
+          <RetroIcon name="computer"/>
+          <span>All Apps</span>
+        </button>
         <button role="menuitem" @click="open('settings')">
           <RetroIcon name="settings"/>
           <span>Desktop Settings</span>
         </button>
         <button role="menuitem" @click="reset">
-          <RetroIcon name="computer"/>
+          <RetroIcon name="reset"/>
           <span>Reset Desktop</span>
         </button>
       </div>

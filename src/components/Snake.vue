@@ -1,4 +1,5 @@
 <script setup>
+import { padShape } from '../arcade-button.mjs';
 import Leaderboard from './Leaderboard.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { columns, rows, directions, newSnake, stepSnake } from '../snake.mjs';
@@ -165,22 +166,12 @@ const startLabel = computed(() => (running.value ? 'Pause' : game.value.over ? '
 // the direction pad: four pixel art arcade buttons in a diamond, coloured like a
 // super nintendo's face buttons. each is drawn on a 16x18 grid: a dark outline,
 // a darker rim under the cap for depth, the cap itself with a highlight, and an arrow
-const discRows = { 16: [6, 10, 12, 14, 14, 16, 16, 16, 16, 16, 16, 14, 14, 12, 10, 6], 14: [6, 10, 12, 12, 14, 14, 14, 14, 14, 14, 12, 12, 10, 6] };
-const disc = (size, x, y) => discRows[size].map((w, row) => `M${x + (size - w) / 2} ${y + row}h${w}v1h-${w}z`).join('');
 const pad = [
   { direction: 'up', label: 'Move up', color: '#3b5bdb', rim: '#1f3183', shine: '#9fb2f7', rotate: 0 },
   { direction: 'left', label: 'Move left', color: '#2f9e44', rim: '#175325', shine: '#96e5a4', rotate: -90 },
   { direction: 'right', label: 'Move right', color: '#e03131', rim: '#7d1717', shine: '#ffadad', rotate: 90 },
   { direction: 'down', label: 'Move down', color: '#f2c318', rim: '#8a6c05', shine: '#fff1a6', rotate: 180 },
 ];
-const padShape = {
-  outline: disc(16, 0, 0) + disc(16, 0, 2),
-  rim: disc(14, 1, 3),
-  cap: disc(14, 1, 1),
-  shine: 'M4 3h3v1H4zM3 4h2v2H3z',
-  // an up arrow in the middle of the cap, turned for the other directions
-  arrow: 'M7 4h2v1H7zM6 5h4v1H6zM5 6h6v1H5zM7 7h2v4H7z',
-};
 
 function pause() {
   running.value = false;

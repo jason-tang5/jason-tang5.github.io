@@ -1,16 +1,20 @@
 <script setup>
 // the snake leaderboard as a game cartridge beside (or under) the handheld: the
-// scores are printed on its label, three buttons flip between the last 7 days, the
-// last 30 and all time, and it can be tucked back into the handheld (Snake.vue).
-// names are typed on the handheld's screen
+// scores are printed on its label, buttons flip between the last 7, 30 and 90 days,
+// the last year and all time, and it can be tucked back into the handheld (Snake.vue).
+// names are typed on the handheld's screen. analytics shows the same cartridge with
+// nothing to tuck it into, so it hides that button
 import { computed, ref } from 'vue';
 import { useLiveStats } from '../live-stats.js';
 import { read, save } from '../storage.js';
+defineProps({ tuckable: { type: Boolean, default: true } });
 defineEmits(['tuck']);
 const { data, error } = useLiveStats();
 const periods = [
   { id: 'week', button: '7D', title: 'Last 7 days', key: 'leaderboardWeek' },
   { id: 'month', button: '30D', title: 'Last 30 days', key: 'leaderboardMonth' },
+  { id: 'quarter', button: '90D', title: 'Last 90 days', key: 'leaderboardQuarter' },
+  { id: 'year', button: '1Y', title: 'Last year', key: 'leaderboardYear' },
   { id: 'all', button: 'ALL', title: 'All time', key: 'leaderboard' },
 ];
 const saved = read('snake-board-period', 'all');
@@ -26,7 +30,7 @@ function pick(id) {
   <section class="snake-cart">
     <div class="cart-controls cart-top">
       <div class="cart-grip" aria-hidden="true"/>
-      <button class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
+      <button v-if="tuckable" class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
     </div>
     <div class="cart-label">
       <div class="cart-label-top">
@@ -86,7 +90,9 @@ function pick(id) {
 .cart-top { margin: 0 10px 10px 0; flex-wrap: nowrap; }
 .cart-top .cart-grip { flex: 1; margin: 0 0 0 4px; }
 .cart-tuck { flex: none; }
-.cart-periods { display: flex; gap: 6px; }
+/* five periods share the width, so they squeeze in without wrapping */
+.cart-periods { display: flex; flex: 1; gap: 4px; }
+.cart-periods button { flex: 1 1 0; padding-inline: 0; letter-spacing: 0; white-space: nowrap; }
 .cart-controls button {
   padding: 3px 9px;
   border: 1px solid #333;

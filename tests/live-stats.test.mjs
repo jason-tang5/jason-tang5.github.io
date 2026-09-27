@@ -68,14 +68,18 @@ test('one player id keeps one row across visits', async () => {
   const board = (await get(stats)).leaderboard;
   assert.deepEqual(board.map(r => [r.player, r.score]), [['JASON', 15], ['JASON', 9]]);
 });
-test('the 7 and 30 day boards only count recent days', async () => {
+test('the 7, 30, 90 day and 1 year boards only count recent days', async () => {
   const { stats, ctx } = setup();
   const day = offset => new Date(Date.now() - offset * 86400000).toISOString().slice(0, 10);
   ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'oldplayer1', day(20), 50, 'OLDIE');
-  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'ancient001', day(40), 90, 'GONE');
+  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'seasonal01', day(40), 70, 'SEASON');
+  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'lastyear01', day(200), 80, 'SPRING');
+  ctx.storage.sql.exec('INSERT INTO daily_scores VALUES (?, ?, ?, ?)', 'ancient001', day(400), 90, 'GONE');
   await stats.fetch(new Request('https://stats/', { method: 'POST', body: JSON.stringify({ name: 'snake-score', visit: 'visitnew01', value: 12, playerId: 'newplayer1', player: 'newbie' }) }));
   const data = await get(stats);
   assert.deepEqual(data.leaderboardWeek.map(r => [r.player, r.score]), [['NEWBIE', 12]]);
   assert.deepEqual(data.leaderboardMonth.map(r => [r.player, r.score]), [['OLDIE', 50], ['NEWBIE', 12]]);
+  assert.deepEqual(data.leaderboardQuarter.map(r => [r.player, r.score]), [['SEASON', 70], ['OLDIE', 50], ['NEWBIE', 12]]);
+  assert.deepEqual(data.leaderboardYear.map(r => [r.player, r.score]), [['SPRING', 80], ['SEASON', 70], ['OLDIE', 50], ['NEWBIE', 12]]);
   assert.equal([...ctx.storage.sql.exec("SELECT COUNT(*) AS n FROM daily_scores WHERE id = 'ancient001'")][0].n, 0);
 });

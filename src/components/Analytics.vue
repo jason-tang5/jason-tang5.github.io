@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import RetroIcon from './RetroIcon.vue';
 import PixelPie from './PixelPie.vue';
+import Leaderboard from './Leaderboard.vue';
 import { useLiveStats } from '../live-stats.js';
 import { read, save } from '../storage.js';
 const { data: live, error: liveError, refresh } = useLiveStats();
@@ -150,8 +151,7 @@ onMounted(load);
             </section>
           </div>
           <h2>Snake leaderboard</h2>
-          <table v-if="live.leaderboard.length" class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
-          <p v-else>No scores yet. Play Snake to set the first record!</p>
+          <Leaderboard class="analytics-cart" :tuckable="false"/>
         </template>
         <p v-if="busy" role="status">Loading site history...</p>
         <p v-else-if="error" role="status">{{ error }}</p>

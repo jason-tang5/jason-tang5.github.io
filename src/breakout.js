@@ -1,12 +1,14 @@
 // breakout for the contact window.  email is hidden behind the bricks and
-// shows up as you clear them. everything is drawn on a 300x300 canvas and
+// shows up as you clear them. everything is drawn on a 300x240 canvas and
 // scaled up with css, so all the numbers below are in those canvas units.
 //
 // start with won: true to show the board already cleared. onWin runs when the
 // board is cleared, onRestart when a round is reset, onLose when the ball is lost,
-// onStart whenever play starts or resumes. returns
-// { setActive, destroy } so the vue component can pause it when the window
-// loses focus and clean up when it closes.
+// onStart whenever play starts or resumes. a new game needs a coin, and a coin
+// buys three tries: clicking the board, space or play before one (or after the
+// third lost ball) asks for it through onCoin, and start() begins once the coin's in. returns { setActive, start, hold, destroy } so the vue
+// component can pause it when the window loses focus, drive it from the cabinet's
+// coin slot and buttons, and clean up when it closes.
 
 import { play } from './sound.js';
 
@@ -45,24 +47,33 @@ const glyphs = {
 
 const brickColors = ['#000080', '#244f9c', '#3972ac', '#538eaf', '#008080', '#379b95', '#7170a0', '#9693b7'];
 // the same rows brightened up for the black board in dark mode
+// the lives in the top right, a little pixel heart each
+const heart = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
+const heartColors = { light: '#e2261c', dark: '#ff5a4f' };
 const darkBrickColors = ['#6f86ff', '#6a95e6', '#72a8dc', '#86bedb', '#2cc3b9', '#5fd0c8', '#a3a1d8', '#c0bde6'];
 const palettes = {
   light: { board: '#eeeee7', dim: 'rgba(238, 238, 231, .88)', score: '#bcbcbc', ink: '#000080', ball: '#111' },
   dark: { board: '#000', dim: 'rgba(0, 0, 0, .85)', score: '#444', ink: '#9db4ff', ball: '#eee' },
 };
+// a and d steer the paddle too, same as the arrow keys
+export const arrowFor = code => ({ KeyA: 'ArrowLeft', KeyD: 'ArrowRight' })[code] || code;
 const isDark = () => document.documentElement.dataset.theme === 'dark';
 const colors = () => palettes[isDark() ? 'dark' : 'light'];
 const brickColor = brick => (isDark() ? darkBrickColors[brickColors.indexOf(brick.color)] : brick.color);
-const ballSpeedScale = 0.65;
+const ballSpeedScale = 0.52;
 const ballSpeed = 380 * ballSpeedScale;
 // the ball speeds up the longer a round goes: about 1% a second, up to 1.6x
 const speedUp = elapsed => Math.min(1.6, 1 + elapsed * 0.01);
-// the paddle's top edge. everything else about the paddle is measured from here
-const paddleY = 238;
+// the paddle's top edge, low on the screen. everything else about the paddle is measured from here
+const paddleY = 212;
+// the board is wider than it's tall, like a crt
+const boardHeight = 240;
 // three rows of bricks, 28 tall, from y 40 down to 124. the email hides behind the middle row
 const brickRows = 3;
 const brickHeight = 28;
 const brickTop = 40;
+// the rows stop short of the screen's sides so the end bricks clear its bevelled edge
+const brickInset = 10;
 const emailMiddle = brickTop + brickRows * brickHeight / 2;
 // how much of the board's width the email spans, the css uses the same number
 const emailSpan = 0.8;
@@ -71,7 +82,7 @@ const brickFontSize = 9;
 const brickLineHeight = 8;
 const font = size => `bold ${size}px "Courier New", monospace`;
 
-export function createBreakout(root, { email, won = false, onWin, onRestart, onLose, onStart }) {
+export function createBreakout(root, { email, won = false, onWin, onRestart, onLose, onStart, onCoin }) {
   // one abort controller so destroy() can drop every listener at once
   const events = new AbortController();
   const on = (target, type, listener) => target?.addEventListener(type, listener, { signal: events.signal });
@@ -118,6 +129,13 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   let started = false;
   let complete = false;
   let message = 'paused';
+  // a coin buys three tries. losing the last one needs another coin
+  const triesPerCoin = 3;
+  let triesLeft = triesPerCoin;
+  // a lost life blinks for a moment, and the loop keeps drawing until then
+  let lifeLostAt = -Infinity;
+  let effectUntil = 0;
+  const lifeBlink = 1200;
   let hostActive = true;
   let previous = 0;
   let animationFrame = 0;
@@ -242,9 +260,9 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   function reset() {
     const columns = 5;
     bricks = Array.from({ length: columns * brickRows }, (_, i) => ({
-      x: (i % columns) * (300 / columns),
+      x: brickInset + (i % columns) * ((300 - 2 * brickInset) / columns),
       y: brickTop + Math.floor(i / columns) * brickHeight,
-      w: 300 / columns,
+      w: (300 - 2 * brickInset) / columns,
       h: brickHeight,
       row: Math.floor(i / columns),
       color: brickColors[Math.floor(i / columns)],
@@ -274,14 +292,38 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     ctx.fillText(String(value).padStart(3, '0'), x, 15);
   }
 
+  // three hearts, lit for each try left. the one just lost blinks before it goes dark
+  function drawLives(palette) {
+    const blinking = performance.now() - lifeLostAt < lifeBlink;
+    const blinkOn = Math.floor((performance.now() - lifeLostAt) / 150) % 2 === 0;
+    for (let i = 0; i < triesPerCoin; i++) {
+      const lit = i < triesLeft || (blinking && blinkOn && i === triesLeft);
+      ctx.fillStyle = lit ? heartColors[isDark() ? 'dark' : 'light'] : palette.score;
+      const left = 244 + i * 13;
+      heart.forEach((row, y) => [...row].forEach((cell, x) => {
+        if (cell === 'X') ctx.fillRect(left + x * 1.5, 16 + y * 1.5, 1.5, 1.5);
+      }));
+    }
+  }
+
+  // a css effect on the screen itself: a shake for a lost ball, a longer one for
+  // running out of tries, and a flashing glow for clearing the board
+  let effectTimer;
+  function screenEffect(name, length) {
+    clearTimeout(effectTimer);
+    board.classList.remove('is-hit', 'is-over', 'is-won');
+    void board.offsetWidth; // restart the animation if it's already on
+    board.classList.add(name);
+    effectTimer = setTimeout(() => board.classList.remove(name), length);
+  }
+
   function draw() {
-    ctx.clearRect(0, 0, 300, 300);
+    ctx.clearRect(0, 0, 300, boardHeight);
     const palette = colors();
 
-    // score on the left, bricks left on the right
+    // score on the left, lives on the right (drawn last, so dimming doesn't hide them)
     ctx.fillStyle = palette.score;
     drawScore(score, 20);
-    drawScore(bricks.filter(brick => brick.alive).length, 240);
 
     for (const brick of bricks) {
       if (!brick.alive) continue;
@@ -316,19 +358,24 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     }
 
     if (complete) {
-      pixelText('all clear', 160, 2);
-      pixelText('click to play again', 195);
+      pixelText('all clear', 140, 2);
+      pixelText('insert coin', 170);
     } else if (!running) {
       // dim the board while paused
       ctx.fillStyle = palette.dim;
-      ctx.fillRect(0, 0, 300, 300);
+      ctx.fillRect(0, 0, 300, boardHeight);
       if (started) {
-        pixelText(message, 125, 2);
-        pixelText('click to play', 175, 2);
+        pixelText(message, 134, 2);
+        pixelText(triesLeft ? 'click to play' : 'insert another coin', 166, 2);
       } else {
-        pixelText('click to play', 188, 2);
+        // the attract screen: the invitation, then what to do about it
+        pixelText('want to get my email?', 132);
+        pixelText('beat the game :)', 146);
+        pixelText('insert coin', 164, 2);
       }
     }
+
+    drawLives(palette);
 
     for (const letter of fallingText) {
       ctx.save();
@@ -352,7 +399,11 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     emailBox.removeAttribute('aria-hidden');
     link.tabIndex = 0;
     status.textContent = 'Email revealed. Say hello!';
-    if (celebrate) onWin?.();
+    if (celebrate) {
+      play('clear');
+      screenEffect('is-won', 1800);
+      onWin?.();
+    }
     draw();
   }
 
@@ -368,6 +419,12 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     draw();
   }
 
+  // a fresh game (never started, the board just cleared, or out of tries) waits for a coin
+  function requestPlay() {
+    if (!running && (!started || complete || !triesLeft) && onCoin) onCoin();
+    else toggle();
+  }
+
   function update(dt) {
     elapsed += dt;
     const direction = (keys.has('ArrowRight') ? 1 : 0) - (keys.has('ArrowLeft') ? 1 : 0);
@@ -379,16 +436,28 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     }
 
     // drop balls that fell off the bottom
-    balls = balls.filter(ball => ball.y <= 306);
+    balls = balls.filter(ball => ball.y <= boardHeight + 6);
     if (!balls.length) {
       running = false;
       keys.clear();
       reset();
       onRestart?.();
       onLose?.();
-      message = 'try again';
-      setStart('Try again');
-      status.textContent = `Ball lost! Board reset. ${bricks.length} bricks to go.`;
+      lifeLostAt = performance.now();
+      effectUntil = lifeLostAt + lifeBlink;
+      if (--triesLeft) {
+        play('lose');
+        screenEffect('is-hit', 450);
+        message = 'try again';
+        setStart('Try again');
+        status.textContent = `Ball lost! Board reset. ${bricks.length} bricks to go.`;
+      } else {
+        play('gameOver');
+        screenEffect('is-over', 1100);
+        message = 'out of tries';
+        setStart('Play');
+        status.textContent = 'Ball lost! Out of tries, insert another coin.';
+      }
     }
   }
 
@@ -468,18 +537,19 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
     const hadFallingText = fallingText.length > 0;
     updateFallingText(dt);
 
+    const effect = now < effectUntil;
     if (running) {
       // small substeps so fast balls don't skip over thin bricks
       const steps = Math.ceil(dt / 0.005);
       for (let i = 0; i < steps && running; i++) update(dt / steps);
       draw();
-    } else if (hadFallingText) {
+    } else if (hadFallingText || effect) {
       draw();
     }
 
     // keep the loop going only while something is moving
     animationFrame = 0;
-    if (running || fallingText.length) {
+    if (running || fallingText.length || now < effectUntil) {
       animationFrame = requestAnimationFrame(frame);
     }
   }
@@ -512,26 +582,26 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
   on(canvas, 'pointerdown', event => {
     if (!hostActive || event.button !== 0) return;
     // after winning, clicks on the top half go to the email link, not the game
-    if (complete && event.offsetY / canvas.getBoundingClientRect().height < 0.46) return;
+    if (complete && event.offsetY / canvas.getBoundingClientRect().height < 0.55) return;
     canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(event.pointerId);
-    if (!running) toggle();
+    if (!running) requestPlay();
   });
 
   on(canvas, 'keydown', event => {
     if (!hostActive) return;
     if (['ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
-    if (event.code === 'Space' && !event.repeat) toggle();
-    keys.add(event.code);
+    if (event.code === 'Space' && !event.repeat) requestPlay();
+    keys.add(arrowFor(event.code));
   });
 
-  on(canvas, 'keyup', event => keys.delete(event.code));
+  on(canvas, 'keyup', event => keys.delete(arrowFor(event.code)));
   on(window, 'blur', pause);
   on(document, 'visibilitychange', () => {
     if (document.hidden) pause();
   });
 
-  on(startButton, 'click', toggle);
+  on(startButton, 'click', requestPlay);
   on(root.querySelector('#breakout-restart'), 'click', () => {
     pause();
     started = false;
@@ -562,8 +632,20 @@ export function createBreakout(root, { email, won = false, onWin, onRestart, onL
       hostActive = value;
       if (!value) pause();
     },
+    // the coin dropped in, so play
+    start() {
+      triesLeft = triesPerCoin;
+      if (!running) toggle();
+    },
+    // the cabinet's left and right buttons, held down like the arrow keys
+    hold(direction, down) {
+      const key = direction === 'left' ? 'ArrowLeft' : 'ArrowRight';
+      if (down) keys.add(key);
+      else keys.delete(key);
+    },
     destroy() {
       pause();
+      clearTimeout(effectTimer);
       events.abort();
       observer.disconnect();
       themeObserver.disconnect();

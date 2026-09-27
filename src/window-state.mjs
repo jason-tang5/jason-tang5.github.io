@@ -122,7 +122,8 @@ export const columnApps = ['projects', 'experience', 'contact'];
 const columnSpots = {
   projects: [0.02, 0.37, 0.4, 0.52],
   experience: [0.3, 0.44, 0.42, 0.55],
-  contact: [0.74, 0.43, 0.25, 0.51],
+  // contact is tall so its arcade cabinet has room
+  contact: [0.73, 0.14, 0.26, 0.82],
 };
 
 export function presetBounds(id, area) {

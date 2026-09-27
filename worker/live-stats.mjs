@@ -32,7 +32,8 @@ export class LiveStats {
         const playerName = cleanName(player) || null;
         this.sql.exec(`INSERT INTO scores (id, score, name) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, value, playerName);
         this.sql.exec(`INSERT INTO daily_scores (id, day, score, name) VALUES (?, ?, ?, ?) ON CONFLICT(id, day) DO UPDATE SET score=MAX(score, excluded.score), name=excluded.name`, id, dayOf(now), value, playerName);
-        this.sql.exec(`DELETE FROM daily_scores WHERE day < ?`, dayOf(now - 31 * day));
+        // a year of days backs the 7, 30, 90 day and 1 year boards
+        this.sql.exec(`DELETE FROM daily_scores WHERE day < ?`, dayOf(now - 366 * day));
         // Only the top 100 anonymous sessions need permanent storage.
         this.sql.exec(`DELETE FROM scores WHERE id NOT IN (SELECT id FROM scores ORDER BY score DESC, id LIMIT 100)`);
       }
@@ -43,7 +44,7 @@ export class LiveStats {
     // sqlite hands back the name from the row with the max score
     const since = days => board(this.sql.exec(`SELECT id, MAX(score) AS score, name FROM daily_scores WHERE day > ? GROUP BY id ORDER BY score DESC, id LIMIT 10`, dayOf(now - days * day)));
     const online = [...this.sql.exec('SELECT COUNT(*) AS count FROM sessions')][0].count;
-    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard, leaderboardWeek: since(7), leaderboardMonth: since(30) }, { headers: { 'Cache-Control': 'no-store' } });
+    return Response.json({ visitors: 0, minesweeperWins: 0, breakoutWins: 0, clippyWins: 0, clippyLosses: 0, ...totals, online, snakeHighScore: leaderboard[0]?.score || 0, leaderboard, leaderboardWeek: since(7), leaderboardMonth: since(30), leaderboardQuarter: since(90), leaderboardYear: since(365) }, { headers: { 'Cache-Control': 'no-store' } });
   }
 }
 const day = 86400000;

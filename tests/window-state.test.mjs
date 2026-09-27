@@ -115,7 +115,9 @@ test('projects, experience and contact pop out left to right, about opens center
   for (const viewport of [area, { width: 1024, height: 600 }]) {
     const [projects, experience, contact] = columnApps.map(id => presetBounds(id, viewport));
     assert.ok(projects.x < experience.x && experience.x < contact.x);
-    for (const w of [projects, experience, contact]) assert.ok(w.height < viewport.height * 0.6);
+    for (const w of [projects, experience]) assert.ok(w.height < viewport.height * 0.6);
+    // contact stands tall for its arcade cabinet
+    assert.ok(contact.height < viewport.height * 0.9);
     const about = presetBounds('about', viewport);
     for (const w of [projects, experience, contact, about]) assert.ok(inside(w, viewport));
     assert.ok(Math.abs(about.x * 2 + about.width - viewport.width) <= 1);

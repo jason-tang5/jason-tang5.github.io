@@ -163,6 +163,38 @@ const sounds = {
   // cartridge latch plays as it seats
   discLoad: ac => swish(ac, { from: 900, to: 2400, q: 0.9, length: 0.36, volume: 0.05 }),
 
+  // a coin into the arcade cabinet: a metal clink as it drops, then the credit chime
+  coin: ac => {
+    burst(ac, { freq: 6200, q: 2, length: 0.012, volume: 0.1 });
+    burst(ac, { freq: 4800, q: 2, start: 0.09, length: 0.01, volume: 0.07 });
+    blip(ac, { from: 988, start: 0.2, length: 0.07, volume: 0.05 });
+    blip(ac, { from: 1319, start: 0.27, length: 0.22, volume: 0.05 });
+  },
+
+  // breakout: losing a ball, a sad two-step wah down
+  lose: ac => {
+    blip(ac, { from: 392, to: 330, length: 0.2, volume: 0.05 });
+    blip(ac, { from: 294, to: 196, start: 0.22, length: 0.34, volume: 0.05 });
+  },
+
+  // breakout: out of tries. a falling four-note run, then a low buzz that
+  // sinks away, so it's clear the game wants another coin
+  gameOver: ac => {
+    [523.25, 392, 329.63, 261.63].forEach((pitch, i) =>
+      blip(ac, { from: pitch, start: i * 0.13, length: 0.12, volume: 0.045 }));
+    blip(ac, { type: 'sawtooth', from: 131, to: 55, start: 0.55, length: 0.7, volume: 0.05 });
+    blip(ac, { from: 98, to: 41, start: 0.55, length: 0.7, volume: 0.03 });
+  },
+
+  // breakout: clearing the board. a quick climb up c major, then a bright chord
+  clear: ac => {
+    [523.25, 659.25, 783.99, 1046.5].forEach((pitch, i) =>
+      blip(ac, { from: pitch, start: i * 0.08, length: 0.09, volume: 0.045 }));
+    [1046.5, 1318.51, 1567.98].forEach(pitch =>
+      blip(ac, { type: 'triangle', from: pitch, start: 0.34, length: 0.6, volume: 0.035 }));
+    burst(ac, { freq: 7000, q: 0.7, start: 0.34, length: 0.05, volume: 0.05 });
+  },
+
   // keyboard presses have no separate down and up, so play both
   click: ac => {
     sounds.press(ac);

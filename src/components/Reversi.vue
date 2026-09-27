@@ -48,6 +48,21 @@ const lines = {
   win: ['You won?! I’m going back to the Office.', 'Well played. I’ll be in the recycle bin.'],
   lose: ['Good game! Would you like help with your strategy?', 'I win! Want a rematch?'],
   draw: ['A draw! Let’s call it even.'],
+  // the help button never helps
+  help: [
+    'It looks like you’re asking for help. Have you tried winning?',
+    'Tip: the discs are black and white.',
+    'I could help, but then I’d lose.',
+    'Searching Help for “how to beat Clippy”… 0 results found.',
+    'I’m not allowed to help the opponent. Office policy.',
+    'Have you tried turning the board off and on again?',
+    'Hint: put your disc somewhere good.',
+    'Would you like me to write a letter about your next move?',
+    'Press F1 for more of this.',
+    'Help is on the way! (It isn’t.)',
+  ],
+  helpTired: ['Please stop pressing that.', 'Help is getting tired…', 'I can hear it creaking.'],
+  helpBroken: ['Oh no. You broke Help.', 'Help has stopped working. Maybe that’s a sign.', 'That’s it, Help has left the building.'],
 };
 // the discs are tiny 8x9 pixel sprites, kept low res on purpose: a black outline drawn
 // twice one row apart, and the face with a one pixel edge peeking out under it.
@@ -63,7 +78,41 @@ const discColors = {
   [white]: { face: '#f2f2ea', edge: '#8a8a84' },
 };
 
+const helpGlyph = 'M4 1h4v1H4zM3 2h2v1H3zM7 2h2v1H7zM7 3h2v1H7zM6 4h2v1H6zM5 5h2v1H5zM5 6h2v2H5zM5 9h2v2H5z';
 const pick = list =>list[Math.floor(Math.random() * list.length)];
+// clippy's face matches what he's saying (see ClippyArt.vue for the moods)
+const moods = {
+  start: 'happy', corner: 'smug', youCorner: 'surprised', big: 'smug', normal: 'neutral',
+  youPass: 'smug', clippyPass: 'sad', win: 'sad', lose: 'happy', draw: 'neutral',
+  help: 'smug', helpTired: 'angry', helpBroken: 'surprised',
+};
+const mood = ref('happy');
+function speak(kind) {
+  say.value = pick(lines[kind]);
+  mood.value = moods[kind];
+}
+// clippy says something unhelpful, never the same line twice running. pressed too
+// often, the button snaps in half and stays broken until reversi is opened again
+const helpClicks = ref(0);
+const helpBroken = ref(false);
+function help() {
+  if (helpBroken.value) return;
+  helpClicks.value++;
+  if (helpClicks.value >= 8) {
+    helpBroken.value = true;
+    speak('helpBroken');
+    play('error');
+    buzz([20, 30, 40]);
+    return;
+  }
+  const list = helpClicks.value >= 5 ? lines.helpTired : lines.help;
+  let line;
+  do line = pick(list); while (line === say.value);
+  say.value = line;
+  mood.value = moods[helpClicks.value >= 5 ? 'helpTired' : 'help'];
+  play('ping');
+  buzz(8);
+}
 const isCorner = i => [0, 7, 56, 63].includes(i);
 
 function place(index, player) {
@@ -88,7 +137,7 @@ function place(index, player) {
 function finish() {
   const s = score.value;
   const result = s[black] > s[white] ? 'win' : s[black] < s[white] ? 'lose' : 'draw';
-  say.value = pick(lines[result]);
+  speak(result);
   if (result === 'win') record.value.you++;
   if (result === 'lose') record.value.clippy++;
   if (result !== 'draw') track(`reversi-${result}`);
@@ -109,7 +158,7 @@ function nextTurn(after) {
     turn.value = next;
   } else {
     turn.value = after;
-    say.value = pick(next === black ? lines.youPass : lines.clippyPass);
+    speak(next === black ? 'youPass' : 'clippyPass');
   }
   if (turn.value === white) clippyMove();
 }
@@ -124,7 +173,7 @@ function clippyMove() {
     play('tap');
     thinking.value = false;
     const youPass = !legalMoves(board.value, black).length;
-    if (!youPass) say.value = pick(isCorner(move) ? lines.corner : flipped >= 5 ? lines.big : lines.normal);
+    if (!youPass) speak(isCorner(move) ? 'corner' : flipped >= 5 ? 'big' : 'normal');
     nextTurn(white);
   }, 650 + Math.random() * 400);
 }
@@ -134,7 +183,7 @@ function choose(index) {
   const corner = isCorner(index);
   place(index, black);
   buzz(12);
-  if (corner) say.value = pick(lines.youCorner);
+  if (corner) speak('youCorner');
   nextTurn(black);
 }
 
@@ -144,7 +193,7 @@ function restart() {
   turn.value = black;
   thinking.value = false;
   lastMove.value = -1;
-  say.value = pick(lines.start);
+  speak('start');
 }
 
 // if the window lost focus while clippy was thinking, pick up again when it's back
@@ -179,6 +228,17 @@ onBeforeUnmount(() => {
         <svg class="spin-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
         <span>New game</span>
       </button>
+      <button v-if="!helpBroken" class="ie-button icon-button" title="Ask Clippy for help" @click="help">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path :d="helpGlyph"/></svg>
+        <span>Help</span>
+      </button>
+      <!-- snapped in two along a jagged crack, each half slumped its own way -->
+      <span v-else class="reversi-help-broken" role="img" aria-label="Help is broken" title="Help is broken. Reopen Reversi to fix it.">
+        <span v-for="half in ['left', 'right']" :key="half" :class="['ie-button', 'icon-button', 'reversi-help-half', half]" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><path :d="helpGlyph"/></svg>
+          <span>Help</span>
+        </span>
+      </span>
       <span class="reversi-record" title="Games won against Clippy, remembered in this browser">You {{ record.you }} · Clippy {{ record.clippy }}</span>
     </div>
 
@@ -186,7 +246,7 @@ onBeforeUnmount(() => {
       <canvas ref="backdropCanvas" class="reversi-backdrop" aria-hidden="true"/>
 
       <div class="reversi-clippy">
-        <ClippyArt :class="['reversi-clippy-art', { thinking }]"/>
+        <ClippyArt :class="['reversi-clippy-art', { thinking }]" :mood="thinking ? 'thinking' : mood"/>
         <p class="reversi-balloon" aria-live="polite">{{ thinking ? 'Hmm, let me think…' : say }}</p>
       </div>
 
