@@ -44,10 +44,11 @@ if (live) {
   for (const type of ['pointerdown', 'keydown']) addEventListener(type, start, { once: true, capture: true });
 }
 
-// records an event. detail is a short lowercase slug, value a number
-export function track(name, detail = '', value = 0) {
+// records an event. detail is a short lowercase slug, value a number. extra is
+// anything else the live scoreboard needs, like the snake player's name
+export function track(name, detail = '', value = 0, extra = {}) {
   if (!live) return;
-  const event = { name, detail: String(detail).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 80), value };
+  const event = { ...extra, name, detail: String(detail).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 80), value };
   if (visit) send(event);
   else waiting.push(event);
 }

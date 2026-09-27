@@ -1,25 +1,35 @@
 <script setup>
+// the all-time snake leaderboard under the handheld, with an optional name to show
+// on it. the name is checked as you type (src/names.mjs) and again by the worker
+import { computed } from 'vue';
 import { useLiveStats } from '../live-stats.js';
+import { maxNameLength, nameProblem } from '../names.mjs';
+const name = defineModel('name', { type: String, default: '' });
 const { data, error } = useLiveStats();
+const problem = computed(() => nameProblem(name.value));
 </script>
 <template>
   <section class="live-scoreboard">
-    <h2>All-time scoreboard</h2>
-    <p v-if="error" role="status">{{ error }}</p>
+    <h2>Snake leaderboard &middot; all-time</h2>
+    <label class="leaderboard-name">
+      <span>Your name on the board</span>
+      <input v-model="name" type="text" :maxlength="maxNameLength" placeholder="Anonymous" autocomplete="nickname" spellcheck="false" :aria-invalid="Boolean(problem)" aria-describedby="leaderboard-name-note" @keydown.stop>
+    </label>
+    <p id="leaderboard-name-note" class="leaderboard-note" :class="{ bad: problem }" role="status">{{ problem || 'Optional. Set it before you play and your scores show under it.' }}</p>
+    <p v-if="error && !data" role="status">{{ error }}</p>
     <template v-else-if="data">
-      <p><strong>{{ data.visitors.toLocaleString() }}</strong> total visits &middot; <strong>{{ data.online }}</strong> online now</p>
-      <p>Minesweeper beaten: {{ data.minesweeperWins }} &middot; Breakout finished: {{ data.breakoutWins }} &middot; Highest Snake score: {{ data.snakeHighScore }}</p>
-      <h3>Snake leaderboard &middot; all-time</h3>
       <table v-if="data.leaderboard.length"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in data.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
       <p v-else>No scores yet. Play to set the first record!</p>
-      <small>Since tracking began. Visits count page loads with interaction; online counts visible, active tabs in the last 90 seconds. One best score per anonymous visit. Scores are client-reported.</small>
     </template>
     <p v-else role="status">Loading scores...</p>
   </section>
 </template>
 <style scoped>
 .live-scoreboard { margin: 16px 0; padding: 12px; background: var(--d-page-alt, #fffdf2); border: 1px solid var(--d-line, #999); }
-h2, h3 { font-family: 'Pixel MS Sans Serif', sans-serif; }
-h2 { font-size: 18px; } h3 { font-size: 14px; } p { font-size: 13px; } small { font-size: 11px; color: var(--muted); }
+h2 { font-family: 'Pixel MS Sans Serif', sans-serif; font-size: 18px; } p { font-size: 13px; }
+.leaderboard-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.leaderboard-name input { font: inherit; width: 14ch; max-width: 100%; }
+.leaderboard-note { font-size: 11px; color: var(--muted); margin: 4px 0 10px; }
+.leaderboard-note.bad { color: var(--d-bad, #b00000); }
 table { width: 100%; text-align: left; font-size: 13px; border-collapse: collapse; } td, th { padding: 5px; border-bottom: 1px solid var(--d-rule, #ccc); }
 </style>

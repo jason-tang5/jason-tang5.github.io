@@ -9,6 +9,7 @@ import { buzz } from '../haptics.js';
 import { useLiveStats } from '../live-stats.js';
 import { createBackdrop, snakeScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
+import { cleanName } from '../names.mjs';
 
 const props = defineProps({ active: Boolean });
 const board = ref(null);
@@ -16,6 +17,9 @@ const game = ref(newSnake());
 const running = ref(false);
 const started = ref(false);
 const best = ref(Math.max(0, Number(read('snake-best', '0')) || 0));
+// the name for the leaderboard, typed under the handheld. only an allowed name is kept
+const playerName = ref(read('snake-name', ''));
+watch(playerName, value => { if (!value.trim() || cleanName(value)) save('snake-name', value.trim()); });
 const turns = [];
 let timer;
 const keyDirections = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
@@ -56,7 +60,7 @@ const art = computed(() => {
   let lines;
   if (!started.value && showScores.value && stats.value) {
     const top = stats.value.leaderboard.slice(0, 8).map(r =>
-      `${String(r.rank).padStart(2)}. ${r.player.replace(/^Player /, '').padEnd(8)} ${String(r.score).padStart(3, '0')}`);
+      `${String(r.rank).padStart(2)}. ${r.player.replace(/^Player /, '').padEnd(12)} ${String(r.score).padStart(3, '0')}`);
     const rowWidth = Math.max(0, ...top.map(line => line.length));
     lines = ['', center('WORLD HI-SCORES'), center('~~~~~~~~~~~~~~~'), '',
       ...(top.length ? top.map(line => center(line.padEnd(rowWidth))) : [center('no scores yet'), '', center('be the first!')])];
@@ -111,7 +115,7 @@ function tick() {
   const before = game.value.score;
   game.value = stepSnake(game.value, turns.shift() || game.value.direction);
   if (game.value.score > before) {
-    track('snake-score', '', game.value.score);
+    track('snake-score', '', game.value.score, { player: cleanName(playerName.value) });
     play('eat');
     buzz(25);
   }
@@ -276,7 +280,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="snake-speaker" aria-hidden="true"/>
       </div>
-      <Leaderboard/>
+      <Leaderboard v-model:name="playerName"/>
     </div>
     <span class="sr-only" role="status">{{ status }}</span>
   </div>

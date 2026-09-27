@@ -20,6 +20,7 @@ import {
 } from '../minesweeper-art.mjs';
 
 import { track } from '../analytics.js';
+import { read, save } from '../storage.js';
 import { createBackdrop, minesScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
 
@@ -265,6 +266,10 @@ function lose(cell) {
 function win() {
   if (state.value !== 'playing') return;
   track('minesweeper-win', level.value.toLowerCase(), seconds.value);
+  // your best time for each level, shown in the analytics window
+  const key = `minesweeper-best-${level.value.toLowerCase()}`;
+  const best = Number(read(key, '0'));
+  if (!best || seconds.value < best) save(key, String(seconds.value));
   state.value = 'won';
   clearInterval(timer);
   cells.value.forEach(c => {

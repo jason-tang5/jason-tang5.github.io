@@ -41,3 +41,20 @@ test('presence expires and score storage stays bounded', async () => {
   assert.equal((await get(stats)).leaderboard.length, 10);
   assert.equal([...ctx.storage.sql.exec('SELECT COUNT(*) AS n FROM scores')][0].n, 100);
 });
+test('snake names show on the leaderboard, blocked ones stay anonymous', async () => {
+  const { stats } = setup();
+  const score = (visit, value, player) => stats.fetch(new Request('https://stats/', { method: 'POST', body: JSON.stringify({ name: 'snake-score', visit, value, player }) }));
+  await score('visitor001', 30, 'Jason');
+  await score('visitor002', 20, 'sh1tface');
+  await score('visitor003', 10);
+  assert.deepEqual((await get(stats)).leaderboard.map(r => r.player), ['Jason', 'Player VISITO', 'Player VISITO']);
+});
+test('an older scores table without names gets the column', async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('CREATE TABLE scores (id TEXT PRIMARY KEY, score INTEGER NOT NULL)');
+  db.exec("INSERT INTO scores VALUES ('oldplayer1', 5)");
+  const ctx = { storage: { sql: { exec(query, ...args) { const statement = db.prepare(query); return statement.columns().length ? statement.all(...args) : (statement.run(...args), []); } } } };
+  new LiveStats(ctx);
+  const data = await get(new LiveStats(ctx));
+  assert.equal(data.leaderboard[0].player, 'Player OLDPLA');
+});

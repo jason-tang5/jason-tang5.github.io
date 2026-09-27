@@ -337,9 +337,16 @@ input[type="checkbox"]:focus-visible {
   display: block;
 }
 
-/* one clockwise turn in quarter steps, so the pixels stay square */
-.ascii-reset.spinning svg {
+/* one clockwise turn in quarter steps, so the pixels stay square. every copy of the
+   arrow circle (this reset, restart in contact and reversi, refresh in analytics)
+   turns once when you hover its button */
+:hover > .spin-icon {
   animation: ascii-reset-spin 0.4s steps(4, end);
+}
+
+/* clicking the reset spins it again even while hovered, so it gets its own keyframes */
+.ascii-reset.spinning svg {
+  animation: ascii-reset-spin-again 0.4s steps(4, end);
 }
 
 @keyframes ascii-reset-spin {
@@ -348,8 +355,15 @@ input[type="checkbox"]:focus-visible {
   }
 }
 
+@keyframes ascii-reset-spin-again {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ascii-reset.spinning svg {
+  .ascii-reset.spinning svg,
+  :hover > .spin-icon {
     animation: none;
   }
 }

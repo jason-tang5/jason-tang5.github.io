@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
   <div class="app-layout reversi-app">
     <div class="toolbar ie-toolbar">
       <button class="ie-button icon-button" title="Clear the board and start over" @click="restart">
-        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
+        <svg class="spin-icon" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
         <span>New game</span>
       </button>
       <span class="reversi-record" title="Games won against Clippy, remembered in this browser">You {{ record.you }} · Clippy {{ record.clippy }}</span>

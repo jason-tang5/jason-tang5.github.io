@@ -14,12 +14,12 @@ const number = value => Number(value || 0).toLocaleString();
 // the window is split into win95 tabs
 const tabs = [
   { id: 'scoreboard', label: 'Scoreboard' },
-  { id: 'history', label: 'Site history' },
   { id: 'behind', label: 'Behind the scenes' },
 ];
 const tab = ref(read('analytics-tab', 'scoreboard'));
 const current = computed(() => tabs.some(t => t.id === tab.value) ? tab.value : 'scoreboard');
 function pick(id) {
+  reread.value++;
   tab.value = id;
   save('analytics-tab', id);
 }
@@ -43,6 +43,29 @@ const cards = computed(() => {
       note: games ? `Clippy wins ${Math.round(s.clippyWins / games * 100)}%` : 'No games yet' },
   ];
 });
+// your own scores, kept in this browser by each game
+// storage isn't reactive, so bumping this re-reads it (on refresh and tab changes)
+const reread = ref(0);
+const levelNames = ['expert', 'intermediate', 'beginner'];
+const yourCards = computed(() => {
+  reread.value;
+  const mines = levelNames.map(l => [l, Number(read(`minesweeper-best-${l}`, '0'))]).find(([, t]) => t);
+  const breakout = Number(read('breakout-best', '0'));
+  const you = Number(read('reversi-you', '0')) || 0, clippy = Number(read('reversi-clippy', '0')) || 0;
+  return [
+    { label: 'Your Minesweeper best', value: mines ? `${mines[1]}s` : '—', icon: 'mine', note: mines ? mines[0] : 'Not beaten yet' },
+    { label: 'Your Breakout best', value: breakout ? `${breakout}s` : '—', icon: 'game', note: breakout ? '' : 'Not beaten yet' },
+    { label: 'Your Snake best', value: number(read('snake-best', '0')), icon: 'snake' },
+    { label: 'You vs Clippy', value: `${you}-${clippy}`, icon: 'reversi', note: you + clippy ? `You win ${Math.round(you / (you + clippy) * 100)}%` : 'No games yet' },
+  ];
+});
+// the same kind of cards for the behind the scenes numbers, over the chosen period
+const behindCards = computed(() => data.value ? [
+  { label: 'Messages sent', value: number(data.value.mail.sent), icon: 'mail' },
+  { label: 'Messages failed', value: number(data.value.mail.failed), icon: 'contact' },
+  { label: 'Breakout balls lost', value: number(data.value.breakout.losses), icon: 'game' },
+  { label: 'Seconds to win Breakout', value: data.value.breakout.averageWinSeconds ?? '—', icon: 'games', note: 'on average' },
+] : []);
 const clippyRows = computed(() => live.value ? [
   { label: 'Clippy won', count: live.value.clippyWins },
   { label: 'Visitors won', count: live.value.clippyLosses },
@@ -73,6 +96,7 @@ function setDays(value) {
   load();
 }
 async function load() {
+  reread.value++;
   busy.value = true;
   error.value = '';
   data.value = null;
@@ -86,11 +110,15 @@ onMounted(load);
 <template>
   <div class="app-layout">
     <div class="toolbar analytics-toolbar">
-      <div v-if="current !== 'scoreboard'" class="analytics-periods" role="group" aria-label="Period">
+      <div class="analytics-periods" role="group" aria-label="Period">
         <span>Last</span>
         <button v-for="value in periods" :key="value" class="raised" :class="{ pressed: days === value }" :aria-pressed="days === value" :disabled="busy" @click="setDays(value)">{{ value }} days</button>
       </div>
-      <button class="raised" :disabled="busy" @click="refresh(); load()">Refresh</button>
+      <button class="raised analytics-refresh" :disabled="busy" @click="refresh(); load()">
+        <!-- the same arrow circle as the restart buttons in contact and reversi -->
+        <svg class="spin-icon" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><path d="M4 1h4v1H4zM9 1h1v1H9zM2 2h2v1H2zM8 2h2v1H8zM2 3h1v1H2zM7 3h3v1H7zM1 4h1v4H1zM10 6h1v2h-1zM2 8h1v1H2zM9 8h1v1H9zM2 9h2v1H2zM8 9h2v1H8zM4 10h4v1H4z"/></svg>
+        Refresh
+      </button>
     </div>
     <div class="analytics-tabs" role="tablist" aria-label="Analytics">
       <button v-for="t in tabs" :id="`analytics-tab-${t.id}`" :key="t.id" :data-tab="t.id" role="tab" :aria-selected="current === t.id" :aria-controls="`analytics-panel-${t.id}`" :tabindex="current === t.id ? 0 : -1"
@@ -110,15 +138,26 @@ onMounted(load);
               <small v-if="card.note">{{ card.note }}</small>
             </section>
           </div>
-          <p class="analytics-note"><strong>{{ number(live.visitors) }}</strong> total visits &middot; <strong>{{ number(live.online) }}</strong> online now</p>
+          <div class="visit-banner">
+            <section><RetroIcon name="person"/><div><strong>{{ number(live.visitors) }}</strong><span>total visits</span></div></section>
+            <section><span class="online-dot" aria-hidden="true"/><div><strong>{{ number(live.online) }}</strong><span>online now</span></div></section>
+          </div>
+          <h2>Your scores</h2>
+          <p class="analytics-note">Kept in this browser.</p>
+          <div class="score-cards">
+            <section v-for="card in yourCards" :key="card.label" class="score-card">
+              <RetroIcon :name="card.icon"/>
+              <strong>{{ card.value }}</strong>
+              <span>{{ card.label }}</span>
+              <small v-if="card.note">{{ card.note }}</small>
+            </section>
+          </div>
           <h2>Reversi against Clippy</h2>
           <PixelPie :rows="clippyRows" label="Reversi games against Clippy"/>
           <h2>Snake leaderboard</h2>
           <table v-if="live.leaderboard.length" class="analytics-table"><thead><tr><th>Rank</th><th>Player</th><th>Score</th></tr></thead><tbody><tr v-for="row in live.leaderboard" :key="row.rank"><td>{{ row.rank }}</td><td>{{ row.player }}</td><td>{{ row.score }}</td></tr></tbody></table>
           <p v-else>No scores yet. Play Snake to set the first record!</p>
         </template>
-      </template>
-      <template v-else-if="current === 'history'">
         <h1>A little bit of site history</h1>
         <p v-if="busy" role="status">Loading site history...</p>
         <p v-else-if="error" role="status">{{ error }}</p>
@@ -142,11 +181,17 @@ onMounted(load);
         <p v-if="busy" role="status">Loading...</p>
         <p v-else-if="error" role="status">{{ error }}</p>
         <template v-if="data">
-          <p>Last {{ days }} days: {{ number(data.mail.sent) }} messages sent · {{ number(data.mail.failed) }} failed · {{ number(data.breakout.losses) }} lost Breakout balls · {{ data.breakout.averageWinSeconds ?? '—' }} seconds to win Breakout on average.</p>
-          <div class="analytics-pies">
-            <section><h2>Devices</h2><PixelPie :rows="data.devices" label="Devices"/></section>
-            <section><h2>Referrers</h2><PixelPie :rows="data.referrers" label="Referrers"/></section>
+          <div class="score-cards">
+            <section v-for="card in behindCards" :key="card.label" class="score-card">
+              <RetroIcon :name="card.icon"/>
+              <strong>{{ card.value }}</strong>
+              <span>{{ card.label }}</span>
+              <small v-if="card.note">{{ card.note }}</small>
+            </section>
           </div>
+          <p class="analytics-note">Last {{ days }} days</p>
+          <h2>Devices</h2>
+          <PixelPie :rows="data.devices" label="Devices"/>
           <section v-for="[title, rows, color] in sections" :key="title">
             <h2>{{ title }}</h2><p v-if="!rows.length">No events yet.</p>
             <div v-for="row in rows" :key="row.label" class="analytics-bar-row" :style="{ '--bar': `var(--bar-${color})` }">
@@ -178,7 +223,21 @@ onMounted(load);
 .analytics-tabs button[aria-selected="true"] { margin-top: 0; padding-bottom: 6px; font-weight: bold; background: var(--paper); }
 .analytics-tabs button:focus-visible { outline: 1px dotted var(--ink); outline-offset: -5px; }
 .analytics-page { border-top: 2px solid var(--light); }
-.analytics-pies { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 24px; }
+.visit-banner { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; }
+.visit-banner section {
+  display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 10px; min-width: 0;
+  background: var(--d-page-alt, #fffdf2); border: 2px solid var(--d-line, #000); box-shadow: 4px 4px 0 var(--d-line, #000);
+  font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
+}
+.visit-banner .retro-icon { width: 40px; height: 40px; flex: none; }
+.visit-banner strong { display: block; font: bold 40px/1.1 'Pixel MS Sans Serif', monospace; color: var(--d-link, #000080); }
+.visit-banner span { font-size: 14px; }
+/* a square green light that blinks like a modem */
+.online-dot { width: 20px; height: 20px; flex: none; background: #1baf7a; border: 2px solid var(--d-line, #000); animation: online-blink 1.2s steps(1) infinite; }
+@keyframes online-blink { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .online-dot { animation: none; } }
+.analytics-refresh { display: inline-flex; align-items: center; gap: 6px; }
+.analytics-refresh svg { width: 16px; height: 16px; fill: currentColor; }
 .score-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
 .score-card {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; text-align: center; min-width: 0;
