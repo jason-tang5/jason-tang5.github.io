@@ -5,7 +5,7 @@ export const profile = {
   subtitle: 'Computer Engineering @ UofT',
   // typed out one at a time under my name on the about page
   roles: ['Software Engineer', 'Autodidact', 'Problem Solver', 'Tinkerer', 'Get-It-Done Guy', 'Builder', 'Student Athlete', 'Gym Rat?'],
-  intro: 'Hi, I’m Jason — a third-year Computer Engineering student at UofT and former software engineering intern at AMD. I like building useful tools, learning new technologies, and digging into complex problems.',
+  intro: 'Hi, I’m Jason, a third-year Computer Engineering student at UofT and former software engineering intern at AMD. I like building useful tools, learning new technologies, and digging into complex problems.',
   links: {
     linkedin: 'https://www.linkedin.com/in/jason-tang-uoft/',
     github: 'https://github.com/jason-tang5',

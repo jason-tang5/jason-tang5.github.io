@@ -28,6 +28,7 @@
   --ink: #171717;
   --muted: #555;
   --tip: #ffffdf;
+  --tip-link: #0000c0;
   --taskbar-height: 46px;
   /* how wide the taskbar is when it's moved to the left or right edge */
   --taskbar-width: 176px;
@@ -47,6 +48,7 @@
   --ink: #e6e6e6;
   --muted: #a9a9ad;
   --tip: #3a3722;
+  --tip-link: #9db4ff;
   --navy: #1c2a7a;
 }
 
@@ -651,6 +653,68 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 .first-tip p {
   line-height: 1.5;
   margin: 8px 0;
+}
+
+/* the welcome note's ways in. the links are plain underlined text, like a help file */
+.tip-subheading {
+  display: block;
+  margin-top: 8px;
+}
+
+.tip-paths {
+  margin: 4px 0 0;
+  padding-left: 14px;
+  line-height: 1.5;
+}
+
+.tip-paths li + li {
+  margin-top: 3px;
+}
+
+.tip-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--tip-link);
+  font: inherit;
+  text-decoration: underline;
+  cursor: var(--classic-pointer);
+}
+
+.tip-link:focus-visible {
+  outline: 1px dotted currentColor;
+}
+
+/* the pixel arrow pointing left at the projects icon. it sits in the icon's cell (App.vue
+   gives it the same position), just right of the picture, so it stays clear of the
+   next column's icons */
+.start-here {
+  position: absolute;
+  width: 86px;
+  height: 83px;
+  pointer-events: none;
+}
+
+.start-here svg {
+  position: absolute;
+  left: 62px;
+  top: 10px;
+  width: 24px;
+  height: 21px;
+  fill: #fff;
+  filter: drop-shadow(2px 2px 0 #000);
+  shape-rendering: crispEdges;
+  animation: start-here-bob 0.8s steps(1) infinite;
+}
+
+@keyframes start-here-bob {
+  50% { transform: translateX(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-here svg {
+    animation: none;
+  }
 }
 
 /* same look as the welcome tip, but over the windows so it isn't hidden by the one it's about */
@@ -1795,7 +1859,10 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 .about-grid {
   display: grid;
   flex: 1 0 auto;
-  grid-template-columns: clamp(250px, 46%, 640px) minmax(0, 1fr);
+  /* the photo gives up width before the text column gets too narrow for the
+     shortcuts box pinned in its corner (344px, plus 36px of edge, scrollbar and
+     margin), and once it would drop under 250px the photo stacks on top instead */
+  grid-template-columns: clamp(250px, min(46%, 100% - 405px), 640px) minmax(0, 1fr);
   gap: 25px;
   align-items: stretch;
 }
@@ -1879,7 +1946,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 }
 
 /* stack the portrait on top when the about window is narrow */
-@container (max-width: 560px) {
+@container (max-width: 655px) {
   .about-grid {
     flex: none;
     grid-template-columns: 1fr;
@@ -3091,50 +3158,7 @@ fieldset {
   animation: cd-note-float 3s steps(24) forwards;
 }
 
-/* the cd in the top right of the about page, the same size as the envelope beside it.
-   while hovered it plays its own 32px sprite sheet, drawn to match its icon (the
-   first frame is the icon), so the shine turns without resizing the player's discs */
-.about-cd-disc {
-  position: relative;
-  display: block;
-}
-
-.about-cd-disc .retro-icon {
-  display: block;
-}
-
-.about-cd-sprite {
-  position: absolute;
-  inset: 0;
-  display: none;
-  background: url(../assets/about-cd-frames.png) 0 0 / 384px 32px no-repeat;
-  image-rendering: pixelated;
-  animation: about-cd-frames 1.2s steps(12) infinite;
-}
-
-.about-cd-disc.spinning .retro-icon {
-  visibility: hidden;
-}
-
-.about-cd-disc.spinning .about-cd-sprite {
-  display: block;
-}
-
-@keyframes about-cd-frames {
-  to { background-position: -384px 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .about-cd-disc.spinning .retro-icon {
-    visibility: visible;
-  }
-
-  .about-cd-disc.spinning .about-cd-sprite {
-    display: none;
-  }
-}
-
-/* linkedin, github, contact and the cd player in the top right of the about window, like desktop icons.
+/* linkedin, github and contact in the top right of the about window, like desktop icons.
    they sit in the same raised grey box as the ascii sliders, so they still read as
    controls when a narrow window puts the photo right under them */
 .about-content {
@@ -3158,7 +3182,7 @@ fieldset {
    the shortcuts box pinned in its top right corner. 100cqh is the page's height
    inside its padding */
 @media (min-width: 701px) {
-  @container (min-width: 561px) {
+  @container (min-width: 656px) {
     .about-grid {
       flex: none;
       height: 100cqh;
@@ -3191,7 +3215,7 @@ fieldset {
   cursor: var(--classic-pointer);
 }
 
-/* toolbar icons are usually squeezed to 24px, but these four animate, and at 3/4 size
+/* toolbar icons are usually squeezed to 24px, but these animate, and at 3/4 size
    their pixel rows round unevenly and flicker (the octocat's tail broke into stray
    bars). at their real 32px every pixel lands on a whole screen pixel */
 .about-shortcut.ie-button .retro-icon {
@@ -3204,7 +3228,7 @@ fieldset {
    across, both centred, and the text goes straight under the photo with no gap left
    for the box.
    the widths match .portrait-frame's in the same layouts */
-@container (max-width: 560px) {
+@container (max-width: 655px) {
   .about-shortcuts {
     position: static;
     box-sizing: border-box;
@@ -3220,14 +3244,14 @@ fieldset {
 }
 
 @media (max-width: 700px) {
-  @container (max-width: 560px) {
+  @container (max-width: 655px) {
     .about-shortcuts {
       width: min(300px, 100%);
       gap: 0;
       padding-inline: 2px;
     }
 
-    /* five buttons and the groove only fit across the photo's width if each gives up
+    /* four buttons and the groove only fit across the photo's width if each gives up
        its minimum width and most of its side padding */
     .about-shortcuts .ie-button {
       min-width: 0;
@@ -3350,12 +3374,6 @@ fieldset {
   .about-shortcut .bl-b {
     visibility: hidden !important;
   }
-}
-
-/* the smaller notes from hovering the cd on the about page */
-.cd-note-small {
-  filter: drop-shadow(1px 1px 0 #fff);
-  animation-duration: 2s;
 }
 
 @keyframes cd-note-float {
@@ -6059,12 +6077,14 @@ label.mail-label {
 }
 
 
+/* from the left, so ascii / normal stay put when the controls that only show
+   while ascii is on come and go after them */
 .pictures-controls {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 6px;
 }
@@ -6146,6 +6166,7 @@ label.mail-label {
    reset underneath, which only show while ascii is on. the ::before is the line break */
 @media (max-width: 700px) {
   .pictures-controls {
+    justify-content: center;
     gap: 3px 6px;
   }
 

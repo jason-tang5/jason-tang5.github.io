@@ -102,8 +102,8 @@ try {
   // ---- desktop icons ----
 
   await expect(page.locator('.desktop-shortcut', { hasText: 'My Computer' })).toHaveCount(0);
-  const blogIcon = page.locator('.desktop-shortcut', { hasText: 'Blog' });
-  const before = await blogIcon.boundingBox();
+  const resumeIcon = page.locator('.desktop-shortcut', { hasText: 'Resume' });
+  const before = await resumeIcon.boundingBox();
   await page.mouse.move(before.x + 40, before.y + 30);
   await page.mouse.down();
   await page.mouse.move(before.x + 240, before.y - 70, { steps: 8 });
@@ -111,13 +111,13 @@ try {
 
   // a 200x-100 drag snaps two columns right and one row up (98x88 grid)
   await expect.poll(async () => {
-    const b = await blogIcon.boundingBox();
+    const b = await resumeIcon.boundingBox();
     return [Math.round(b.x - before.x), Math.round(b.y - before.y)];
   }).toEqual([196, -88]);
-  await expect(page.locator('[data-window="blog"]')).toHaveCount(0);
+  await expect(page.locator('[data-window="resume"]')).toHaveCount(0);
 
   await page.reload();
-  const reloaded = await blogIcon.boundingBox();
+  const reloaded = await resumeIcon.boundingBox();
   assert.ok(Math.abs(reloaded.x - before.x) < 2 && Math.abs(reloaded.y - before.y) < 2, 'icon positions reset on load');
 
   // ---- windows remember where they were ----

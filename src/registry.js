@@ -13,16 +13,17 @@ const app = (id, label, icon, width, height, minWidth = 340, minHeight = 260) =>
 });
 
 export const apps = [
-  // the desktop icons and start menu follow this order
+  // the desktop icons and start menu follow this order. the desktop leaves an empty
+  // cell after resume, so the work stuff reads as its own group above the rest
   app('about', 'About Me', 'person', 900, 740, 430, 350),
-  app('resume', 'Resume', 'document', 740, 650),
   app('experience', 'Experience', 'case', 680, 570, 410, 310),
   app('projects', 'Projects', 'folder', 720, 480, 430, 310),
+  app('resume', 'Resume', 'document', 740, 650),
   app('blog', 'Blog', 'notebook', 720, 580),
   app('analytics', 'Analytics', 'chart', 720, 640),
-  app('contact', 'Contact', 'contact', 460, 680, 340, 520),
   app('games', 'Games', 'games', 440, 350, 300, 270),
   app('funstuff', 'Fun Stuff', 'funstuff', 440, 350, 300, 270),
+  app('contact', 'Contact', 'contact', 460, 680, 340, 520),
   // opened from the start menu, shows every app in one folder view
   app('computer', 'All Apps', 'computer', 480, 440, 300, 270),
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
@@ -53,6 +54,7 @@ for (const a of apps) {
   a.fixedSize = false;
   a.locked = a.id === 'mail'; // can't be opened until something unlocks it
   a.sheet = a.id in folders; // on a phone, opens partway up the screen instead of filling it
+  a.gapAfter = a.id === 'resume'; // an empty desktop cell follows its icon
 }
 
 // old links used #app=breakout, the game lives in contact now

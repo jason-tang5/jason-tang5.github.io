@@ -58,6 +58,9 @@ const compact = ref(innerWidth <= 700);
 const { resting } = useResting(() => compact.value && matchMedia('(pointer: coarse)').matches);
 const clock = ref(new Date());
 const tip = ref(read('tip') !== 'dismissed');
+// a bobbing pixel arrow beside the projects icon says where to start, until the
+// projects folder or any project has been opened once
+const projectsArrow = ref(read('projects-arrow') !== 'done');
 
 const savedColor = read('wallpaper', defaultWallpaper);
 const wallpaper = ref(wallpapers.some(w => w.color === savedColor) ? savedColor : defaultWallpaper);
@@ -164,6 +167,11 @@ function open(id, updateUrl = true, sound = true) {
     // windows put back after a refresh were opened on an earlier visit, so skip them
     if (!restoring) trackOnce('open', id);
     windows.push(win);
+  }
+
+  if (projectsArrow.value && (id === 'projects' || registry[id].type === 'project')) {
+    projectsArrow.value = false;
+    save('projects-arrow', 'done');
   }
 
   win.minimized = false;
@@ -658,7 +666,8 @@ function nearestFree(taken, want, { cols, rows }) {
 }
 
 // where every icon goes right now. icons nobody has moved yet fill the grid in
-// order, top to bottom then left to right, like the css grid does
+// order, top to bottom then left to right, like the css grid does. a gapAfter icon
+// ends a group, which the next icon keeps apart from
 const iconLayout = computed(() => {
   const fits = gridFits();
   const taken = new Set();
@@ -676,6 +685,9 @@ const iconLayout = computed(() => {
     while (taken.has(`${Math.floor(next / fits.rows)},${next % fits.rows}`)) next++;
     out[app.id] = { col: Math.floor(next / fits.rows), row: next % fits.rows };
     next++;
+    // the gap only fits if everything still fits in one column. if not, the next
+    // group starts at the top of a new column instead, which splits them just as well
+    if (app.gapAfter && next % fits.rows) next = shortcuts.length < fits.rows ? next + 1 : Math.ceil(next / fits.rows) * fits.rows;
   }
   return out;
 });
@@ -792,6 +804,33 @@ function setWallpaper(color) {
   wallpaper.value = color;
   const saved = save('wallpaper', color);
   announcement.value = saved ? 'Wallpaper saved.' : 'Wallpaper changed. Browser storage is unavailable.';
+}
+
+// the very first visit on a desktop also gets a sticky note of tips on the right side,
+// under the welcome note. it's an ordinary note, so it saves like one and can be
+// edited or deleted, and it's only ever made once
+const starterTips = [
+  'Drag windows by the title bar, resize from any edge',
+  'Right-click the desktop for more',
+  'Every window has its own link to share',
+  'Clear Breakout to unlock a secret',
+  'This note is yours, type over it!',
+];
+
+function openStarterNote() {
+  if (compact.value || read('starter-note') === 'done') return;
+  save('starter-note', 'done');
+  const text = ['Tips', ...starterTips.map(line => `• ${line}`)].join('\n');
+  const html = `<div><b>Tips</b></div><ul>${starterTips.map(line => `<li>${line}</li>`).join('')}</ul>`;
+  const id = addNote('yellow', text, html);
+  open(id, false, false);
+  // on wide screens the welcome note is in the top right, and on narrower ones it
+  // drops to the bottom right (see .first-tip), so the tips go under it or up top
+  const win = get(id);
+  win.width = 260;
+  win.height = 330;
+  win.x = area.width - win.width - 24;
+  win.y = innerWidth > 1100 && tip.value ? 200 : 25;
 }
 
 function dismissTip() {
@@ -1054,11 +1093,19 @@ onMounted(() => {
   resizeObserver.observe(desktop.value);
 
   // bring back the windows from last time, then put whatever the url asks for on
-  // top. a fresh visit (or one where everything was closed) gets the about window
+  // top. a fresh visit (or one where everything was closed) gets the cd player
+  // waiting behind the about window. opening it isn't counted as a visitor's open
   restoreOpen();
+  const fresh = !windows.length;
+  if (fresh) {
+    restoring = true;
+    open('music', false, false);
+    openStarterNote();
+    restoring = false;
+  }
   const id = hashApp();
   if (canOpen(id)) open(id, false, false);
-  else if (!windows.length) open('about', false, false);
+  else if (fresh) open('about', false, false);
   else {
     active.value = nextVisible(windows);
     if (active.value) {
@@ -1145,6 +1192,9 @@ onBeforeUnmount(() => {
           <RetroIcon :name="app.icon"/>
           <span>{{ app.label }}</span>
         </button>
+        <span v-if="projectsArrow && !dragging" class="start-here" :style="iconStyle('projects')" aria-hidden="true">
+          <svg viewBox="0 0 8 7"><path d="M0 3h1V2h1V1h1V0h1v2h4v3H4v2H3V6H2V5H1V4H0z"/></svg>
+        </span>
       </nav>
 
       <div class="desktop-signature" aria-hidden="true"><span>JASON TANG</span></div>
@@ -1154,7 +1204,12 @@ onBeforeUnmount(() => {
           <strong>Welcome!</strong>
           <button aria-label="Dismiss welcome message" @click="dismissTip">×</button>
         </div>
-        <p>feel free to click around!</p>
+        <strong class="tip-subheading">Where to?</strong>
+        <ul class="tip-paths">
+          <li>In a hurry? <button class="tip-link" @click="open('resume')">Resume</button> · <button class="tip-link" @click="open('projects')">Projects</button></li>
+          <li>Want to poke around? <button class="tip-link" @click="open('contact')">Play Breakout</button> to reveal my email</li>
+          <li>Just looking? {{ compact ? 'Tap' : 'Double-click' }} anything</li>
+        </ul>
       </aside>
 
       <aside v-if="notice" class="first-tip desktop-notice raised" role="status" aria-label="Notification">

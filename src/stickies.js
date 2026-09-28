@@ -60,8 +60,9 @@ notes.value.forEach(register);
 
 export const findNote = id => notes.value.find(n => n.id === id);
 
-export function addNote(color = 'yellow') {
-  const note = { id: crypto.randomUUID(), text: '', color, updated: Date.now() };
+// text is the plain version, html the formatted one (see editNote below)
+export function addNote(color = 'yellow', text = '', html) {
+  const note = { id: crypto.randomUUID(), text, html, color, updated: Date.now() };
   notes.value.unshift(note);
   register(note);
   persist();

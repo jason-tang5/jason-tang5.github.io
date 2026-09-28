@@ -25,7 +25,6 @@ import FpgaFigures from './FpgaFigures.vue';
 import ReversiFigures from './ReversiFigures.vue';
 import { read, save, remove } from '../storage.js';
 import { track } from '../analytics.js';
-import { noteGlyphs, noteColors } from '../notes.mjs';
 import { balloonColors, balloonFrames, balloonString } from '../balloon-sprite.js';
 import { play, setSoundEnabled, setSoundLevel, soundEnabled, soundLevel } from '../sound.js';
 import { theme, setTheme } from '../theme.js';
@@ -231,59 +230,6 @@ watch(portraitControls, controls => controls && hintObserver.observe(controls));
 onBeforeUnmount(() => hintObserver.disconnect());
 
 
-// the cd at the bottom of the about page. hovering it spins it, plays a little
-// music box tune and puffs out small notes, like the cd player does while it
-// plays. clicking it opens the real cd player
-const hoverNotes = ref([]);
-const cdSpinning = ref(false);
-const cdDisc = ref(null);
-let hoverNoteId = 0;
-let hoverNoteTimer;
-let tuneTimer;
-let tuneStep = 0;
-
-// the notes are teleported onto the desktop (like the cd player's) so they can
-// float up past the edge of the window instead of being cut off by it
-function spawnHoverNote() {
-  const host = document.querySelector('.desktop');
-  const rect = cdDisc.value?.getBoundingClientRect();
-  if (!host || !rect?.width || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const box = host.getBoundingClientRect();
-  const id = hoverNoteId++;
-  const dir = id % 2 ? 1 : -1;
-  hoverNotes.value.push({
-    id,
-    glyph: noteGlyphs[id % noteGlyphs.length],
-    style: {
-      left: `${rect.left - box.left + rect.width / 2 + dir * rect.width * 0.35}px`,
-      top: `${rect.top - box.top + rect.height * 0.25}px`,
-      color: noteColors[id % noteColors.length],
-      '--dx': `${dir * (20 + Math.random() * 40)}px`,
-      '--dy': `${-(80 + Math.random() * 70)}px`,
-    },
-  });
-}
-
-function startCd() {
-  cdSpinning.value = true;
-  clearInterval(hoverNoteTimer);
-  clearInterval(tuneTimer);
-  spawnHoverNote();
-  hoverNoteTimer = setInterval(spawnHoverNote, 320);
-  tuneStep = 0;
-  play('tune', tuneStep++);
-  tuneTimer = setInterval(() => play('tune', tuneStep++), 240);
-}
-
-function stopCd() {
-  cdSpinning.value = false;
-  clearInterval(hoverNoteTimer);
-  clearInterval(tuneTimer);
-}
-
-onBeforeUnmount(stopCd);
-
 function setPortraitAscii(value) {
   portraitHint.value = false;
   portraitAscii.value = value;
@@ -464,17 +410,6 @@ function balloonDone(event, id) {
             <RetroIcon name="contact"/>
             <span>Contact</span>
           </button>
-          <button
-            class="about-shortcut ie-button"
-            @click="emit('open', 'music')"
-            @pointerenter="startCd"
-            @pointerleave="stopCd"
-            @focus="startCd"
-            @blur="stopCd"
-          >
-            <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"><RetroIcon name="music"/><span class="about-cd-sprite"/></span>
-            <span>CD Player</span>
-          </button>
           <!-- the balloons are just for fun, so a groove keeps them apart from the links -->
           <span class="toolbar-separator" aria-hidden="true"/>
           <button class="about-shortcut ie-button about-balloons" title="Let go of some balloons" @click="launchBalloons">
@@ -482,20 +417,6 @@ function balloonDone(event, id) {
             <span>Balloons</span>
           </button>
         </div>
-        <Teleport to=".desktop">
-          <span
-            v-for="n in hoverNotes"
-            :key="n.id"
-            class="cd-note cd-note-small"
-            :style="n.style"
-            aria-hidden="true"
-            @animationend="hoverNotes = hoverNotes.filter(h => h.id !== n.id)"
-          >
-            <svg :viewBox="`0 0 ${n.glyph.w} ${n.glyph.h}`" :width="n.glyph.w * 1.5" :height="n.glyph.h * 1.5" shape-rendering="crispEdges">
-              <path :d="n.glyph.d" fill="currentColor"/>
-            </svg>
-          </span>
-        </Teleport>
         <div class="about-grid">
           <div ref="portraitFrame" class="portrait-frame inset" @pointerdown.capture="portraitHint = false">
             <div ref="portraitControls" class="pictures-controls portrait-toolbar"/>
