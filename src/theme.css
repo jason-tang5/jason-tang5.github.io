@@ -4395,6 +4395,35 @@ label.mail-label {
   display: grid;
   place-items: center;
   background: #20202b;
+  /* a sideways drag is the photo's (Pictures.vue), up and down still scroll */
+  touch-action: pan-y pinch-zoom;
+}
+
+/* the photo and its neighbour slide in the same spot, clipped to the stage while
+   they're moving */
+.pictures-stage > .pictures-hero {
+  grid-area: 1 / 1;
+}
+
+.pictures-stage.swiping {
+  overflow: hidden;
+}
+
+.pictures-stage.settling > .pictures-hero {
+  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pictures-stage.settling > .pictures-hero { transition: none; }
+}
+
+.pictures-peek img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: center / cover;
+  filter: brightness(var(--photo-brightness, 1.22)) saturate(1.25);
 }
 
 /* biggest size that fits the stage while keeping the photo's shape */
@@ -6996,10 +7025,11 @@ label.mail-label {
   min-width: 0;
 }
 
+/* just as wide as its longest name */
 .about-favorites-pane {
   display: flex;
   flex-direction: column;
-  flex: 0 0 158px;
+  flex: 0 0 auto;
   min-height: 0;
   min-width: 0;
 }
@@ -7011,7 +7041,7 @@ label.mail-label {
   flex-direction: column;
   flex: 1;
   gap: 1px;
-  padding: 6px 4px;
+  padding: 6px 14px 6px 4px;
   overflow-y: auto;
   background: var(--paper);
   font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
