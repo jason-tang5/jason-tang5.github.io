@@ -3,19 +3,27 @@
 export const profile = {
   name: 'Jason Tang',
   subtitle: 'Computer Engineering @ UofT',
-  intro: 'Hi, I’m Jason — a Computer Engineering student at UofT and former software engineering intern at AMD. I like building useful tools, learning new technologies, and digging into complex problems.',
+  // typed out one at a time under my name on the about page
+  roles: ['Software Engineer', 'Autodidact', 'Problem Solver', 'Tinkerer', 'Get-It-Done Guy', 'Builder', 'Student Athlete', 'Gym Rat?'],
+  intro: 'Hi, I’m Jason — a third-year Computer Engineering student at UofT and former software engineering intern at AMD. I like building useful tools, learning new technologies, and digging into complex problems.',
   links: {
     linkedin: 'https://www.linkedin.com/in/jason-tang-uoft/',
     github: 'https://github.com/jason-tang5',
   },
   bio: 'When I’m not building, I’m usually playing some sport, at the gym, or learning some random skill.',
-  // the quick facts under the divider on the about page: work first, then for fun. the text takes *italic* and **bold** like the blog
+  // the quick facts under the divider on the about page (AboutFacts.vue): work first, then
+  // for fun. the text takes *italic* and **bold** like the blog. awards each get a ribbon
+  // medal under the fact, and books sets the links in the pixel font with a little book
   facts: [
-    ['Studying', 'Comp Eng @ UofT ’28 · Edward S Rogers Sr. Scholarship'],
-    ['Previously', '16-month SWE intern @ AMD, building regression tooling for 2,000+ engineers'],
-    ['Building', 'a small LLM running on my own Rust + CUDA ML framework'],
-    ['Sports', 'volleyball (captain), ultimate frisbee, badminton'],
-    ['Favorite books', '[*The Name of the Wind*](https://www.goodreads.com/book/show/186074.The_Name_of_the_Wind), [*Meditations*](https://www.goodreads.com/book/show/30659.Meditations)'],
+    {
+      label: 'Studying',
+      text: 'Comp Eng @ UofT ’28',
+      awards: ['Edward S Rogers Sr. Scholarship', 'Faculty of Applied Science and Engineering Scholarship'],
+    },
+    { label: 'Previously', text: '16-month SWE intern @ AMD, building tooling for 1,000+ engineers' },
+    { label: 'Currently building', text: 'a small LLM running on my own Rust + CUDA ML framework' },
+    { label: 'Sports', text: 'volleyball (captain), ultimate frisbee, badminton' },
+    { label: 'Favorite books', text: '[The Name of the Wind](https://www.goodreads.com/book/show/186074.The_Name_of_the_Wind), [Meditations](https://www.goodreads.com/book/show/30659.Meditations)', books: true },
   ],
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],

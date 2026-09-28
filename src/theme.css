@@ -1851,6 +1851,26 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   margin: 10px 0;
 }
 
+/* the typed line under my name: the pixel font in the link colour, with a blinking
+   underscore cursor like the build terminal's. its height is fixed so the page doesn't
+   jump while a word's being typed or erased */
+.about-copy .typed-roles {
+  height: 1.3em;
+  margin: 0 0 16px;
+  font: bold 17px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  color: var(--d-link, #000080);
+  white-space: nowrap;
+}
+
+.typed-cursor {
+  animation: terminal-blink 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typed-cursor { animation: none; }
+}
+
 .about-copy .intro {
   font-size: 17px;
   line-height: 1.45;
@@ -2570,8 +2590,8 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 }
 
 .about-copy .about-facts-section h2 {
-  margin: 0 0 12px;
-  font: bold 16px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  margin: 0 0 14px;
+  font: bold 21px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   color: var(--ink);
 }
@@ -2627,16 +2647,17 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   .build-terminal-screen .cursor { animation: none; }
 }
 
-/* the about page's quick facts: each label in the pixel font like the blog's headings,
-   lined up in a column, with the fact beside it */
+/* the about page's quick facts (AboutFacts.vue): each label in the pixel font like the
+   blog's headings, lined up in a column, with the fact beside it. dotted pixel lines,
+   like a windows focus box, run between the rows and down between the two columns */
 .about-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 7px 14px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.45;
 }
 
@@ -2644,11 +2665,77 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   display: contents;
 }
 
+.about-facts li > * {
+  padding: 7px 0;
+}
+
+.about-facts li > strong {
+  padding-right: 12px;
+  border-right: 1px dotted var(--fact-line, var(--shadow));
+}
+
+.about-facts li > span {
+  padding-left: 14px;
+}
+
+.about-facts li + li > * {
+  border-top: 1px dotted var(--fact-line, var(--shadow));
+}
+
+/* the shadow grey is nearly the page colour in dark mode, so the dots go lighter */
+:root[data-theme="dark"] .about-facts { --fact-line: #74747f; }
+
+.about-facts li:first-child > * { padding-top: 0; }
+.about-facts li:last-child > * { padding-bottom: 0; }
+
 /* the labels sit on the same line height as the facts, so the baselines line up */
 .about-facts strong {
-  font: bold 14px/calc(17px * 1.45) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  font: bold 13px/calc(15px * 1.45) 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   color: var(--d-link, #000080);
+}
+
+/* each scholarship on its own line under the school, with a little ribbon medal */
+.fact-award {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 3px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.fact-award svg {
+  flex: none;
+  width: 12px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+/* the favourite books in the pixel font, each with a little book in front, in the link
+   colour, and a dotted underline like the jumps in an old windows help file */
+.about-facts .fact-books a {
+  font: bold 13px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+  color: var(--d-link, #000080);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.about-facts .fact-books a::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 11px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='11' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M0 0h9v8H0zM2 0h1v8H2zM1 9h8v1H1zM0 8h1v2h8v1H0z'/%3E%3C/svg%3E") no-repeat;
+}
+
+.about-facts .fact-books a:hover {
+  text-decoration-style: solid;
 }
 
 /* too narrow for two columns: each label sits over its fact */
@@ -2658,9 +2745,17 @@ body:has(.about-app.over-balloon) .hammer-cursor {
     gap: 0;
   }
 
-  .about-facts span {
-    margin-bottom: 8px;
+  .about-facts li > strong {
+    padding: 7px 0 0;
+    border-right: 0;
   }
+
+  .about-facts li > span {
+    padding: 0 0 7px;
+    border-top: 0;
+  }
+
+  .about-facts li:first-child > strong { padding-top: 0; }
 }
 
 /* the snake cartridge's printed label brings its own heading, without the divider */
