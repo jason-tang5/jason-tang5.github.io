@@ -4417,13 +4417,14 @@ label.mail-label {
   .pictures-stage.settling > .pictures-hero { transition: none; }
 }
 
-.pictures-peek img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: center / cover;
-  filter: brightness(var(--photo-brightness, 1.22)) saturate(1.25);
+/* the neighbour sliding in shows just its photo and caption, the controls are the
+   photo's */
+.pictures-peek .ascii-mode-controls,
+.pictures-peek .ascii-reset,
+.pictures-peek .ascii-hammer,
+.pictures-peek .hammer-toggle,
+.pictures-peek .video-play {
+  display: none;
 }
 
 /* biggest size that fits the stage while keeping the photo's shape */

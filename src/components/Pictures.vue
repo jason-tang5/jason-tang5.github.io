@@ -49,10 +49,14 @@ const settling = ref(false);
 const dragging = ref(false);
 let swipe = null;
 let settleTimer = 0;
-const neighbour = computed(() => {
-  if (!offset.value) return null;
-  const index = (selected.value + (offset.value < 0 ? 1 : -1) + photos.length) % photos.length;
-  return photos[index];
+// in order left to right, so the photo never moves in the page when its neighbour
+// comes or goes. shift is how many pages over from the photo each one sits
+const slides = computed(() => {
+  const current = { photo: photo.value, shift: 0 };
+  if (!offset.value) return [current];
+  const shift = offset.value < 0 ? 1 : -1;
+  const neighbour = { photo: photos[(selected.value + shift + photos.length) % photos.length], shift };
+  return shift < 0 ? [neighbour, current] : [current, neighbour];
 });
 const pageWidth = () => (stage.value?.clientWidth ?? 0) + gap;
 
@@ -142,33 +146,31 @@ function keys(event) {
     </div>
     <div ref="stage" :class="['pictures-stage', { swiping: offset || dragging, settling }]" @pointerdown="swipeStart" @pointermove="swipeMove" @pointerup="swipeEnd" @pointercancel="swipeEnd">
       <button v-if="!compact" class="raised picture-arrow picture-arrow-prev" aria-label="Previous photo" @click="step(-1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path :d="arrows.prev"/></svg></button>
-      <!-- the photo coming in beside the one being dragged. it's the plain photo (or a
-           video's poster) over its thumbnail until it's picked and gets its letters -->
+      <!-- the photo and, while it's being dragged, the neighbour coming in beside it.
+           the neighbour is only made once a drag starts, then carries on as the photo
+           after the swap, so its letters are already drawn and nothing reloads -->
       <figure
-        v-if="neighbour"
-        class="pictures-hero pictures-peek"
-        aria-hidden="true"
-        :style="{ '--photo-ratio': neighbour.width / neighbour.height, '--photo-brightness': neighbour.brightness ?? 1.22, transform: `translateX(${offset + (offset < 0 ? 1 : -1) * pageWidth()}px)` }"
+        v-for="slide in slides"
+        :key="slide.photo.id"
+        :class="['pictures-hero', { 'pictures-peek': slide.shift }]"
+        :inert="slide.shift ? true : null"
+        :style="{ transform: offset || slide.shift ? `translateX(${offset + slide.shift * pageWidth()}px)` : null, '--photo-ratio': slide.photo.width / slide.photo.height, '--photo-brightness': slide.photo.brightness ?? 1.22, '--ascii-brightness': slide.photo.brightness ?? 1 }"
       >
-        <img class="inset" :src="neighbour.poster || neighbour.source" :style="{ backgroundImage: `url(${neighbour.thumbnail})` }" alt="">
-      </figure>
-      <figure class="pictures-hero" :style="{ transform: offset ? `translateX(${offset}px)` : null, '--photo-ratio': photo.width / photo.height, '--photo-brightness': photo.brightness ?? 1.22, '--ascii-brightness': photo.brightness ?? 1 }">
         <AsciiImage
-          :key="photo.id"
           class="picture-image inset"
-          :source="photo.source"
-          :media-type="photo.mediaType || 'image'"
-          :poster="photo.poster"
+          :source="slide.photo.source"
+          :media-type="slide.photo.mediaType || 'image'"
+          :poster="slide.photo.poster"
           show-controls
-          :description="photo.description"
+          :description="slide.photo.description"
           :enabled="ascii"
           :visible="visible"
           :cell-size="6"
-          :controls-to="compact ? controlsHost : null"
+          :controls-to="compact && !slide.shift ? controlsHost : null"
           @update:enabled="setMode"
         />
-        <figcaption v-if="photo.caption" class="picture-subtitle">
-          <span>{{ photo.caption }}</span> <strong>{{ photo.name }}</strong>
+        <figcaption v-if="slide.photo.caption" class="picture-subtitle">
+          <span>{{ slide.photo.caption }}</span> <strong>{{ slide.photo.name }}</strong>
         </figcaption>
       </figure>
       <button v-if="!compact" class="raised picture-arrow picture-arrow-next" aria-label="Next photo" @click="step(1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path :d="arrows.next"/></svg></button>
