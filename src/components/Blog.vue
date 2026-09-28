@@ -5,11 +5,15 @@
 // every block renders as plain text, demos run in a sandboxed iframe.
 import { computed, ref, watch, nextTick, onMounted } from 'vue';
 import { posts as localPosts } from '../blog.mjs';
-import { parse, slugify } from '../blog-markup.mjs';
+import { parse, slugify, safeSrc } from '../blog-markup.mjs';
 import { pastedTable } from '../blog-paste.mjs';
 import { withFigures } from '../blog-figures.mjs';
 import InlineText from './InlineText.vue';
 import ContactFigures from './ContactFigures.vue';
+import BlogCode from './BlogCode.vue';
+import BlogGraphic from './BlogGraphic.vue';
+import BlogGallery from './BlogGallery.vue';
+import BlogThumbnail from './BlogThumbnail.vue';
 import { read, save, remove } from '../storage.js';
 import { trackOnce } from '../analytics.js';
 
@@ -33,6 +37,11 @@ const allPosts = computed(() => {
   return [...written.value, ...props.posts.filter(p => !slugs.has(p.slug))]
     .sort((a, b) => b.date.localeCompare(a.date));
 });
+const thumbnails = computed(() => Object.fromEntries(allPosts.value.map(entry => {
+  const src = entry.leadImage || (entry.lead?.type === 'image' && entry.lead.src)
+    || (entry.source ? parse(entry.source) : entry.blocks || []).find(block => block.type === 'image')?.src || '';
+  return [entry.slug, safeSrc(src) ? src : ''];
+})));
 
 const draftPost = computed(() => draft.value && {
   ...draft.value,
@@ -309,7 +318,7 @@ async function destroy() {
         class="mail-message inset blog-source"
         aria-label="Post"
         maxlength="50000"
-        placeholder="Write here. Blank lines split paragraphs, # ## ### start headings, **bold** *italic* __underline__ ~~strike~~ `code`, ![alt](url &quot;caption&quot;) adds an image (or paste one in), ``` fences code."
+        placeholder="Write here. Blank lines split paragraphs, # ## ### start headings, **bold** *italic* __underline__ ~~strike~~ `code`, ![alt](url &quot;caption&quot;) adds an image (or paste one in). Use ```js for highlighted code or ```figure for graphic data."
         @paste="paste"
         @drop="addImages($event, $event.dataTransfer.files)"
       />
@@ -321,9 +330,10 @@ async function destroy() {
         <p v-if="!allPosts.length">No posts published yet.</p>
         <ul v-else class="blog-list">
           <li v-for="entry in allPosts" :key="entry.slug">
-            <button @click="slug = entry.slug">{{ entry.title }}</button>
-            <time :datetime="entry.date">{{ date(entry.date) }}</time>
-            <span v-if="entry.subtitle" class="blog-subtitle">{{ entry.subtitle }}</span>
+            <button class="blog-entry" :aria-label="entry.title" @click="slug = entry.slug">
+              <BlogThumbnail :src="thumbnails[entry.slug]" :gallery="entry.slug === 'test-blog'" />
+              <span class="blog-entry-copy"><span class="blog-entry-title">{{ entry.title }}</span><time :datetime="entry.date">{{ date(entry.date) }}</time><span v-if="entry.subtitle" class="blog-subtitle">{{ entry.subtitle }}</span></span>
+            </button>
           </li>
         </ul>
       </template>
@@ -351,6 +361,7 @@ async function destroy() {
             </table>
           </div>
           <ContactFigures v-else-if="block.type === 'figure'" :figure="block.figure" :caption="block.caption" :number="block.number" />
+          <BlogGraphic v-else-if="block.type === 'graphic'" :graphic="block" />
           <figure v-else-if="block.type === 'image'">
             <img :src="block.src" :alt="block.alt">
             <figcaption v-if="block.caption">{{ block.caption }}</figcaption>
@@ -363,14 +374,9 @@ async function destroy() {
             loading="lazy"
             class="blog-demo"
           />
-          <div v-else-if="block.type === 'code'" class="code-block">
-            <div>
-              <span>{{ block.language }}</span>
-              <button class="raised" @click="copy(block.code)">Copy</button>
-            </div>
-            <pre><code>{{ block.code }}</code></pre>
-          </div>
+          <BlogCode v-else-if="block.type === 'code'" :code="block.code" :language="block.language" @copy="copy" />
         </template>
+        <BlogGallery v-if="post.slug === 'test-blog'" />
       </article>
     </div>
 

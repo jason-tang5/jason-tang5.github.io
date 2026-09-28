@@ -300,7 +300,7 @@ test('swaps the contact post images for figures and adds the section figures', a
 
   const figures = blocks.filter(b => b.type === 'figure');
   assert.deepEqual(figures.map(f => [f.figure, f.number]), [
-    ['mail', undefined], ['journey', 1], ['spam', 2], ['delivery', 3], ['headers', 4], ['pipeline', 5],
+    ['mail', undefined], ['journey', 1], ['flow', 2], ['spam', 3], ['delivery', 4], ['headers', 5], ['pipeline', 6],
   ]);
   assert.equal(figures[1].caption, 'The whole trip, from Send to my inbox');
   assert.equal(figures[0].caption, '');

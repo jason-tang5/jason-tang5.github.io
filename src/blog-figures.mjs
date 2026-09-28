@@ -19,10 +19,12 @@ export const blogFigures = {
       'Vue → HTTP → Cloudflare Worker → MIME → Email Routing → DNS → Gmail': 'pipeline',
     },
     after: {
+      'Sending from the frontend': 'flow',
       'Lightweight spam protection': 'spam',
       'HOW did you get my email????': 'headers',
     },
     captions: {
+      flow: 'From Send to the result shown in Mail',
       spam: 'The three spam checks, in the order the Worker runs them',
       headers: 'Who the email says it’s from, and who a reply goes to',
       pipeline: 'Every layer a message passes through',

@@ -1,3 +1,5 @@
+import { parseGraphic } from './blog-templates.mjs';
+
 // turns what i type in the blog editor into the block list Blog.vue renders.
 // shared by the editor preview and the worker, so both agree on the result.
 //
@@ -63,7 +65,9 @@ export function parse(source) {
         }
         code.push(lines[i]);
       }
-      blocks.push({ type: 'code', language: rest.trim(), code: code.join('\n') });
+      const content = code.join('\n');
+      const graphic = rest.trim() === 'figure' && parseGraphic(content);
+      blocks.push(graphic || { type: 'code', language: rest.trim(), code: content });
       if (after) paragraph.push(after);
     } else if (line.startsWith('|')) {
       flush();

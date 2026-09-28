@@ -7,6 +7,7 @@
 // buildEmail, so they can't drift from what really happens. nothing here sends email
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import RetroIcon from './RetroIcon.vue';
+import BlogGraphic from './BlogGraphic.vue';
 import { buildEmail, validate } from '../../worker/contact.mjs';
 
 const props = defineProps({
@@ -17,6 +18,7 @@ const props = defineProps({
 
 // read out in place of the picture, for screen readers
 const descriptions = {
+  flow: 'Send begins with validation in Mail. Invalid input stays in the browser. A valid request goes to the Worker: a disallowed Origin returns 403, a filled honeypot returns a fake success, and invalid fields or timing return 400. Otherwise Cloudflare accepts the email handoff and the Worker returns 200, or a send failure returns 502.',
   mail: 'A game of Breakout with every brick cleared and a YOU WIN banner, next to the Mail window it unlocks, where a visitor is typing a message to Jason.',
   journey: 'A message’s trip in steps: the Mail window posts to the Cloudflare Worker, the Worker checks it and hands it to Email Routing, the Worker answers the Mail window, and Email Routing delivers it to Gmail. Other versions show a message failing validation and a failed send.',
   delivery: 'The visitor’s browser sends to the Cloudflare Worker, which hands the email to Email Routing, which delivers it to Gmail. Separately, a note says nothing is saved in a database or KV.',
@@ -25,6 +27,18 @@ const descriptions = {
   pipeline: 'Seven layers in a row: Vue, HTTP, Cloudflare Worker, MIME, Email Routing, DNS and Gmail, grouped into frontend, backend, infrastructure and delivery.',
 };
 const uid = `cf-${Math.random().toString(36).slice(2, 8)}`;
+const contactFlow = {
+  template: 'flow', title: 'Send → response', items: [
+    { label: 'Press Send', text: 'Mail collects the name, email, message, honeypot and elapsed time.' },
+    { label: 'Mail: input valid?', text: 'The shared validator runs in the browser before any request is sent.', branch: 'No → show the error; keep the draft.' },
+    { label: 'POST /api/contact', text: 'The browser sends the fields as JSON to the Worker.' },
+    { label: 'Origin allowed?', text: 'The Worker accepts its own Origin or an absent header.', branch: 'No → 403. Refuse the request.' },
+    { label: 'Honeypot empty?', text: 'An empty website field lets validation continue.', branch: 'No → 200 fake success. Drop the message.' },
+    { label: 'Timing and fields valid?', text: 'The Worker checks elapsed time and validates the fields again.', branch: 'No → 400. Show the error.' },
+    { label: 'Handoff accepted?', text: 'The Worker builds the email and waits for SEND_EMAIL.send.', branch: 'No → 502. Keep the draft to retry.' },
+    { label: '200 · Mail shows Sent', text: 'Cloudflare accepted the handoff. Gmail still decides how to handle the email.' },
+  ],
+};
 
 // only animate while the figure is on screen, and not at all with reduced motion
 const root = ref(null);
@@ -244,6 +258,8 @@ function layerKey(event) {
       </div>
     </div>
 
+    <BlogGraphic v-else-if="figure === 'flow'" :graphic="contactFlow" class="cf-flow-graphic" />
+
     <!-- one message, step by step -->
     <div v-else-if="figure === 'journey'" class="cf-panel">
       <div class="cf-lane">
@@ -402,6 +418,8 @@ function layerKey(event) {
 .cf-detail > strong { margin-right: 6px; }
 .cf-detail > strong b { margin-right: 6px; font: bold 11px 'Courier New', monospace; color: var(--muted); }
 .cf-detail p { margin: 6px 0 0; font: 13px/1.5 Tahoma, sans-serif; }
+
+.cf-flow-graphic { margin: 0; }
 
 /* ---- lead: a small breakout screen, then the mail window it opens ---- */
 .cf-mail { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 12px; background: var(--d-page-alt, #fffdf2); border: 1px solid var(--d-rule, #d6d6de); }

@@ -2431,33 +2431,19 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   margin-top: 24px;
 }
 
-.code-block {
-  background: #19182b;
-  color: #e7defb;
-  padding: 14px;
-  margin: 24px 0;
-}
-
-.code-block > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font: 12px Tahoma, sans-serif;
-}
-
-.code-block pre {
-  overflow: auto;
-  font-size: 13px;
-}
-
-.code-block button {
-  color: var(--ink);
-}
-
 .blog-list {
   list-style: none;
   padding: 0;
 }
+
+.blog-list .blog-entry { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; text-decoration: none; }
+.blog-entry-copy { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.blog-entry-title { overflow-wrap: anywhere; }
+.blog-entry time, .blog-entry .blog-subtitle { font-weight: normal; }
+.blog-list .blog-entry .blog-subtitle { margin-top: 0; font: 13px/1.5 Tahoma, sans-serif; }
+.blog-entry:hover .blog-entry-title { text-decoration: underline; text-underline-offset: 3px; }
+.blog-entry:focus-visible { outline: 1px dotted var(--ink); outline-offset: 5px; }
+@media (max-width: 480px) { .blog-list .blog-entry { gap: 12px; } }
 
 /* each post is its title, the date, then the subtitle, with a pixel divider under it */
 .blog-list li {

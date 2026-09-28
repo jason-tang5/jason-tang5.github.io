@@ -11,6 +11,7 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "highlight.js": "^11.12.0",
     "obscenity": "^0.4.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

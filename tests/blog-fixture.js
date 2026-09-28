@@ -35,3 +35,11 @@ export async function mountContactFixture() {
   document.body.append(host);
   createApp(Blog, { posts: [{ ...post, lead: { type: 'image', src: post.leadImage, alt: post.title } }] }).mount(host);
 }
+
+export function mountGalleryFixture() {
+  const host = document.createElement('div');
+  host.id = 'blog-fixture';
+  host.style = 'position:fixed;inset:0;z-index:999999;display:flex';
+  document.body.append(host);
+  createApp(Blog, { posts: [{ slug: 'test-blog', title: 'test blog', date: '2026-09-27', source: 'hello world\n\nJason was here' }] }).mount(host);
+}
