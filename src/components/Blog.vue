@@ -7,7 +7,9 @@ import { computed, ref, watch, nextTick, onMounted } from 'vue';
 import { posts as localPosts } from '../blog.mjs';
 import { parse, slugify } from '../blog-markup.mjs';
 import { pastedTable } from '../blog-paste.mjs';
+import { withFigures } from '../blog-figures.mjs';
 import InlineText from './InlineText.vue';
+import ContactFigures from './ContactFigures.vue';
 import { read, save, remove } from '../storage.js';
 import { trackOnce } from '../analytics.js';
 
@@ -41,8 +43,12 @@ const draftPost = computed(() => draft.value && {
 const post = computed(() => previewing.value ? draftPost.value : allPosts.value.find(p => p.slug === slug.value));
 
 // posts written on the site keep their source, so parse that again rather than use
-// the saved blocks. older posts then pick up anything the markup learns later
-const blocks = computed(() => post.value && [post.value.lead, ...(post.value.source ? parse(post.value.source) : post.value.blocks)].filter(Boolean));
+// the saved blocks. older posts then pick up anything the markup learns later.
+// some images are swapped for interactive figures, see blog-figures.mjs
+const blocks = computed(() => post.value && withFigures(post.value.slug, [
+  post.value.lead && { ...post.value.lead, lead: true },
+  ...(post.value.source ? parse(post.value.source) : post.value.blocks),
+].filter(Boolean)));
 
 // # is the biggest heading. the post title is the h1, so # starts at h2
 const headingTag = block => `h${Math.min(Math.max(block.level ?? 2, 1), 3) + 1}`;
@@ -344,6 +350,7 @@ async function destroy() {
               </tbody>
             </table>
           </div>
+          <ContactFigures v-else-if="block.type === 'figure'" :figure="block.figure" :caption="block.caption" :number="block.number" />
           <figure v-else-if="block.type === 'image'">
             <img :src="block.src" :alt="block.alt">
             <figcaption v-if="block.caption">{{ block.caption }}</figcaption>

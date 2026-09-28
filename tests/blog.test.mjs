@@ -292,3 +292,36 @@ test('rejects anything else', async () => {
   // fails closed when access isn't configured
   assert.equal(await check(await token({}), { ...env, ACCESS_AUD: '' }), null);
 });
+
+test('swaps the contact post images for figures and adds the section figures', async () => {
+  const { withFigures } = await import('../src/blog-figures.mjs');
+  const post = JSON.parse(await (await import('node:fs/promises')).readFile(new URL('./fixtures/contact-post.json', import.meta.url), 'utf8'));
+  const blocks = withFigures(post.slug, [{ type: 'image', src: post.leadImage, alt: post.title, lead: true }, ...parse(post.source)]);
+
+  const figures = blocks.filter(b => b.type === 'figure');
+  assert.deepEqual(figures.map(f => [f.figure, f.number]), [
+    ['mail', undefined], ['journey', 1], ['spam', 2], ['delivery', 3], ['headers', 4], ['pipeline', 5],
+  ]);
+  assert.equal(figures[1].caption, 'The whole trip, from Send to my inbox');
+  assert.equal(figures[0].caption, '');
+  assert.equal(blocks.filter(b => b.type === 'image').length, 0);
+
+  // each added figure closes its section, just before the next heading
+  const at = name => blocks.findIndex(b => b.figure === name);
+  assert.equal(blocks[at('spam') + 1].text, 'Sending through Cloudflare');
+  assert.equal(blocks[at('headers') + 1].text, 'Takeaways');
+});
+
+test('figures only replace exact sources on their own post', async () => {
+  const { withFigures } = await import('../src/blog-figures.mjs');
+  const slug = 'how-i-built-the-contact-form-on-jasontang-dev';
+  const other = [{ type: 'image', src: '/assets/blog/contact-mail-icon.png', alt: 'x' }, { type: 'heading', level: 1, text: 'Lightweight spam protection' }];
+  assert.equal(withFigures('some-other-post', other), other);
+
+  const blocks = withFigures(slug, [
+    { type: 'image', src: '/api/blog/images/new-upload.png', alt: 'a new image' },
+    { type: 'image', src: '/assets/blog/contact-mail-icon.png?v=2', alt: 'not exact' },
+    { type: 'code', language: 'js', code: 'Vue → HTTP' },
+  ]);
+  assert.deepEqual(blocks.map(b => b.type), ['image', 'image', 'code']);
+});

@@ -24,3 +24,14 @@ export function mountFixture() {
 
   createApp(Blog, { posts: [post] }).mount(host);
 }
+
+// the published contact form post (fixtures/contact-post.json, a copy of /api/blog),
+// so its figures from blog-figures.mjs can be checked without the worker
+export async function mountContactFixture() {
+  const post = await (await fetch('/tests/fixtures/contact-post.json')).json();
+  const host = document.createElement('div');
+  host.id = 'blog-fixture';
+  host.style = 'position:fixed;inset:0;z-index:999999;background:white;display:flex';
+  document.body.append(host);
+  createApp(Blog, { posts: [{ ...post, lead: { type: 'image', src: post.leadImage, alt: post.title } }] }).mount(host);
+}
