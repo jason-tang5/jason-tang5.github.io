@@ -1783,7 +1783,9 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 /* ---- about ---- */
 
 .about-content {
-  container-type: inline-size;
+  /* a size container, so the photo beside the text can be exactly as tall as the
+     window's scrolling area (100cqh) */
+  container-type: size;
   display: flex;
   flex-direction: column;
   background: var(--d-page, #f5f4ed);
@@ -1819,7 +1821,6 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   aspect-ratio: 1525 / 1940;
 }
 
-/* on wide screens the portrait stretches to match the text next to it */
 .portrait-frame .portrait-ascii {
   flex: 1;
   height: auto;
@@ -2478,7 +2479,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
    (BuildTerminal.vue): a raised grey window with a navy title bar, and a black screen
    in the dos colours, tall enough for the whole run so nothing moves as it types */
 .build-terminal {
-  margin-top: 10px;
+  margin-top: 24px;
   padding: 3px;
   background: var(--surface);
 }
@@ -3157,9 +3158,39 @@ fieldset {
   background: var(--surface);
 }
 
-/* beside the photo, the text starts under that box so it never covers the name */
-.about-copy {
-  padding-top: 64px;
+/* beside the photo (a wide window, not a phone), the page stops scrolling as a whole:
+   the photo fills the window's height and stays put, and the text sits on its own
+   sunken white sheet that scrolls by itself, like a document open next to it, with
+   the shortcuts box pinned in its top right corner. 100cqh is the page's height
+   inside its padding */
+@media (min-width: 701px) {
+  @container (min-width: 561px) {
+    .about-grid {
+      flex: none;
+      height: 100cqh;
+      min-height: 320px;
+      position: relative;
+    }
+
+    .about-copy {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding: 84px 22px 22px;
+      background: var(--paper);
+      border: 2px solid;
+      border-color: var(--shadow) var(--light) var(--light) var(--shadow);
+      box-shadow: inset 1px 1px var(--edge);
+    }
+
+    /* the shortcuts box pinned in the sheet's top right corner, 8px in from its
+       sunken edge and clear of its scrollbar */
+    .about-shortcuts {
+      top: calc(20px + 2px + 8px);
+      right: calc(24px + 2px + 18px + 8px);
+    }
+  }
 }
 
 .about-shortcut {
