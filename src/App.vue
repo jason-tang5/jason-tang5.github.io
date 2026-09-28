@@ -810,11 +810,13 @@ function setWallpaper(color) {
 // under the welcome note. it's an ordinary note, so it saves like one and can be
 // edited or deleted, and it's only ever made once
 const starterTips = [
-  'Drag windows by the title bar, resize from any edge',
-  'Right-click the desktop for more',
-  'Every window has its own link to share',
-  'Clear Breakout to unlock a secret',
-  'This note is yours, type over it!',
+  'Open apps from the desktop or Start menu',
+  'Dark mode and volume controls are down in the taskbar',
+  'Drag windows by the title bar and resize them from any edge',
+  'Right-click the desktop or taskbar for more settings',
+  'Check out the blog, games, and analytics while you’re here',
+  'Try contacting me. It might take a little work',
+  'And yes, this note actually works. Type whatever you want over it!',
 ];
 
 function openStarterNote() {
@@ -828,9 +830,10 @@ function openStarterNote() {
   // drops to the bottom right (see .first-tip), so the tips go under it or up top
   const win = get(id);
   win.width = 260;
-  win.height = 330;
+  win.height = 460;
   win.x = area.width - win.width - 24;
   win.y = innerWidth > 1100 && tip.value ? 200 : 25;
+  return id;
 }
 
 function dismissTip() {
@@ -1097,10 +1100,11 @@ onMounted(() => {
   // waiting behind the about window. opening it isn't counted as a visitor's open
   restoreOpen();
   const fresh = !windows.length;
+  let starter;
   if (fresh) {
     restoring = true;
     open('music', false, false);
-    openStarterNote();
+    starter = openStarterNote();
     restoring = false;
   }
   const id = hashApp();
@@ -1113,6 +1117,10 @@ onMounted(() => {
       focusRegion(active.value);
     }
   }
+  // the tips note sits in front of whatever opened, so a window reaching over to the
+  // right doesn't cover it, but that window stays the active one. it waits a tick,
+  // since each open focuses its window then and focusing brings a window to the front
+  if (starter) nextTick(() => { if (get(starter)) get(starter).z = ++z; });
 
   timer = setInterval(() => { clock.value = new Date(); }, 60000);
   document.addEventListener('pointerdown', outside);
