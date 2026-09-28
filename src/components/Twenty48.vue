@@ -4,7 +4,7 @@
 // title up top, score and best in boxes either side, and the board in the middle,
 // scaled up with crisp pixels. under the monitor is the fpga board itself, with the
 // score on its six seven-segment hex displays and the same arcade buttons as snake.
-// the rules are in twenty48.mjs. arrows or wasd, a swipe on the screen, or the pad
+// the rules are in twenty48.mjs. arrows or wasd, a swipe anywhere on the desk, or the pad
 import RetroIcon from './RetroIcon.vue';
 import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { newGame, slide, addTile, canMove, hasWon, value, size, rgb, tileColor, tileInk } from '../twenty48.mjs';
@@ -30,6 +30,10 @@ const game = ref(load());
 const best = ref(Math.max(0, Number(read('2048-best', '0')) || 0));
 const over = computed(() => !canMove(game.value.board));
 const showWin = computed(() => game.value.won && !game.value.keepGoing);
+// a new game nobody has moved yet: its two starting tiles and no score, since every
+// move either scores or adds a tile. the screen shows how to play until then
+const fresh = computed(() => game.value.score === 0 && game.value.board.filter(Boolean).length <= 2);
+const touch = matchMedia('(pointer: coarse)');
 watch(game, value => save('2048-game', JSON.stringify(value)), { deep: true });
 
 // ---- the screen: a 160x120 canvas, like the vga adapter ----
@@ -46,7 +50,8 @@ const font = {
   3: ['###', '..#', '.##', '..#', '###'], 4: ['#.#', '#.#', '###', '..#', '..#'], 5: ['###', '#..', '###', '..#', '###'],
   6: ['###', '#..', '###', '#.#', '###'], 7: ['###', '..#', '..#', '.#.', '.#.'], 8: ['###', '#.#', '###', '#.#', '###'],
   9: ['###', '#.#', '###', '..#', '###'], A: ['.#.', '#.#', '###', '#.#', '#.#'], B: ['##.', '#.#', '##.', '#.#', '##.'],
-  C: ['###', '#..', '#..', '#..', '###'], E: ['###', '#..', '##.', '#..', '###'], G: ['###', '#..', '#.#', '#.#', '###'],
+  C: ['###', '#..', '#..', '#..', '###'], D: ['##.', '#.#', '#.#', '#.#', '##.'], E: ['###', '#..', '##.', '#..', '###'],
+  G: ['###', '#..', '#.#', '#.#', '###'], H: ['#.#', '#.#', '###', '#.#', '#.#'],
   I: ['###', '.#.', '.#.', '.#.', '###'], K: ['#.#', '#.#', '##.', '#.#', '#.#'], M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'],
   N: ['#..#', '##.#', '#.##', '#..#', '#..#'], O: ['###', '#.#', '#.#', '#.#', '###'], P: ['###', '#.#', '###', '#..', '#..'],
   R: ['##.', '#.#', '##.', '#.#', '#.#'], S: ['###', '#..', '###', '..#', '###'], T: ['###', '.#.', '.#.', '.#.', '.#.'],
@@ -56,8 +61,6 @@ const font = {
 // Board silkscreen uses the same actual square-pixel glyphs as the display.
 const boardFont = {
   ...font,
-  D: ['##.', '#.#', '#.#', '#.#', '##.'],
-  H: ['#.#', '#.#', '###', '#.#', '#.#'],
   X: ['#.#', '#.#', '.#.', '#.#', '#.#'],
   '-': ['...', '...', '###', '...', '...'],
   '?': ['.', '.', '#', '.', '.'],
@@ -147,7 +150,7 @@ function draw(now = performance.now()) {
     if (anim && p >= 1) anim = null;
   }
 
-  if (showWin.value || over.value) {
+  if (showWin.value || over.value || fresh.value) {
     ctx.fillStyle = '#000';
     ctx.fillRect(boardX + 6, 52, 86, 30);
     ctx.strokeStyle = frame;
@@ -156,9 +159,12 @@ function draw(now = performance.now()) {
     if (showWin.value) {
       centered(ctx, 'YOU WIN!', cx, 57, rgb.yellow);
       centered(ctx, 'KEEP GOING?', cx, 69, blink.value ? frame : '#000');
-    } else {
+    } else if (over.value) {
       centered(ctx, 'GAME OVER', cx, 57, rgb.red);
       centered(ctx, 'FLIP SW0', cx, 69, blink.value ? frame : '#000');
+    } else {
+      centered(ctx, touch.matches ? 'SWIPE ANYWHERE' : 'SWIPE OR ARROWS', cx, 57, rgb.yellow);
+      centered(ctx, 'TO PLAY', cx, 69, blink.value ? frame : '#000');
     }
   }
   if (anim) raf = requestAnimationFrame(draw);
@@ -170,7 +176,7 @@ function redraw() {
 
 // "keep going?" and "press new game" blink, like snake's touch to play
 const blink = ref(true);
-const blinkTimer = setInterval(() => { blink.value = !blink.value; if (showWin.value || over.value || !powered.value) redraw(); }, 530);
+const blinkTimer = setInterval(() => { blink.value = !blink.value; if (showWin.value || over.value || fresh.value || !powered.value) redraw(); }, 530);
 
 // the board's power button. off, the monitor loses its signal, the displays and leds
 // go dark and the buttons do nothing, but the game is kept for when it's back on
@@ -252,10 +258,11 @@ function key(event) {
 }
 function keyUp() { held.value = null; }
 
-// a swipe on the screen, for phones
+// a swipe anywhere on the desk, for phones, except on the board's own buttons and switches
 const screen = ref(null);
 let swipeFrom = null;
 function swipeDown(event) {
+  if (event.target.closest('button')) return;
   swipeFrom = { x: event.clientX, y: event.clientY };
   screen.value?.focus({ preventScroll: true });
 }
@@ -477,7 +484,7 @@ onBeforeUnmount(() => {
         <span>Project</span>
       </button>
     </div>
-    <div ref="content" class="content-scroll t48-content">
+    <div ref="content" class="content-scroll t48-content" @pointerdown="swipeDown" @pointerup="swipeUp" @pointercancel="swipeFrom = null">
       <div ref="stage" class="t48-stage" :class="{ wide }" :style="{ transform: `translate3d(-50%, -50%, 0) scale(${fit})` }">
         <!-- the vga cable, from the board up into the monitor's bottom right corner -->
         <svg class="t48-cable" shape-rendering="crispEdges" stroke-linejoin="miter" aria-hidden="true">
@@ -494,8 +501,7 @@ onBeforeUnmount(() => {
         <!-- the vga monitor on its stand -->
         <div ref="desk" class="t48-desk">
         <div ref="monitor" class="t48-monitor">
-          <div ref="screen" class="t48-screen" tabindex="0" role="group" aria-label="2048 game screen" aria-describedby="t48-help"
-            @pointerdown="swipeDown" @pointerup="swipeUp" @pointercancel="swipeFrom = null">
+          <div ref="screen" class="t48-screen" tabindex="0" role="group" aria-label="2048 game screen" aria-describedby="t48-help">
             <canvas ref="canvas" :width="W" :height="H" aria-hidden="true"/>
           </div>
           <div class="t48-monitor-chin">
@@ -650,7 +656,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    <p id="t48-help" class="sr-only">Arrow keys, WASD, the four push buttons, or a swipe on the screen slide the tiles. Equal tiles merge. Reach 2048 to win. Press R or flip SW0 for a new game.</p>
+    <p id="t48-help" class="sr-only">Arrow keys, WASD, the four push buttons, or a swipe anywhere below the toolbar slide the tiles. Equal tiles merge. Reach 2048 to win. Press R or flip SW0 for a new game.</p>
     <span class="sr-only" role="status">{{ status }}</span>
     <footer class="status-bar"><span>Score {{ game.score }}</span><span>Best {{ best }}</span></footer>
   </div>
@@ -674,7 +680,8 @@ onBeforeUnmount(() => {
 .t48-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 /* the toolbar sits over the ascii backdrop */
 .t48-toolbar { position: relative; z-index: 1; background: var(--surface); }
-.t48-content { position: relative; overflow: hidden; }
+/* swipes work anywhere in here, so the browser mustn't scroll or zoom on them */
+.t48-content { position: relative; overflow: hidden; touch-action: none; }
 /* Centre and scale one fixed scene without changing its internal layout. */
 .t48-stage { position: absolute; left: 50%; top: 50%; transform-origin: center; will-change: transform; isolation: isolate; display: flex; flex-direction: column; align-items: center; gap: 18px; width: max-content; box-sizing: border-box; padding: 8px 6px; }
 .t48-desk { display: flex; flex-direction: column; align-items: center; }
