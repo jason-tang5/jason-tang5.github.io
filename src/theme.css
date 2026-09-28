@@ -6744,7 +6744,7 @@ label.mail-label {
   overflow-y: auto;
   overflow-wrap: anywhere;
   color: var(--sticky-ink);
-  font-size: 14px;
+  font-size: 10px;
   outline: none;
   cursor: text;
 }
