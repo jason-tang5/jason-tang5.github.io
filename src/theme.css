@@ -5983,15 +5983,21 @@ label.mail-label {
 
 /* ---- cd player visualizer ----
    a strip under the controls on desktop (the window is sized for it in registry.js).
-   on phones the cd player gets the whole screen, so it takes all the height that's left */
+   on phones the cd player gets the whole screen, so it takes all the height that's left.
+   its slot shrinks with a short window: the mode buttons go first, then the screen keeps
+   going until it's a sliver, and then the panel snaps shut to just its header strip */
+.cd-visualizer-slot {
+  container: cd-visualizer / size;
+  flex: 1 1 152px;
+  min-height: 38px;
+  padding: 0 10px 8px;
+}
 .cd-visualizer {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  height: 100%;
   padding: 6px;
-  flex: 1 0 144px;
-  min-height: 144px;
-  margin: 0 10px 8px;
   background: var(--surface);
 }
 
@@ -6024,15 +6030,22 @@ label.mail-label {
   image-rendering: pixelated;
 }
 
+@container cd-visualizer (max-height: 110px) { .cd-visualizer-controls { display: none; } }
+@container cd-visualizer (max-height: 52px) {
+  .cd-visualizer { height: auto; }
+  .cd-visualizer-screen { display: none; }
+}
+
 @media (max-width: 700px) {
-  .cd-visualizer {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 180px;
-    margin: 4px 10px 10px;
+  .cd-visualizer-slot {
+    flex: 1 1 194px;
+    min-height: 44px;
+    padding: 4px 10px 10px;
   }
   .cd-visualizer-controls button { min-height: 36px; flex: 1; }
   .cd-visualizer-vents { flex: 0 0 28px; margin-left: 3px; }
+  /* the buttons are taller for thumbs, so they give way sooner */
+  @container cd-visualizer (max-height: 128px) { .cd-visualizer-controls { display: none; } }
 }
 
 

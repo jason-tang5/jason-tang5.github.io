@@ -29,7 +29,7 @@ export const apps = [
   app('pictures', 'My Pictures', 'pictures', 760, 720, 340, 400),
   app('settings', 'Desktop Settings', 'settings', 470, 730),
   app('stickies', 'Sticky Notes', 'sticky', 340, 520, 280, 300),
-  app('music', 'CD Player', 'music', 360, 490, 335, 312),
+  app('music', 'CD Player', 'music', 360, 490, 335, 200),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
   app('reversi', 'Reversi', 'reversi', 420, 660, 320, 480),

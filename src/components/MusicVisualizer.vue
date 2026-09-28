@@ -146,6 +146,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- the slot takes whatever height is left, so the panel inside can snap down to its header -->
+  <div class="cd-visualizer-slot">
   <section class="cd-visualizer raised" aria-label="TANGO stereo display">
     <div class="cd-visualizer-heading">
       <span class="cd-visualizer-screw" aria-hidden="true"/>
@@ -163,4 +165,5 @@ onBeforeUnmount(() => {
       <span class="cd-visualizer-vents" aria-hidden="true"/>
     </div>
   </section>
+  </div>
 </template>
