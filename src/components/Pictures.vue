@@ -40,15 +40,26 @@ onBeforeUnmount(() => observer.disconnect());
 
 // a finger that moves mostly sideways drags the photo along, with its neighbour
 // following a gap behind. letting go past a third of the way, or with a flick, slides
-// the rest of the way over and switches to it; otherwise both slide back. the ascii
-// letters let unarmed touches through to here (KnockoffAscii.vue), an armed hammer
-// keeps them
+// the rest of the way over and switches to it; otherwise both slide back. a mouse
+// drags it the same way. the ascii letters let unarmed presses through to here
+// (KnockoffAscii.vue), an armed hammer keeps them, and the arrows are just clicked
 const gap = 20;
 const offset = ref(0);
 const settling = ref(false);
 const dragging = ref(false);
 let swipe = null;
 let settleTimer = 0;
+// a mouse let go after a drag still clicks, which shouldn't ripple the letters
+let dragged = false;
+function swallowClick(event) {
+  if (!dragged) return;
+  dragged = false;
+  event.stopPropagation();
+}
+function swipeDown(event) {
+  dragged = false;
+  swipeStart(event);
+}
 // in order left to right, so the photo never moves in the page when its neighbour
 // comes or goes. shift is how many pages over from the photo each one sits
 const slides = computed(() => {
@@ -61,7 +72,7 @@ const slides = computed(() => {
 const pageWidth = () => (stage.value?.clientWidth ?? 0) + gap;
 
 function swipeStart(event) {
-  if (event.pointerType !== 'touch' || !event.isPrimary || settling.value) return;
+  if (!event.isPrimary || event.button !== 0 || settling.value || event.target.closest('button')) return;
   swipe = { id: event.pointerId, x: event.clientX, y: event.clientY, moves: [{ x: event.clientX, t: event.timeStamp }] };
 }
 function swipeMove(event) {
@@ -86,6 +97,7 @@ function swipeEnd(event) {
   swipe = null;
   if (!dragging.value) return;
   dragging.value = false;
+  dragged = true;
   // how fast the finger was going over its last few moves, in px per ms
   const first = moves[0];
   const last = moves[moves.length - 1];
@@ -144,7 +156,7 @@ function keys(event) {
       <div ref="controlsHost" class="pictures-controls"/>
       <button class="raised picture-arrow" aria-label="Next photo" @click="step(1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path :d="arrows.next"/></svg></button>
     </div>
-    <div ref="stage" :class="['pictures-stage', { swiping: offset || dragging, settling }]" @pointerdown="swipeStart" @pointermove="swipeMove" @pointerup="swipeEnd" @pointercancel="swipeEnd">
+    <div ref="stage" :class="['pictures-stage', { swiping: offset || dragging, settling }]" @pointerdown="swipeDown" @pointermove="swipeMove" @pointerup="swipeEnd" @pointercancel="swipeEnd" @click.capture="swallowClick" @dragstart.prevent>
       <button v-if="!compact" class="raised picture-arrow picture-arrow-prev" aria-label="Previous photo" @click="step(-1)"><svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path :d="arrows.prev"/></svg></button>
       <!-- the photo and, while it's being dragged, the neighbour coming in beside it.
            the neighbour is only made once a drag starts, then carries on as the photo

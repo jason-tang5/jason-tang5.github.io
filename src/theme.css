@@ -4407,6 +4407,7 @@ label.mail-label {
 
 .pictures-stage.swiping {
   overflow: hidden;
+  user-select: none;
 }
 
 .pictures-stage.settling > .pictures-hero {
