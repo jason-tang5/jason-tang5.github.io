@@ -4635,6 +4635,11 @@ label.mail-label {
   transform: translate(1px, 1px);
 }
 
+/* games and stats sit at the far end of the menubar, shaped like the mode buttons */
+.mines-modes.mines-stats {
+  margin-left: auto;
+}
+
 .mines-menu {
   position: absolute;
   top: 100%;
@@ -5726,10 +5731,12 @@ label.mail-label {
 }
 
 .reversi-record {
-  margin-left: auto;
-  padding: 0 8px;
-  font-size: 11px;
   white-space: nowrap;
+}
+
+/* phones only keep the first status bar section, but the record stays beside it */
+.reversi-app .status-bar > .reversi-record {
+  display: block;
 }
 
 .reversi-content {

@@ -32,7 +32,7 @@ export const apps = [
   app('music', 'CD Player', 'music', 360, 490, 335, 200),
   app('snake', 'Snake', 'snake', 400, 700, 340, 560),
   app('minesweeper', 'Minesweeper', 'mine', 300, 400, 250, 330),
-  app('reversi', 'Reversi', 'reversi', 420, 660, 320, 480),
+  app('reversi', 'Reversi', 'reversi', 420, 660, 350, 480),
   app('2048', '2048', '2048', 540, 800, 320, 560),
   // locked until you beat the breakout game in contact, see unlock() in App.vue
   app('mail', 'Mail', 'mail', 500, 450, 360, 330),

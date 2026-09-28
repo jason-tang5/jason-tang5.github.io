@@ -472,7 +472,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout t48-app">
     <canvas ref="backdropCanvas" class="t48-backdrop" aria-hidden="true"/>
-    <!-- a new game, and the writeup for the fpga project this game was rebuilt from -->
+    <!-- a new game, the writeup for the fpga project this game was rebuilt from, the other games, and stats -->
     <div class="toolbar ie-toolbar t48-toolbar">
       <!-- the same as pressing R: SW0 flips on the board and the game starts over -->
       <button class="ie-button icon-button" title="Start over (flips SW0, or press R)" @click="flip(0)">
@@ -482,6 +482,14 @@ onBeforeUnmount(() => {
       <button class="ie-button" title="Read how FPGA 2048 was built" @click="emit('open', 'fpga-2048')">
         <RetroIcon name="document"/>
         <span>Project</span>
+      </button>
+      <button class="ie-button" title="Open the Games folder" @click="emit('open', 'games')">
+        <RetroIcon name="games"/>
+        <span>Games</span>
+      </button>
+      <button class="ie-button" title="See 2048 wins and scores in Analytics" @click="emit('open', 'analytics')">
+        <RetroIcon name="chart"/>
+        <span>Stats</span>
       </button>
     </div>
     <div ref="content" class="content-scroll t48-content" @pointerdown="swipeDown" @pointerup="swipeUp" @pointercancel="swipeFrom = null">

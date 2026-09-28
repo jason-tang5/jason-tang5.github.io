@@ -17,7 +17,7 @@ import { padShape } from '../arcade-button.mjs';
 import { buzz } from '../haptics.js';
 
 const props = defineProps({ active: Boolean });
-const emit = defineEmits(['unlock']);
+const emit = defineEmits(['unlock', 'open']);
 const root = ref(null);
 const backdropCanvas = ref(null);
 const beaten = ref(contactBeaten());
@@ -166,6 +166,14 @@ onBeforeUnmount(() => {
       <button v-if="beaten" class="ie-button go-to-mail" title="Open the mail window and send me a message" @pointerenter="play('letter')" @click="openMail">
         <RetroIcon name="mail"/>
         <span>Go to Mail</span>
+      </button>
+      <button class="ie-button" title="Open the Games folder" @click="emit('open', 'games')">
+        <RetroIcon name="games"/>
+        <span>Games</span>
+      </button>
+      <button class="ie-button" title="See Breakout wins in Analytics" @click="emit('open', 'analytics')">
+        <RetroIcon name="chart"/>
+        <span>Stats</span>
       </button>
     </div>
 

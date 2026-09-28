@@ -246,7 +246,14 @@ onBeforeUnmount(() => {
         <RetroIcon name="document"/>
         <span>Project</span>
       </button>
-      <span class="reversi-record" title="Games won against Clippy, remembered in this browser">You {{ record.you }} · Clippy {{ record.clippy }}</span>
+      <button class="ie-button" title="Open the Games folder" @click="emit('open', 'games')">
+        <RetroIcon name="games"/>
+        <span>Games</span>
+      </button>
+      <button class="ie-button" title="See wins against Clippy in Analytics" @click="emit('open', 'analytics')">
+        <RetroIcon name="chart"/>
+        <span>Stats</span>
+      </button>
     </div>
 
     <div class="content-scroll reversi-content">
@@ -296,6 +303,6 @@ onBeforeUnmount(() => {
     </div>
 
     <span class="sr-only" role="status">{{ status }}</span>
-    <footer class="status-bar"><span>{{ status }}</span><span>{{ score[black] + score[white] }} / 64 discs</span></footer>
+    <footer class="status-bar"><span>{{ status }}</span><span class="reversi-record" title="Games won against Clippy, remembered in this browser">You {{ record.you }} · Clippy {{ record.clippy }}</span><span>{{ score[black] + score[white] }} / 64 discs</span></footer>
   </div>
 </template>

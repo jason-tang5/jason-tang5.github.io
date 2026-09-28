@@ -636,7 +636,7 @@ function balloonDone(event, id) {
     </object>
   </div>
 
-  <Game v-else-if="win.type === 'contact'" :active="active" @unlock="(id, message) => emit('unlock', id, message)"/>
+  <Game v-else-if="win.type === 'contact'" :active="active" @unlock="(id, message) => emit('unlock', id, message)" @open="id => emit('open', id)"/>
   <Mail v-else-if="win.type === 'mail'"/>
   <Music v-else-if="win.type === 'music'" :win="win"/>
   <Pictures v-else-if="win.type === 'pictures'" :visible="visible"/>
@@ -653,7 +653,7 @@ function balloonDone(event, id) {
     <footer class="status-bar"><span>{{ folderItems(win.type).length }} {{ win.type === 'games' ? 'games' : 'items' }}</span></footer>
   </div>
   <Snake v-else-if="win.type === 'snake'" :active="active"/>
-  <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win"/>
+  <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win" @open="id => emit('open', id)"/>
   <Reversi v-else-if="win.type === 'reversi'" :active="active" @open="id => emit('open', id)"/>
   <Twenty48 v-else-if="win.type === '2048'" :active="active" @open="id => emit('open', id)"/>
 

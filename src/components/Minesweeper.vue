@@ -22,12 +22,14 @@ import {
   segmentsOn,
 } from '../minesweeper-art.mjs';
 
+import RetroIcon from './RetroIcon.vue';
 import { track } from '../analytics.js';
 import { read, save } from '../storage.js';
 import { createBackdrop, minesScene } from '../ascii-backdrop.js';
 import { theme } from '../theme.js';
 
 const props = defineProps({ active: Boolean, win: Object });
+const emit = defineEmits(['open']);
 
 // [rows, cols, mines]
 const levels = {
@@ -412,6 +414,15 @@ onBeforeUnmount(() => {
             <path :d="flagCloth" fill="#f00"/>
             <path :d="flagPole" fill="#000"/>
           </svg>
+        </button>
+      </div>
+      <!-- the other games, and the analytics window, which counts boards won at each level -->
+      <div class="mines-modes mines-stats">
+        <button class="raised" aria-label="Games" title="Open the Games folder" @click="emit('open', 'games')">
+          <RetroIcon name="games" small/>
+        </button>
+        <button class="raised" aria-label="Stats" title="See wins in Analytics" @click="emit('open', 'analytics')">
+          <RetroIcon name="chart" small/>
         </button>
       </div>
     </nav>
