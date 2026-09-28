@@ -15,7 +15,6 @@ defineProps({ facts: { type: Array, required: true } });
       <span :class="{ 'fact-books': fact.books }">
         <span v-if="fact.lifts" class="fact-lifts">
           <span v-for="[lift, weight] in fact.lifts" :key="lift">{{ lift }} <b>{{ weight }}</b></span>
-          <small>lb</small>
         </span>
         <InlineText v-else :text="fact.text"/>
         <span v-for="award in fact.awards" :key="award" class="fact-award">

@@ -2654,12 +2654,6 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   -webkit-font-smoothing: none;
 }
 
-.fact-lifts small {
-  margin-left: -8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 /* too narrow for two columns: each label sits over its fact */
 @container (max-width: 380px) {
   .about-facts {

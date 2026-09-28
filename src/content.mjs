@@ -24,7 +24,7 @@ export const profile = {
     { label: 'Currently building', text: 'a small LLM running on my own Rust + CUDA ML framework' },
     { label: 'Sports', text: 'volleyball (captain), ultimate frisbee, badminton' },
     // best lifts in lb, each weight in the pixel font after the lift's name
-    { label: 'Lifts', lifts: [['Power clean', '265'], ['Squat', '405'], ['Bench', '265'], ['Pull-up', '+100']] },
+    { label: 'Lifts (lb)', lifts: [['Power clean', '265'], ['Squat', '405'], ['Bench', '265'], ['Pull-up', '+100']] },
     { label: 'Favorite books', text: '[The Name of the Wind](https://www.goodreads.com/book/show/186074.The_Name_of_the_Wind), [Meditations](https://www.goodreads.com/book/show/30659.Meditations)', books: true },
   ],
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
