@@ -14,7 +14,7 @@ const props = defineProps({
   period: { type: [Number, String], default: null },
   choices: { type: Array, default: () => [7, 30, 'all'] },
 });
-const emit = defineEmits(['tuck', 'update:period']);
+const emit = defineEmits(['tuck', 'stats', 'update:period']);
 const { data, error } = useLiveStats();
 const allPeriods = [
   { id: 7, button: '7D', title: 'Last 7 days' },
@@ -39,6 +39,11 @@ function pick(id) {
   <section class="snake-cart">
     <div class="cart-controls cart-top">
       <div class="cart-grip" aria-hidden="true"/>
+      <!-- on the handheld it also links to analytics, where the rest of the stats are -->
+      <button v-if="tuckable" class="cart-stats" title="See all stats in Analytics" aria-label="See all stats" @click="$emit('stats')">
+        <svg viewBox="0 0 8 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 3h2v3H0zM3 1h2v5H3zM6 0h2v6H6z"/></svg>
+        STATS
+      </button>
       <button v-if="tuckable" class="cart-tuck" title="Tuck the cartridge into the handheld" @click="$emit('tuck')">&#9660; TUCK IN</button>
     </div>
     <div class="cart-label">
@@ -99,6 +104,8 @@ function pick(id) {
 .cart-top { margin: 0 10px 10px 0; flex-wrap: nowrap; }
 .cart-top .cart-grip { flex: 1; margin: 0 0 0 4px; }
 .cart-tuck { flex: none; }
+.cart-stats { flex: none; display: flex; align-items: center; gap: 4px; }
+.cart-stats svg { width: 8px; height: 6px; fill: currentColor; }
 /* the periods share the width, so they squeeze in without wrapping */
 .cart-periods { display: flex; flex: 1; gap: 4px; }
 .cart-periods button { flex: 1 1 0; padding-inline: 0; letter-spacing: 0; white-space: nowrap; }

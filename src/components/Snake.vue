@@ -13,6 +13,7 @@ import { theme } from '../theme.js';
 import { cleanName, maxNameLength, nameProblem, tidyName } from '../names.mjs';
 
 const props = defineProps({ active: Boolean });
+const emit = defineEmits(['open']);
 const board = ref(null);
 const game = ref(newSnake());
 const running = ref(false);
@@ -386,7 +387,7 @@ onBeforeUnmount(() => {
       </div>
       </div>
       <Transition name="cart-out">
-        <Leaderboard v-if="!cartTucked" @tuck="tuckIn"/>
+        <Leaderboard v-if="!cartTucked" @tuck="tuckIn" @stats="emit('open', 'analytics')"/>
       </Transition>
       </div>
     </div>

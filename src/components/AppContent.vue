@@ -652,7 +652,7 @@ function balloonDone(event, id) {
     </div>
     <footer class="status-bar"><span>{{ folderItems(win.type).length }} {{ win.type === 'games' ? 'games' : 'items' }}</span></footer>
   </div>
-  <Snake v-else-if="win.type === 'snake'" :active="active"/>
+  <Snake v-else-if="win.type === 'snake'" :active="active" @open="id => emit('open', id)"/>
   <Minesweeper v-else-if="win.type === 'minesweeper'" :active="active" :win="win" @open="id => emit('open', id)"/>
   <Reversi v-else-if="win.type === 'reversi'" :active="active" @open="id => emit('open', id)"/>
   <Twenty48 v-else-if="win.type === '2048'" :active="active" @open="id => emit('open', id)"/>

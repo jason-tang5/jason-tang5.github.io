@@ -12,6 +12,12 @@ export default defineConfig({
         target: 'https://jasontang.dev',
         changeOrigin: true,
       },
+      // analytics and the snake scoreboard read the live numbers too. /api/event stays
+      // local, so playing on localhost doesn't count as real visits and wins
+      '^/api/(?:stats|analytics)(?:\\?|$)': {
+        target: 'https://jasontang.dev',
+        changeOrigin: true,
+      },
     },
   },
   // keep vite's output out of assets/, which holds our own static files

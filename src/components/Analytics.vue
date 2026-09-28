@@ -93,12 +93,16 @@ const behindCards = computed(() => data.value ? [
 ] : []);
 const daily = computed(() => {
   const counts = new Map(data.value?.daily.map(row => [row.day, row.visits]) || []);
-  return Array.from({ length: days.value }, (_, i) => {
+  const all = Array.from({ length: days.value }, (_, i) => {
     const date = new Date();
     date.setUTCDate(date.getUTCDate() - days.value + 1 + i);
     const day = date.toISOString().slice(0, 10);
     return { day, visits: counts.get(day) || 0 };
   });
+  // start at the first day anyone visited, so a short history spreads across the
+  // whole chart instead of bunching up on the right behind a run of empty days
+  const first = all.findIndex(row => row.visits);
+  return first > 0 ? all.slice(first) : all;
 });
 const peak = computed(() => Math.max(1, ...daily.value.map(row => row.visits)));
 const sections = computed(() => data.value ? [
@@ -207,13 +211,14 @@ onBeforeUnmount(() => {
               <span :style="{ height: `${row.visits / peak * 100}%` }"/>
             </div>
           </div>
-          <div class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
+          <!-- a week or less gets a date under every bar, more just the two ends -->
+          <div v-if="daily.length <= 7" class="analytics-axis each"><span v-for="row in daily" :key="row.day">{{ row.day.slice(5) }}</span></div>
+          <div v-else class="analytics-axis"><span>{{ daily[0].day }}</span><span>{{ daily.at(-1).day }} (UTC)</span></div>
           </section>
         </template>
           <div class="history-row">
           <section>
           <h2>Boards cleared</h2>
-          <p class="analytics-note">Last {{ days }} days, replays included.</p>
           <PixelPie v-if="data" :rows="[{ label: 'Minesweeper', count: data.minesweeperWins }, { label: 'Breakout', count: data.breakoutWins }]" label="Boards cleared"/>
           </section>
           <section>
@@ -291,6 +296,9 @@ onBeforeUnmount(() => {
 /* visitors by day and boards cleared side by side, stacked on a phone */
 .history-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; margin-top: 12px; }
 .history-row .pixel-pie { flex-direction: column; align-items: flex-start; }
+/* the boards cleared pie matches the cartridge beside it: 240px, ten screen pixels a pie pixel */
+.history-row .pixel-pie :deep(svg) { width: min(100%, 240px); height: auto; aspect-ratio: 1; }
+.history-row .pixel-pie :deep(figcaption) { width: min(100%, 240px); max-width: none; flex: none; }
 /* stacked on a phone, the pie and the cartridge each sit in the middle of their row */
 @media (max-width: 700px) {
   .history-row { grid-template-columns: minmax(0, 1fr); }
@@ -310,10 +318,14 @@ onBeforeUnmount(() => {
 .score-card span { font-size: 12px; }
 .score-card small { font-size: 11px; color: var(--muted); }
 .analytics-note { font-size: 12px; color: var(--muted); }
+/* the bars share the width, each with a little space either side of it */
 .analytics-chart { display: flex; align-items: stretch; gap: 2px; height: 144px; border-left: 2px solid #555; border-bottom: 2px solid #555; padding: 8px 4px 0; background: repeating-linear-gradient(to top, var(--d-rule, #ddd) 0 1px, transparent 1px 32px); }
-.analytics-column { flex: 1; min-width: 0; display: flex; align-items: flex-end; }
-.analytics-column span { width: 100%; background: repeating-linear-gradient(to top, #008080 0 6px, var(--paper) 6px 8px); }
+.analytics-column { flex: 1; min-width: 0; display: flex; align-items: flex-end; justify-content: center; }
+.analytics-column span { width: 90%; background: repeating-linear-gradient(to top, #008080 0 6px, var(--paper) 6px 8px); }
 .analytics-axis { display: flex; justify-content: space-between; font: 10px/2 monospace; gap: 8px; }
+/* lined up under the bars: the same spacing and padding as the chart */
+.analytics-axis.each { gap: 2px; padding: 0 4px 0 6px; }
+.analytics-axis.each span { flex: 1; min-width: 0; text-align: center; white-space: nowrap; }
 .analytics-bar-row { margin: 14px 0; }
 .analytics-bar-row > div:first-child { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
 .analytics-page { --bar-1: #2a78d6; --bar-2: #eb6834; --bar-3: #1baf7a; --bar-4: #eda100; --bar-5: #e87ba4; --bar-6: #8a8a8a; --bar-7: #4a3aa7; }
