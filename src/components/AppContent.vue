@@ -103,9 +103,9 @@ const places = [
     title: 'Favorites',
     star: true,
     items: [
+      { id: 'projects', path: 'Portfolio:\\Projects' },
       { id: 'resume', path: 'Portfolio:\\Jason_Tang_Resume.pdf' },
       { id: 'experience', path: 'Portfolio:\\Experience.txt' },
-      { id: 'projects', path: 'Portfolio:\\Projects' },
       { id: 'blog', path: 'Portfolio:\\Blog' },
     ],
   },
@@ -281,7 +281,7 @@ function setPortraitAscii(value) {
   portraitAscii.value = value;
 }
 
-// ---- balloons: the button beside the lifts lets a bunch of pixel balloons float up
+// ---- balloons: the button at the end of the shortcuts toolbar lets a bunch of pixel balloons float up
 // over the whole about window (the sprite is in balloon-sprite.js) ----
 const aboutApp = ref(null);
 const balloons = ref([]);
@@ -467,6 +467,12 @@ function balloonDone(event, id) {
             <span ref="cdDisc" class="about-cd-disc" :class="{ spinning: cdSpinning }" aria-hidden="true"><RetroIcon name="music"/><span class="about-cd-sprite"/></span>
             <span>CD Player</span>
           </button>
+          <!-- the balloons are just for fun, so a groove keeps them apart from the links -->
+          <span class="toolbar-separator" aria-hidden="true"/>
+          <button class="about-shortcut ie-button about-balloons" title="Let go of some balloons" @click="launchBalloons">
+            <RetroIcon name="balloon"/>
+            <span>Balloons</span>
+          </button>
         </div>
         <Teleport to=".desktop">
           <span
@@ -501,35 +507,12 @@ function balloonDone(event, id) {
             <TypedRoles :words="profile.roles" :visible="visible"/>
             <p class="intro">{{ profile.intro }}</p>
             <p class="intro">{{ profile.bio }}</p>
-            <!-- a few quick facts, under a line like the one over the lifts used to be -->
+            <!-- a few quick facts under an etched line -->
             <section class="about-facts-section" aria-labelledby="about-facts-heading">
               <h2 id="about-facts-heading">About me</h2>
               <AboutFacts :facts="profile.facts"/>
               <BuildTerminal :visible="visible"/>
             </section>
-            <div class="about-bottom">
-              <div class="about-links">
-                <!-- a raised box like the shortcut toolbars: each lift sits in a cell the
-                     size of a toolbar button, the number where the icon would be and the
-                     lift's name under it like a button's label -->
-                <div class="lift-box raised">
-                  <p class="lift-title">Lifts<small>lb</small></p>
-                  <dl>
-                    <div v-for="[lift, weight] in profile.lifts" :key="lift">
-                      <dd>{{ weight }}</dd>
-                      <dt>{{ lift }}</dt>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-              <!-- the same raised box and toolbar button as the linkedin / github shortcuts -->
-              <div class="about-balloons-box raised">
-                <button class="about-shortcut ie-button about-balloons" title="Let go of some balloons" @click="launchBalloons">
-                  <RetroIcon name="balloon"/>
-                  <span>Balloons</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

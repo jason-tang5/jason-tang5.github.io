@@ -23,17 +23,12 @@ export const profile = {
     { label: 'Previously', text: '16-month SWE intern @ AMD, building tooling for 1,000+ engineers' },
     { label: 'Currently building', text: 'a small LLM running on my own Rust + CUDA ML framework' },
     { label: 'Sports', text: 'volleyball (captain), ultimate frisbee, badminton' },
+    // best lifts in lb, each weight in the pixel font after the lift's name
+    { label: 'Lifts', lifts: [['Power clean', '265'], ['Squat', '405'], ['Bench', '265'], ['Pull-up', '+100']] },
     { label: 'Favorite books', text: '[The Name of the Wind](https://www.goodreads.com/book/show/186074.The_Name_of_the_Wind), [Meditations](https://www.goodreads.com/book/show/30659.Meditations)', books: true },
   ],
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],
-  // best lifts in lb, shown in a small group box at the bottom of the about window
-  lifts: [
-    ['Power clean', '265'],
-    ['Squat', '405'],
-    ['Bench', '265'],
-    ['Pull-up', '+100'],
-  ],
 };
 
 // the breakout game in the contact window spells this out

@@ -1834,7 +1834,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 .about-copy h1 {
   font-size: 32px;
   letter-spacing: -1px;
-  margin: 4px 0 7px;
+  margin: 4px 0 4px;
   font-weight: bold;
 }
 
@@ -1856,7 +1856,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
    jump while a word's being typed or erased */
 .about-copy .typed-roles {
   height: 1.3em;
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   font: bold 17px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   color: var(--d-link, #000080);
@@ -1872,131 +1872,9 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 }
 
 .about-copy .intro {
-  font-size: 17px;
-  line-height: 1.45;
-  margin: 0 0 12px;
-}
-
-.about-bottom {
-  margin-top: 18px;
-  display: flex;
-  justify-content: flex-start;
-  align-items: stretch;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 12px;
-}
-
-/* the lifts stretch so they and the balloons together are as wide as the ms-dos
-   prompt above them, the lift cells sharing out the room. the lifts take (almost) all
-   the spare room on a shared row, but if the balloons wrap onto a row of their own,
-   their box stretches across it with the button in the middle */
-.about-links {
-  display: grid;
-  flex: 1000 1 auto;
-  min-width: 0;
-  gap: 20px;
-}
-
-/* the lifts, in the same raised grey box as the shortcut toolbars and the balloons
-   button beside them: cells the size of a toolbar button, the number up top in the
-   pixel font and the lift under it */
-.lift-box {
-  display: flex;
-  align-items: stretch;
-  max-width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 3px 4px;
-  color: var(--ink);
-  font: 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
-  -webkit-font-smoothing: none;
-}
-
-/* (.about-copy p would give it the page's paragraph margins and size) */
-.lift-box .lift-title {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.3;
-  padding: 0 8px 0 4px;
-  border-right: 1px solid var(--shadow);
-  box-shadow: 1px 0 var(--light);
-  font-weight: bold;
-}
-
-.lift-title small {
-  font-size: 11px;
-  font-weight: normal;
-  color: var(--muted);
-}
-
-.lift-box dl {
-  display: flex;
-  flex: 1;
-  margin: 0 0 0 2px;
-}
-
-.lift-box dl > div {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  flex: 1;
-  min-width: 62px;
-  padding: 4px 6px 3px;
-  border: 1px solid transparent;
-  box-sizing: border-box;
-}
-
-/* a short etched line between lifts: grey with white beside it, like the groove
-   under the bio */
-.lift-box dl > div + div::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 9px;
-  bottom: 9px;
-  width: 2px;
-  background: linear-gradient(90deg, var(--shadow) 50%, var(--light) 50%);
-}
-
-/* hovering a lift bevels it out like the shortcut buttons, and its number hops */
-.lift-box dl > div:hover {
-  border-color: var(--light) var(--shadow) var(--shadow) var(--light);
-}
-
-.lift-box dl > div:hover dd {
-  animation: lift-hop .6s steps(1) infinite;
-}
-
-@keyframes lift-hop {
-  0%, 60%, 100% { transform: translateY(0); }
-  20% { transform: translateY(-2px); }
-  40% { transform: translateY(-1px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lift-box dl > div:hover dd { animation: none; }
-}
-
-.lift-box dd {
-  margin: 0;
-  font: bold 18px/32px 'Pixel MS Sans Serif', Tahoma, sans-serif;
-}
-
-.lift-box dt {
-  white-space: nowrap;
-}
-
-/* a narrow window packs the cells in tighter so the balloons still fit beside them */
-@container about (max-width: 640px) {
-  .lift-box dl > div { min-width: 0; padding: 4px 2px 3px; }
-  .lift-box .lift-title { padding: 0 6px 0 3px; }
+  font-size: 15px;
+  line-height: 1.4;
+  margin: 0 0 8px;
 }
 
 /* stack the portrait on top when the about window is narrow */
@@ -2585,12 +2463,12 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 .about-facts-section {
   border-top: 1px solid var(--shadow);
   box-shadow: inset 0 1px var(--light);
-  margin-top: 22px;
-  padding-top: 17px;
+  margin-top: 14px;
+  padding-top: 12px;
 }
 
 .about-copy .about-facts-section h2 {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   font: bold 21px/1.3 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   color: var(--ink);
@@ -2600,17 +2478,40 @@ body:has(.about-app.over-balloon) .hammer-cursor {
    (BuildTerminal.vue): a raised grey window with a navy title bar, and a black screen
    in the dos colours, tall enough for the whole run so nothing moves as it types */
 .build-terminal {
-  margin-top: 16px;
+  margin-top: 10px;
   padding: 3px;
   background: var(--surface);
 }
 
+/* the title bar is the button that folds the screen down and up, its arrow turning
+   to point down while it's open */
 .build-terminal-title {
-  padding: 2px 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 3px 5px;
+  border: 0;
   background: var(--navy);
   color: #fff;
   font: bold 11px 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.build-terminal-title svg {
+  width: 7px;
+  height: 7px;
+  fill: currentColor;
+}
+
+.build-terminal.open .build-terminal-title svg { rotate: 90deg; }
+
+.build-terminal-title:focus-visible {
+  outline: 1px dotted #fff;
+  outline-offset: -3px;
 }
 
 .build-terminal-screen {
@@ -2658,7 +2559,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   padding: 0;
   list-style: none;
   font-size: 15px;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .about-facts li {
@@ -2666,7 +2567,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 }
 
 .about-facts li > * {
-  padding: 7px 0;
+  padding: 4px 0;
 }
 
 .about-facts li > strong {
@@ -2690,7 +2591,7 @@ body:has(.about-app.over-balloon) .hammer-cursor {
 
 /* the labels sit on the same line height as the facts, so the baselines line up */
 .about-facts strong {
-  font: bold 13px/calc(15px * 1.45) 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  font: bold 13px/calc(15px * 1.35) 'Pixel MS Sans Serif', Tahoma, sans-serif;
   -webkit-font-smoothing: none;
   color: var(--d-link, #000080);
 }
@@ -2700,9 +2601,9 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   display: flex;
   align-items: flex-start;
   gap: 7px;
-  margin-top: 3px;
+  margin-top: 2px;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 .fact-award svg {
@@ -2738,6 +2639,26 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   text-decoration-style: solid;
 }
 
+/* the lifts on one line, each weight in the pixel font, wrapping between lifts */
+.fact-lifts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+}
+
+.fact-lifts b {
+  margin-left: 3px;
+  font: bold 14px 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  -webkit-font-smoothing: none;
+}
+
+.fact-lifts small {
+  margin-left: -8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* too narrow for two columns: each label sits over its fact */
 @container (max-width: 380px) {
   .about-facts {
@@ -2746,12 +2667,12 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   }
 
   .about-facts li > strong {
-    padding: 7px 0 0;
+    padding: 5px 0 0;
     border-right: 0;
   }
 
   .about-facts li > span {
-    padding: 0 0 7px;
+    padding: 0 0 5px;
     border-top: 0;
   }
 
@@ -3277,6 +3198,19 @@ fieldset {
   @container (max-width: 560px) {
     .about-shortcuts {
       width: min(300px, 100%);
+      gap: 0;
+      padding-inline: 2px;
+    }
+
+    /* five buttons and the groove only fit across the photo's width if each gives up
+       its minimum width and most of its side padding */
+    .about-shortcuts .ie-button {
+      min-width: 0;
+      padding-inline: 2px;
+    }
+
+    .about-shortcuts .toolbar-separator {
+      margin-inline: 1px;
     }
   }
 }
@@ -4973,21 +4907,11 @@ label.mail-label {
   }
 
   .about-copy .intro {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .about-copy p {
     font-size: 14px;
-  }
-
-  /* the balloons button stays beside the lifts */
-  .about-bottom {
-    margin-top: 18px;
-  }
-
-  .about-links {
-    flex: 1000 1 auto;
-    min-width: 0;
   }
 
   .about-favorites .favorite {
@@ -6898,15 +6822,8 @@ label.mail-label {
   position: relative;
 }
 
-/* the balloons button beside the lifts, and the balloons it lets go. they float over
-   the whole window, stepped like pixel art, and never catch a click */
-.about-balloons-box {
-  display: flex;
-  flex: 1 0 auto;
-  justify-content: center;
-  padding: 3px 4px;
-  background: var(--surface);
-}
+/* the balloons the button at the end of the shortcuts lets go. they float over the
+   whole window, stepped like pixel art, and never catch a click */
 
 /* over a balloon's hit box, everything under it points like a button */
 .about-app.over-balloon,

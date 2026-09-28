@@ -2,9 +2,10 @@
 // a little ms-dos prompt on the about page that "builds" each project in turn: it types
 // the command, spins for a moment, prints done, then moves on to the next. the last one
 // is what i'm building right now, so it never finishes. it just spins until the whole
-// thing clears and starts over. it only runs while you can see it, and with reduced
-// motion it shows a finished run, standing still
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+// thing clears and starts over. it starts folded up to just its title bar, and clicking
+// the arrow drops the screen down and starts it typing. it only runs while you can see
+// it, and with reduced motion it shows a finished run, standing still
+import { nextTick, onBeforeUnmount, ref } from 'vue';
 import { projects } from '../content.mjs';
 
 const props = defineProps({ visible: Boolean });
@@ -16,6 +17,7 @@ const builds = [...order.filter(id => projects.some(p => p.id === id)), 'small-l
 const lines = ref([]);
 const spinner = ref('|');
 const screen = ref(null);
+const open = ref(false);
 
 const spinFrames = ['|', '/', '-', '\\'];
 let onScreen = false;
@@ -54,18 +56,25 @@ async function run() {
 }
 
 let observer;
-onMounted(() => {
+let started = false;
+async function toggle() {
+  open.value = !open.value;
+  if (!open.value || started) return;
+  started = true;
+  await nextTick();
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     lines.value = builds.map((name, i) => ({ text: `building ${name}...`, state: i < builds.length - 1 ? 'done' : 'building' }));
     return;
   }
+  // folding it back up pulls the screen out of the page, so the observer sees it leave
+  // and the run holds until it's opened again
   observer = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
   observer.observe(screen.value);
   spin = setInterval(() => {
     if (props.visible && onScreen) spinner.value = spinFrames[(spinFrames.indexOf(spinner.value) + 1) % spinFrames.length];
   }, 120);
   run();
-});
+}
 
 onBeforeUnmount(() => {
   alive = false;
@@ -76,10 +85,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- decoration only: the projects themselves are listed properly elsewhere -->
-  <div class="build-terminal raised" aria-hidden="true">
-    <div class="build-terminal-title">MS-DOS Prompt - build</div>
-    <div ref="screen" class="build-terminal-screen" :style="{ '--rows': builds.length * 2 - 1 }">
+  <div class="build-terminal raised" :class="{ open }">
+    <button class="build-terminal-title" :aria-expanded="open" @click="toggle">
+      <svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path d="M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z"/></svg>
+      MS-DOS Prompt - build
+    </button>
+    <!-- decoration only: the projects themselves are listed properly elsewhere -->
+    <div v-show="open" ref="screen" class="build-terminal-screen" aria-hidden="true" :style="{ '--rows': builds.length * 2 - 1 }">
       <template v-for="(line, i) in lines" :key="i">
         <div>
           <span class="prompt">&gt;</span> {{ line.text }}<span v-if="line.state === 'typing'" class="cursor">_</span><span v-else-if="line.state === 'building'" class="spinner"> {{ spinner }}</span>
