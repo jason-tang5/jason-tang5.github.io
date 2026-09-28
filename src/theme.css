@@ -4606,6 +4606,35 @@ label.mail-label {
   color: #fff;
 }
 
+/* click and flag mode sit beside the difficulty, the one in use pushed in */
+.mines-modes {
+  display: flex;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.mines-modes button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  padding: 0;
+}
+
+/* both icons are drawn at 1.5x so their pixels match */
+.mines-modes svg {
+  width: 12px;
+  height: 15px;
+  shape-rendering: crispEdges;
+}
+
+.mines-modes svg.mines-pointer {
+  height: 18px;
+}
+
+.mines-modes button.pressed svg {
+  transform: translate(1px, 1px);
+}
+
 .mines-menu {
   position: absolute;
   top: 100%;

@@ -512,9 +512,11 @@ async function openContextMenu(event, kind) {
   el.querySelector('button:not(:disabled)')?.focus();
 }
 
-// only the bare desktop (or its wallpaper) and the empty parts of the taskbar count
+// only the bare desktop (or its wallpaper) and the empty parts of the taskbar count.
+// an app that handled the right click already prevented it, and its target may be gone
+// by now (unflagging a minesweeper square removes the flag it was on), so check that first
 function desktopContext(event) {
-  if (event.target.closest('.desktop-shortcut, .window, .first-tip')) return;
+  if (event.defaultPrevented || event.target.closest('.desktop-shortcut, .window, .first-tip')) return;
   openContextMenu(event, 'desktop');
 }
 function taskbarContext(event) {

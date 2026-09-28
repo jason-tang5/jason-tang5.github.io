@@ -134,3 +134,21 @@ export const segmentsOn = {
   9: 'abcdfg',
   '-': 'g',
 };
+
+// the win9x arrow pointer for the click mode button. k = outline, w = fill
+const pointer = [
+  'k.......',
+  'kk......',
+  'kwk.....',
+  'kwwk....',
+  'kwwwk...',
+  'kwwwwk..',
+  'kwwwwwk.',
+  'kwwwkkkk',
+  'kwkwk...',
+  'kk.kwk..',
+  'k..kwk..',
+  '....kk..',
+];
+export const pointerOutline = bitmapPath(pointer, 'k');
+export const pointerFill = bitmapPath(pointer, 'w');

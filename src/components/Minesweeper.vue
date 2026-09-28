@@ -1,6 +1,7 @@
 <script setup>
 // minesweeper, as close to the win98 one as i could get it.
-// left click opens, right click (or f, or long press on touch) flags,
+// left click opens, right click (or f, or long press on touch) flags. flag mode is
+// an extra on top of those, where a plain click or tap flags too.
 // clicking a number with all its flags placed opens the rest around it.
 // on a phone the squares grow to fill the screen, and in portrait the wide boards
 // are turned on their side so expert still fits. behind the board an ascii
@@ -15,6 +16,8 @@ import {
   flagPole,
   mineBody,
   mineShine,
+  pointerFill,
+  pointerOutline,
   segmentPolygons,
   segmentsOn,
 } from '../minesweeper-art.mjs';
@@ -39,6 +42,7 @@ const state = ref('ready'); // ready, playing, won or lost
 const seconds = ref(0);
 const pressed = ref(false); // makes the face do the :o while you hold a cell down
 const menuOpen = ref(false);
+const flagMode = ref(false); // clicks and taps place flags instead of opening squares
 
 // template refs
 const root = ref(null);
@@ -211,6 +215,10 @@ function reveal(i) {
   if (state.value === 'won' || state.value === 'lost') return;
 
   const cell = cells.value[i];
+  if (flagMode.value && !cell.open) {
+    toggleFlag(i);
+    return;
+  }
   if (state.value === 'ready') plant(i);
 
   if (!cell.open) {
@@ -389,6 +397,21 @@ onBeforeUnmount(() => {
           @click="newGame(name)"
         >
           <span class="mines-check" aria-hidden="true">{{ level === name ? '✓' : '' }}</span>{{ name }}
+        </button>
+      </div>
+      <!-- click mode opens squares, flag mode flags them, for when there's no right click -->
+      <div class="mines-modes" role="group" aria-label="Click action">
+        <button class="raised" :class="{ pressed: !flagMode }" :aria-pressed="!flagMode" aria-label="Click mode" title="Click to open squares" @click="flagMode = false">
+          <svg class="mines-pointer" viewBox="0 0 8 12" aria-hidden="true">
+            <path :d="pointerFill" fill="#fff"/>
+            <path :d="pointerOutline" fill="#000"/>
+          </svg>
+        </button>
+        <button class="raised" :class="{ pressed: flagMode }" :aria-pressed="flagMode" aria-label="Flag mode" title="Click to place flags" @click="flagMode = true">
+          <svg viewBox="0 0 8 10" aria-hidden="true">
+            <path :d="flagCloth" fill="#f00"/>
+            <path :d="flagPole" fill="#000"/>
+          </svg>
         </button>
       </div>
     </nav>
