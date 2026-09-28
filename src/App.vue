@@ -31,7 +31,7 @@ import { theme, setTheme } from './theme.js';
 import { defaultWallpaper, wallpaperFilter, wallpapers } from './wallpaper.js';
 import { useResting } from './resting.js';
 import { autoHide, edgeNotices, setAutoHide, taskbarEdge } from './taskbar.js';
-import { addNote } from './stickies.js';
+import { addNote, findNote, noteColors } from './stickies.js';
 
 
 const windows = reactive([]);
@@ -243,7 +243,7 @@ watch(taskbarEdge, value => {
 const taskbarEl = ref(null);
 const taskbarShown = ref(false);
 let hideTimer;
-const menuOpen = () => startOpen.value || volumeOpen.value || calendar.value || !!taskMenu.value;
+const menuOpen = () => startOpen.value || volumeOpen.value || calendar.value || !!taskMenu.value || !!stickyMenu.value;
 
 function nearEdge(x, y, reach) {
   return {
@@ -379,15 +379,86 @@ async function openTaskMenu(event, id) {
   taskMenuEl.value?.querySelector('button:not(:disabled)')?.focus();
 }
 // the menu sits beside whichever edge the taskbar is on
-const taskMenuStyle = computed(() => {
-  const { x, y } = taskMenu.value;
+const taskMenuStyle = computed(() => menuBeside(taskMenu.value));
+function menuBeside({ x, y }) {
   return {
     bottom: { left: `${x}px` },
     top: { left: `${x}px`, top: 'calc(var(--taskbar-height) + 2px)', bottom: 'auto' },
     left: { left: 'calc(var(--taskbar-width) + 2px)', top: `${y}px`, bottom: 'auto' },
     right: { right: 'calc(var(--taskbar-width) + 2px)', top: `${y}px`, bottom: 'auto' },
   }[edge.value];
+}
+
+// ---- sticky notes on the taskbar ----
+// every note window, and the notes list, share one taskbar button. with more than one
+// open, clicking it (or right clicking) pops up a list of them just off the taskbar:
+// pick one to bring it up, or show or close them all. with just one it acts like any
+// other taskbar button
+const isSticky = win => win.type === 'sticky' || win.id === 'stickies';
+const stickyWins = computed(() => windows.filter(isSticky));
+// the taskbar's buttons in window order, the notes' group sitting where the first one is
+const taskEntries = computed(() => {
+  const entries = [];
+  for (const win of windows) {
+    if (!isSticky(win)) entries.push({ key: win.id, win });
+    else if (win === stickyWins.value[0]) entries.push({ key: 'stickies-group', group: stickyWins.value });
+  }
+  return entries;
 });
+const stickyActive = computed(() => stickyWins.value.some(w => w.id === active.value && !w.minimized));
+const stickyMenu = ref(null);
+const stickyMenuEl = ref(null);
+
+// what a note window is called in the list: its first line, or empty note
+function stickyTitle(win) {
+  if (win.id === 'stickies') return 'All notes';
+  const note = findNote(win.noteId);
+  const line = note?.text.split('\n').find(l => l.trim())?.trim();
+  return line ? (line.length > 30 ? `${line.slice(0, 29)}…` : line) : 'Empty note';
+}
+const stickyColor = win => (win.id === 'stickies' ? null : noteColors[findNote(win.noteId)?.color] ?? noteColors.yellow);
+
+async function stickyClick(event) {
+  const group = stickyWins.value;
+  if (group.length === 1 && event.type === 'click') {
+    taskClick(group[0].id);
+    return;
+  }
+  startOpen.value = false;
+  calendar.value = false;
+  taskMenu.value = null;
+  if (stickyMenu.value && event.type === 'click') {
+    stickyMenu.value = null;
+    return;
+  }
+  stickyMenu.value = { x: Math.min(event.clientX, innerWidth - 236), y: Math.min(event.clientY, innerHeight - 60 - group.length * 30) };
+  await nextTick();
+  stickyMenuEl.value?.querySelector('button:not(:disabled)')?.focus();
+}
+
+function stickyAction(action, id) {
+  const group = [...stickyWins.value];
+  stickyMenu.value = null;
+  if (action === 'open') open(id);
+  // oldest first, so the one that was on top ends up on top and focused
+  else if (action === 'show') group.sort((a, b) => a.z - b.z).forEach(w => open(w.id, false, false));
+  else group.forEach(w => close(w.id));
+}
+
+function stickyMenuKeys(event) {
+  if (event.key === 'Escape') {
+    stickyMenu.value = null;
+    event.stopPropagation();
+    return;
+  }
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+  event.preventDefault();
+  const items = [...stickyMenuEl.value.querySelectorAll('button:not(:disabled)')];
+  const i = items.indexOf(document.activeElement);
+  items[(i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+}
+// the popup goes away with the last note
+watch(() => stickyWins.value.length, count => { if (!count) stickyMenu.value = null; });
 function taskMenuAction(action) {
   const { id } = taskMenu.value;
   taskMenu.value = null;
@@ -842,6 +913,7 @@ function outside(event) {
   const inMenu = startMenu.value?.contains(event.target) || startSubEl.value?.contains(event.target) || start.value?.contains(event.target);
   if (startOpen.value && !inMenu) dismissStart(false);
   if (!taskMenuEl.value?.contains(event.target)) taskMenu.value = null;
+  if (!stickyMenuEl.value?.contains(event.target) && !event.target.closest('.sticky-task')) stickyMenu.value = null;
   if (!contextMenuEl.value?.contains(event.target)) contextMenu.value = null;
   if (!event.target.closest('.tray')) {
     calendar.value = false;
@@ -852,6 +924,7 @@ function outside(event) {
 function escape(event) {
   if (event.key !== 'Escape') return;
   contextMenu.value = null;
+  stickyMenu.value = null;
   if (startOpen.value) {
     dismissStart();
     event.preventDefault();
@@ -1150,19 +1223,33 @@ onBeforeUnmount(() => {
       </button>
 
       <div ref="taskItems" class="task-items" :class="{ crowded: taskbarCrowded }" aria-label="Running applications">
-        <button
-          v-for="win in windows"
-          :key="win.id"
-          class="task-button raised"
-          :class="{ pressed: active === win.id && !win.minimized }"
-          :aria-label="`${win.label}${win.minimized ? ' (minimized)' : ''}`"
-          :aria-pressed="active === win.id && !win.minimized"
-          @click="taskClick(win.id)"
-          @contextmenu.prevent="openTaskMenu($event, win.id)"
-        >
-          <RetroIcon :name="win.icon" small/>
-          <span>{{ win.label }}</span>
-        </button>
+        <template v-for="{ key, win, group } in taskEntries" :key="key">
+          <button
+            v-if="group"
+            class="task-button sticky-task raised"
+            :class="{ pressed: stickyActive || stickyMenu }"
+            :aria-label="`Sticky Notes, ${group.length} open`"
+            :aria-haspopup="group.length > 1 ? 'menu' : null"
+            :aria-expanded="group.length > 1 ? Boolean(stickyMenu) : null"
+            @click="stickyClick"
+            @contextmenu.prevent="stickyClick"
+          >
+            <RetroIcon name="sticky" small/>
+            <span>Sticky Notes<template v-if="group.length > 1"> ({{ group.length }})</template></span>
+          </button>
+          <button
+            v-else
+            class="task-button raised"
+            :class="{ pressed: active === win.id && !win.minimized }"
+            :aria-label="`${win.label}${win.minimized ? ' (minimized)' : ''}`"
+            :aria-pressed="active === win.id && !win.minimized"
+            @click="taskClick(win.id)"
+            @contextmenu.prevent="openTaskMenu($event, win.id)"
+          >
+            <RetroIcon :name="win.icon" small/>
+            <span>{{ win.label }}</span>
+          </button>
+        </template>
       </div>
 
       <div class="tray">
@@ -1298,6 +1385,38 @@ onBeforeUnmount(() => {
       <button role="menuitem" :disabled="compact || get(taskMenu.id).fixedSize || get(taskMenu.id).maximized" @click="taskMenuAction('maximize')"><MenuGlyph name="maximize"/>Maximize</button>
       <hr>
       <button role="menuitem" data-sound="none" @click="taskMenuAction('close')"><MenuGlyph name="close"/><strong>Close</strong></button>
+    </div>
+
+    <!-- the sticky notes' shared taskbar button pops up a list of every open note -->
+    <div
+      v-if="stickyMenu && stickyWins.length"
+      ref="stickyMenuEl"
+      class="system-menu task-menu sticky-task-menu raised"
+      role="menu"
+      aria-label="Sticky Notes"
+      :style="menuBeside(stickyMenu)"
+      @keydown="stickyMenuKeys"
+    >
+      <div class="task-menu-title" aria-hidden="true">
+        <RetroIcon name="sticky" small/>
+        <span>Sticky Notes</span>
+      </div>
+      <button
+        v-for="win in stickyWins"
+        :key="win.id"
+        role="menuitem"
+        :class="{ current: active === win.id && !win.minimized }"
+        @click="stickyAction('open', win.id)"
+      >
+        <span class="sticky-swatch" :style="{ background: stickyColor(win) }" aria-hidden="true">
+          <RetroIcon v-if="!stickyColor(win)" name="sticky" small/>
+        </span>
+        <span class="sticky-task-menu-name">{{ stickyTitle(win) }}</span>
+        <small v-if="win.minimized">minimized</small>
+      </button>
+      <hr>
+      <button role="menuitem" @click="stickyAction('show')"><MenuGlyph name="restore"/>Show all notes</button>
+      <button role="menuitem" data-sound="none" @click="stickyAction('close')"><MenuGlyph name="close"/><strong>Close all notes</strong></button>
     </div>
 
     <!-- clippy peeking up from under the bottom edge, with a bobbing pixel arrow -->

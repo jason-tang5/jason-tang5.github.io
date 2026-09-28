@@ -16,6 +16,7 @@ import Stickies from './Stickies.vue';
 import StickyNote from './StickyNote.vue';
 import RetroIcon from './RetroIcon.vue';
 import InlineText from './InlineText.vue';
+import BuildTerminal from './BuildTerminal.vue';
 import TechList from './TechList.vue';
 import PortfolioFigures from './PortfolioFigures.vue';
 import FpgaFigures from './FpgaFigures.vue';
@@ -498,6 +499,17 @@ function balloonDone(event, id) {
             <p class="subtitle">{{ profile.subtitle }}</p>
             <p class="intro">{{ profile.intro }}</p>
             <p class="intro">{{ profile.bio }}</p>
+            <!-- a few quick facts, under a line like the one over the lifts used to be -->
+            <section class="about-facts-section" aria-labelledby="about-facts-heading">
+              <h2 id="about-facts-heading">About me</h2>
+              <ul class="about-facts">
+                <li v-for="[label, text] in profile.facts" :key="label">
+                  <strong>{{ label }}</strong>
+                  <span><InlineText :text="text"/></span>
+                </li>
+              </ul>
+              <BuildTerminal :visible="visible"/>
+            </section>
             <div class="about-bottom">
               <div class="about-links">
                 <!-- a raised box like the shortcut toolbars: each lift sits in a cell the
@@ -577,7 +589,7 @@ function balloonDone(event, id) {
         <p>{{ selected.summary }}</p>
         <div class="preview-actions">
           <small><TechList :items="selected.tech" chips/></small>
-          <button class="raised" @click="emit('open', selected.id)">View project</button>
+          <button class="raised tinted" @click="emit('open', selected.id)">View project</button>
         </div>
         <!-- the project's first figure, the same one that opens its what i built -->
         <component :is="figureFor[f]" v-for="f in [selected.figures?.lead ?? []].flat().slice(0, 1)" :key="selected.id + f" :figure="f" @open="id => emit('open', id)"/>

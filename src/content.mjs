@@ -9,6 +9,14 @@ export const profile = {
     github: 'https://github.com/jason-tang5',
   },
   bio: 'When I’m not building, I’m usually playing some sport, at the gym, or learning some random skill.',
+  // the quick facts under the divider on the about page: work first, then for fun. the text takes *italic* and **bold** like the blog
+  facts: [
+    ['Studying', 'Comp Eng @ UofT ’28 · Edward S Rogers Sr. Scholarship'],
+    ['Previously', '16-month SWE intern @ AMD, building regression tooling for 2,000+ engineers'],
+    ['Building', 'a small LLM running on my own Rust + CUDA ML framework'],
+    ['Sports', 'volleyball (captain), ultimate frisbee, badminton'],
+    ['Favorite books', '[*The Name of the Wind*](https://www.goodreads.com/book/show/186074.The_Name_of_the_Wind), [*Meditations*](https://www.goodreads.com/book/show/30659.Meditations)'],
+  ],
   education: 'BASc, Computer Engineering · September 2023 – May 2028',
   skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'Ruby', 'SQL', 'Vue.js', 'Node.js', 'PostgreSQL', 'CUDA', 'Verilog'],
   // best lifts in lb, shown in a small group box at the bottom of the about window
