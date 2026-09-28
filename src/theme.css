@@ -7432,6 +7432,14 @@ label.mail-label {
   padding: 1px 10px;
 }
 
+/* on a touchscreen the open button would come up right where the next tap lands,
+   so the details list leaves it off and the preview's view project button opens */
+@media (hover: none), (any-pointer: coarse) {
+  .project-details .row-open {
+    display: none;
+  }
+}
+
 /* a narrow pane gives the open buttons' column back to the others. the preview's
    view project button and double clicking still open it */
 @container (max-width: 380px) {

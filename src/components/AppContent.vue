@@ -126,6 +126,14 @@ const projectViews = [
   { id: 'icons', label: 'Large icons', glyph: 'M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9zM2 2v4h4V2zM10 2v4h4V2zM2 10v4h4v-4zM10 10v4h4v-4z' },
   { id: 'details', label: 'Details', glyph: 'M1 2h3v3H1zM6 3h9v1H6zM1 7h3v3H1zM6 8h9v1H6zM1 12h3v3H1zM6 13h9v1H6z' },
 ];
+// in the details list on a touchscreen a double tap only picks the file, since the
+// rows are close enough to open one by accident. the preview's view project button
+// opens it
+let lastPointer = '';
+function openOnDoubleClick(p) {
+  if (lastPointer === 'touch' && projectView.value === 'details') return;
+  emit('open', p.id);
+}
 const projectView = ref(read('projects-view', 'icons') === 'details' ? 'details' : 'icons');
 function setProjectView(view) {
   projectView.value = view;
@@ -593,8 +601,9 @@ function balloonDone(event, id) {
             class="project-file"
             :aria-pressed="selected.id === p.id"
             :title="projectView === 'details' ? null : p.kind"
+            @pointerdown="lastPointer = $event.pointerType"
             @click="selected = p"
-            @dblclick="emit('open', p.id)"
+            @dblclick="openOnDoubleClick(p)"
             @keydown.enter.prevent="emit('open', p.id)"
           >
             <RetroIcon :name="p.icon" :small="projectView === 'details'"/>

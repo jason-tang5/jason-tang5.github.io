@@ -39,10 +39,11 @@ export const apps = [
 
 // the apps that live inside the games and fun stuff folders instead of on the desktop
 export const folders = {
-  games: ['minesweeper', 'snake', 'reversi', '2048'],
+  games: ['contact', 'minesweeper', 'snake', 'reversi', '2048'],
   funstuff: ['pictures', 'stickies', 'music'],
 };
-const tucked = ['settings', 'mail', 'computer', ...Object.values(folders).flat()];
+// contact's breakout is in games too, but keeps its desktop icon
+const tucked = ['settings', 'mail', 'computer', ...Object.values(folders).flat()].filter(id => id !== 'contact');
 // all apps holds everything, including what's inside the other folders
 folders.computer = apps.map(a => a.id).filter(id => id !== 'computer');
 
