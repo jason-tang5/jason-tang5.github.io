@@ -2528,6 +2528,28 @@ body:has(.about-app.over-balloon) .hammer-cursor {
   color: var(--ink);
 }
 
+/* projects, resume and experience as a row of raised buttons under the heading */
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  font: inherit;
+  color: var(--ink);
+  cursor: var(--classic-pointer);
+}
+
+.about-link:focus-visible span {
+  outline: 1px dotted var(--edge);
+}
+
 /* the ms-dos prompt under the quick facts that builds each project in turn
    (BuildTerminal.vue): a raised grey window with a navy title bar, and a black screen
    in the dos colours, tall enough for the whole run so nothing moves as it types */

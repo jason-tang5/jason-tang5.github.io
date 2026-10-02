@@ -8,7 +8,42 @@
 //   code     exact code block text → figure
 //   after    heading text → figure, placed at the end of that section
 //   captions caption for a figure that isn't replacing an image
+//   set      which component draws the figures (Blog.vue), contact when left out
+//
+// the posts kept in blog.mjs place their figures with image lines pointing at
+// /figures/<post>/<name>. there's no file there, the line is only a spot to swap
 export const blogFigures = {
+  'a-crash-course-in-this-sites-ui': {
+    set: 'ui',
+    images: {
+      '/figures/ui/smash': 'smash',
+      '/figures/ui/ramp': 'ramp',
+      '/figures/ui/stamp': 'stamp',
+      '/figures/ui/hit': 'hit',
+      '/figures/ui/backdrop': 'backdrop',
+      '/figures/ui/swap': 'swap',
+    },
+  },
+  'how-the-analytics-work': {
+    set: 'analytics',
+    images: {
+      '/figures/analytics/journey': 'journey',
+      '/figures/analytics/event': 'event',
+      '/figures/analytics/summary': 'summary',
+      '/figures/analytics/pie': 'pie',
+      '/figures/analytics/floors': 'floors',
+    },
+  },
+  'one-durable-object-as-the-whole-backend': {
+    set: 'backend',
+    images: {
+      '/figures/backend/race': 'race',
+      '/figures/backend/tables': 'tables',
+      '/figures/backend/online': 'online',
+      '/figures/backend/boards': 'boards',
+      '/figures/backend/choice': 'choice',
+    },
+  },
   'how-i-built-the-contact-form-on-jasontang-dev': {
     images: {
       '/assets/blog/contact-mail-icon.png': 'mail',
@@ -43,6 +78,7 @@ export function withFigures(slug, blocks) {
   const figure = (name, from = {}) => ({
     type: 'figure',
     figure: name,
+    set: entry.set ?? 'contact',
     caption: from.caption ?? entry.captions?.[name] ?? '',
     lead: Boolean(from.lead),
   });

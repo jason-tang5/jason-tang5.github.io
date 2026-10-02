@@ -813,12 +813,12 @@ function setWallpaper(color) {
 // edited or deleted, and it's only ever made once
 const starterTips = [
   'Open apps from the desktop or Start menu',
-  'Dark mode and volume controls are down in the taskbar',
-  'Drag windows by the title bar and resize them from any edge',
-  'Right-click the desktop or taskbar for more settings',
-  'Check out the blog, games, and analytics while you’re here',
-  'Try contacting me. It might take a little work',
-  'And yes, this note actually works. Type whatever you want over it!',
+  'Dark mode + volume are in the taskbar',
+  'Drag and resize windows',
+  'Right-click for more options',
+  'Check out the blog, games, and analytics',
+  'Try contacting me :)',
+  'This note is editable!',
 ];
 
 function openStarterNote() {
@@ -1098,14 +1098,13 @@ onMounted(() => {
   resizeObserver.observe(desktop.value);
 
   // bring back the windows from last time, then put whatever the url asks for on
-  // top. a fresh visit (or one where everything was closed) gets the cd player
-  // waiting behind the about window. opening it isn't counted as a visitor's open
+  // top. a fresh visit (or one where everything was closed) gets the starter note
+  // and the about window. opening them isn't counted as a visitor's open
   restoreOpen();
   const fresh = !windows.length;
   let starter;
   if (fresh) {
     restoring = true;
-    open('music', false, false);
     starter = openStarterNote();
     restoring = false;
   }

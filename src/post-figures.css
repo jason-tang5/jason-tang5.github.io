@@ -1,0 +1,72 @@
+/* shared look for the figures in the posts kept in blog.mjs (UiFigures.vue,
+   AnalyticsFigures.vue, BackendFigures.vue). the same panels, buttons and detail
+   boxes as ContactFigures.vue, so every post reads like the others */
+.pf-figure { container-type: inline-size; margin: 18px 0 22px; font-family: 'Pixel MS Sans Serif', Tahoma, sans-serif;
+  --bar-1: #2a78d6; --bar-2: #eb6834; --bar-3: #1baf7a; --bar-4: #eda100; --bar-5: #e87ba4; --bar-6: #8a8a8a; --bar-7: #4a3aa7;
+  --pf-good: #1a7f2e; --pf-bad: #c01818; --pf-mark: #ffec8a; --pf-mark-ink: #111; }
+:root[data-theme="dark"] .pf-figure { --bar-1: #3987e5; --bar-2: #d95926; --bar-3: #199e70; --bar-4: #c98500; --bar-5: #d55181; --bar-6: #77777c; --bar-7: #9085e9;
+  --pf-good: #5fd07a; --pf-bad: #ff6b61; --pf-mark: #5a4d10; --pf-mark-ink: #fff; }
+.pf-figure > figcaption { margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.pf-figure > figcaption strong { color: var(--ink); margin-right: 4px; }
+.pf-panel { --sunk-edge: var(--shadow); padding: 12px; background: var(--paper); border: 2px solid; border-color: var(--edge) var(--sunk-edge) var(--sunk-edge) var(--edge); box-shadow: inset 1px 1px var(--shadow); }
+:root[data-theme="dark"] .pf-panel { --sunk-edge: var(--light); }
+.pf-button { padding: 3px 10px; font: 12px 'Pixel MS Sans Serif', Tahoma, sans-serif; color: var(--ink); }
+.pf-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.pf-toggle { display: inline-flex; flex-wrap: wrap; }
+.pf-figure .pressed { background: var(--navy, #000080); color: #fff; }
+.pf-figure code { font: 11px 'Courier New', monospace; color: var(--d-link, #000080); }
+.pf-figure .pressed code { color: #dfe3ff; }
+.pf-detail { margin-top: 12px; padding: 8px 10px; background: var(--d-page-alt, #fffdf2); border: 2px solid var(--d-line, #000); box-shadow: 3px 3px 0 var(--d-line, #000); font-size: 13px; }
+.pf-detail > strong { margin-right: 6px; }
+.pf-detail > strong b { margin-right: 6px; font: bold 11px 'Courier New', monospace; color: var(--muted); }
+.pf-detail p { margin: 6px 0 0; font: 13px/1.5 Tahoma, sans-serif; }
+.pf-note { margin: 8px 0 0; font: 12px/1.45 Tahoma, sans-serif; color: var(--muted); }
+
+/* a label over each control */
+.pf-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 20px; margin-bottom: 12px; }
+.pf-control { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 12px; }
+.pf-control > span:first-child, .pf-control > label { color: var(--muted); }
+.pf-control b { color: var(--ink); }
+.pf-range { width: 180px; max-width: 100%; accent-color: var(--navy, #000080); }
+.pf-figure :is(button, input, select):focus-visible { outline: 1px dotted currentColor; outline-offset: -4px; }
+
+/* a screen: the dark box the ascii and canvases sit in */
+.pf-screen { position: relative; display: block; width: 100%; background: #15151e; border: 2px solid; border-color: var(--shadow) var(--light) var(--light) var(--shadow); box-shadow: inset 1px 1px #000; overflow: hidden; }
+.pf-screen canvas { display: block; width: 100%; height: 100%; }
+
+/* code and sql listings */
+.pf-code { margin: 0; padding: 8px 10px; background: var(--paper); color: var(--ink); font: 12px/1.5 'Courier New', monospace; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--d-rule, #ccc); }
+.pf-code .mark { background: var(--pf-mark); color: var(--pf-mark-ink); }
+.pf-code .dim { color: var(--muted); }
+
+/* key and value lists */
+.pf-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; margin: 0; font: 13px/1.4 Tahoma, sans-serif; }
+.pf-dl dt { color: var(--muted); }
+.pf-dl dd { margin: 0; overflow-wrap: anywhere; }
+.pf-good { color: var(--pf-good); }
+.pf-bad { color: var(--pf-bad); font-weight: bold; }
+
+/* two things side by side, stacked when narrow */
+.pf-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pf-pair > * { min-width: 0; }
+.pf-pair h4 { margin: 0 0 6px; font: bold 12px 'Pixel MS Sans Serif', Tahoma, sans-serif; }
+@container (max-width: 520px) { .pf-pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* small tables, like sqlite rows */
+.pf-table { width: 100%; border-collapse: collapse; font: 12px 'Courier New', monospace; }
+.pf-table caption { text-align: left; padding-bottom: 4px; font: bold 12px 'Pixel MS Sans Serif', Tahoma, sans-serif; color: var(--ink); }
+.pf-table th, .pf-table td { padding: 2px 6px; text-align: left; border: 1px solid var(--d-rule, #ccc); white-space: nowrap; }
+.pf-table th { background: var(--surface); color: var(--ink); font-weight: bold; }
+.pf-table td { background: var(--paper); color: var(--ink); }
+.pf-table tr.new td { background: var(--pf-mark); color: var(--pf-mark-ink); }
+.pf-table tr.gone td { color: var(--muted); text-decoration: line-through; }
+.pf-table .empty td { color: var(--muted); font-style: italic; }
+.pf-scroll { overflow-x: auto; }
+
+/* horizontal bars, like the analytics window */
+.pf-bars { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 12px; }
+.pf-bars li { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr) 3.5em; align-items: center; gap: 8px; }
+.pf-bars li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-bars i { display: block; height: 10px; background: var(--bar, var(--bar-1)); border: 1px solid var(--d-line, #000); min-width: 1px; transition: width .25s; }
+.pf-bars b { text-align: right; font-weight: bold; }
+@media (prefers-reduced-motion: reduce) { .pf-bars i { transition: none; } }

@@ -133,7 +133,6 @@ const tiles = computed(() => {
 
 <template>
   <figure v-if="figure === 'desktop'" class="pf-figure">
-    <figcaption><strong>Fig. 1</strong> This desktop in miniature, left to idle. Click an icon to open the real one.</figcaption>
     <div ref="deskStage" class="pf-mini pf-frame">
       <div class="pf-mini-desk">
         <button v-for="(id, k) in deskIcons" :key="id" class="pf-mini-icon" :class="{ picked: mini.selected === id }" :style="pct(iconAt(k))"
@@ -172,7 +171,7 @@ const tiles = computed(() => {
   </figure>
 
   <figure v-else-if="figure === 'apps'" class="pf-figure">
-    <figcaption><strong>Fig. 2</strong> What’s on the desktop. Pick one to open it.</figcaption>
+    <figcaption><strong>Fig. 1</strong> What’s on the desktop. Pick one to open it.</figcaption>
     <div class="pf-table-wrap pf-frame">
       <table class="pf-table">
         <thead><tr><th scope="col">App</th><th scope="col">What it does</th><th scope="col">Under the hood</th></tr></thead>
@@ -192,7 +191,7 @@ const tiles = computed(() => {
   </figure>
 
   <figure v-else-if="figure === 'stack'" class="pf-figure">
-    <figcaption><strong>Fig. 3</strong> How a click travels. Pick a box to see what it handles.</figcaption>
+    <figcaption><strong>Fig. 2</strong> How a click travels. Pick a box to see what it handles.</figcaption>
     <div class="pf-stack pf-frame">
       <button class="pf-node raised" :class="{ pressed: picked === 'browser' }" :aria-pressed="picked === 'browser'" @click="picked = 'browser'">
         <RetroIcon :name="nodes.browser.icon"/><span>{{ nodes.browser.name }}</span>
@@ -218,7 +217,7 @@ const tiles = computed(() => {
 
   <figure v-else-if="figure === 'live'" class="pf-figure">
     <figcaption>
-      <strong>Fig. 4</strong> This site, right now.
+      <strong>Fig. 3</strong> This site, right now.
       <span class="pf-live"><i aria-hidden="true"/>{{ error && !live ? 'No signal' : 'Live, every 30 seconds' }}</span>
     </figcaption>
     <div class="pf-tiles">

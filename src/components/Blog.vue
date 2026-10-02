@@ -3,7 +3,7 @@
 // blog.mjs plus whatever i've written on the site, which the worker keeps in kv
 // (worker/blog.mjs). the test can pass its own posts in.
 // every block renders as plain text, demos run in a sandboxed iframe.
-import { computed, ref, watch, nextTick, onMounted } from 'vue';
+import { computed, defineAsyncComponent, ref, watch, nextTick, onMounted } from 'vue';
 import { posts as localPosts } from '../blog.mjs';
 import { parse, slugify, safeSrc } from '../blog-markup.mjs';
 import { pastedTable } from '../blog-paste.mjs';
@@ -16,6 +16,15 @@ import BlogGallery from './BlogGallery.vue';
 import BlogThumbnail from './BlogThumbnail.vue';
 import { read, save, remove } from '../storage.js';
 import { trackOnce } from '../analytics.js';
+
+// which component draws a post's figures (the set in blog-figures.mjs). the ones for
+// the posts in blog.mjs only load once one of those posts is opened
+const figureSets = {
+  contact: ContactFigures,
+  ui: defineAsyncComponent(() => import('./UiFigures.vue')),
+  analytics: defineAsyncComponent(() => import('./AnalyticsFigures.vue')),
+  backend: defineAsyncComponent(() => import('./BackendFigures.vue')),
+};
 
 const props = defineProps({
   posts: { type: Array, default: () => localPosts },
@@ -40,7 +49,8 @@ const allPosts = computed(() => {
 const thumbnails = computed(() => Object.fromEntries(allPosts.value.map(entry => {
   const src = entry.leadImage || (entry.lead?.type === 'image' && entry.lead.src)
     || (entry.source ? parse(entry.source) : entry.blocks || []).find(block => block.type === 'image')?.src || '';
-  return [entry.slug, safeSrc(src) ? src : ''];
+  // a /figures/ line is only a spot for an interactive figure, there's no picture there
+  return [entry.slug, safeSrc(src) && !src.startsWith('/figures/') ? src : ''];
 })));
 
 const draftPost = computed(() => draft.value && {
@@ -360,7 +370,7 @@ async function destroy() {
               </tbody>
             </table>
           </div>
-          <ContactFigures v-else-if="block.type === 'figure'" :figure="block.figure" :caption="block.caption" :number="block.number" />
+          <component :is="figureSets[block.set] ?? ContactFigures" v-else-if="block.type === 'figure'" :figure="block.figure" :caption="block.caption" :number="block.number" />
           <BlogGraphic v-else-if="block.type === 'graphic'" :graphic="block" />
           <figure v-else-if="block.type === 'image'">
             <img :src="block.src" :alt="block.alt">
