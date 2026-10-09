@@ -1,5 +1,5 @@
 // all the text about me that shows up on the desktop.
-// career stuff was checked against my resume on 2026-09-24.
+// career stuff was checked against my resume on 2026-10-09.
 export const profile = {
   name: 'Jason Tang',
   subtitle: 'Computer Engineering @ UofT',
@@ -42,12 +42,12 @@ export const roles = [
     location: 'Toronto, ON',
     dates: 'May 2025 – August 2026',
     bullets: [
-      'Developed and scaled an internal regression-management platform used by **2,000+ engineers**, supporting **3.1M tests** per month across Vue, TypeScript, Node.js/Express, Ruby, and PostgreSQL.',
-      'Built IBM LSF lifecycle services to improve reliability and recovery for **239K jobs per month**, reconciling scheduler and application state across timeouts, failures, and abnormal terminations.',
-      'Developed an authenticated **TypeScript MCP** integration, enabling **100+ engineers** to execute **10K+ monthly** AI-assisted operations for failure investigation, coverage analysis, and controlled regression workflows.',
-      'Built an AI debugging agent that correlated logs, scheduler events, and regression metadata, reducing initial failure triage from **15–30 minutes to approximately 30 seconds**.',
+      'Developed and scaled an internal regression-management platform serving **1,000+ engineers** and processing **3.1M tests** monthly, building full-stack features across Vue, TypeScript, Node.js/Express, Ruby, and PostgreSQL.',
+      'Reduced failure triage from **15–30 minutes to 30 seconds** by building an **AI debugging agent** that correlated logs, scheduler events, and regression metadata to automatically identify likely root causes.',
+      'Improved reliability for **239K jobs per month** by building job lifecycle services that reconcile job state after failures.',
+      'Enabled **10K+ monthly AI operations** with an authenticated **TypeScript MCP** integration used by **100+ engineers**.',
       'Automated deployment workflows with Python, Ruby, and Jenkins, saving **20+ engineering hours per week** and shortening release cycles by **30%**.',
-      'Architected version-control abstractions and validation workflows for a **113-repository** Perforce-to-Git migration, preserving traceability for **1.4M+** historical regression runs.',
+      'Secured traceability for **1.4M+ regression runs** with validation workflows for a **113-repository** Perforce-to-Git migration.',
     ],
   },
   {
@@ -56,8 +56,9 @@ export const roles = [
     location: 'Ottawa, ON',
     dates: 'June – September 2023',
     bullets: [
-      'Designed and launched two responsive WordPress websites serving **100+ customers**, with reusable layouts and streamlined content-management workflows.',
-      'Improved page-load performance by **30%** and increased organic traffic by **over 50%** through performance optimization, technical SEO, and analytics-driven content updates.',
+      'Designed and launched two responsive WordPress websites serving **100+ customers**, with reusable page layouts.',
+      'Improved page-load speed by **30%** through image optimization, caching, and lazy loading; grew organic traffic by **50%+** through technical SEO and analytics-driven content updates across both websites.',
+      'Spearheaded the company’s **expansion into Ottawa**, launching its local web presence and student outreach.',
     ],
   },
   {
@@ -66,13 +67,29 @@ export const roles = [
     location: 'Ottawa, ON',
     dates: 'June – September 2020',
     bullets: [
-      'Developed an event-planning application prototype with event creation, scheduling, attendee registration, and account management using **HTML, CSS, JavaScript, and MySQL**.',
+      'Built an event-planning app with scheduling, registration, and accounts using **HTML, CSS, JavaScript, and MySQL**.',
       'Designed the **MySQL** database structure and implemented form validation, filtering, and error handling for reliable CRUD operations.',
+      'Implemented authentication and **role-based permissions** to secure event management and registration features.',
     ],
   },
 ];
 
 export const projects = [
+  {
+    id: 'liftlens',
+    name: 'LiftLens',
+    kind: 'Computer vision',
+    date: 'October 2026 – Present',
+    icon: 'chip',
+    tech: ['Python', 'PyTorch', 'TypeScript', 'Next.js', 'ONNX Runtime', 'FastAPI', 'Redis'],
+    summary: 'A computer vision app that analyzes joint angles and bar movement in Olympic lifts.',
+    contribution: 'Built an app using pose estimation and bar tracking to analyze joint angles in Olympic lifts.',
+    implementation: [
+      'Fine-tuned YOLOv8 on custom-labeled frames to detect barbells and applied Kalman filtering to stabilize tracking through motion blur and occlusion. Estimated bar velocity using the 450 mm plate diameter and frame timing.',
+      'Ran models in-browser with ONNX Runtime Web and TypeScript for live webcam inference entirely on the client.',
+      'Built a Next.js app with a Redis job queue for server-side processing of uploaded videos and rep comparison.',
+    ],
+  },
   {
     id: 'portfolio',
     name: 'Portfolio Website',
