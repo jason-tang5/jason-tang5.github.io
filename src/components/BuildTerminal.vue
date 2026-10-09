@@ -12,7 +12,7 @@ const props = defineProps({ visible: Boolean });
 
 // oldest first, ending on what's being built now
 const order = ['reversi-ai', 'fpga-2048', 'portfolio', 'mini-ml'];
-const builds = [...order.filter(id => projects.some(p => p.id === id)), 'small-llm'];
+const builds = [...order.filter(id => projects.some(p => p.id === id)), 'LiftLens'];
 // the lines on screen: { text, state } where state is typing, building or done
 const lines = ref([]);
 const spinner = ref('|');
