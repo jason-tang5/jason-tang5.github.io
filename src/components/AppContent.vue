@@ -23,6 +23,8 @@ import TechList from './TechList.vue';
 import PortfolioFigures from './PortfolioFigures.vue';
 import FpgaFigures from './FpgaFigures.vue';
 import ReversiFigures from './ReversiFigures.vue';
+import LiftLensFigures from './LiftLensFigures.vue';
+import MlFigures from './MlFigures.vue';
 import { read, save, remove } from '../storage.js';
 import { track } from '../analytics.js';
 import { balloonColors, balloonFrames, balloonString } from '../balloon-sprite.js';
@@ -41,7 +43,7 @@ const Minesweeper = defineAsyncComponent(() => import('./Minesweeper.vue'));
 const Reversi = defineAsyncComponent(() => import('./Reversi.vue'));
 const Twenty48 = defineAsyncComponent(() => import('./Twenty48.vue'));
 // the interactive figures in a project's writeup, by name (content.mjs, figures)
-const figureFor = { desktop: PortfolioFigures, apps: PortfolioFigures, stack: PortfolioFigures, live: PortfolioFigures, register: FpgaFigures, datapath: FpgaFigures, slide: FpgaFigures, fsm: FpgaFigures, board: ReversiFigures, weights: ReversiFigures, eval: ReversiFigures, lookahead: ReversiFigures };
+const figureFor = { desktop: PortfolioFigures, apps: PortfolioFigures, stack: PortfolioFigures, live: PortfolioFigures, register: FpgaFigures, datapath: FpgaFigures, slide: FpgaFigures, fsm: FpgaFigures, board: ReversiFigures, weights: ReversiFigures, eval: ReversiFigures, lookahead: ReversiFigures, angles: LiftLensFigures, plate: LiftLensFigures, smooth: LiftLensFigures, graph: MlFigures, tiles: MlFigures, epsilon: MlFigures };
 
 defineProps({
   win: Object,
