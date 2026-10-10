@@ -1,57 +1,15 @@
 # jasontang.dev
 
-my portfolio, dressed up as a windows 95 desktop. built with vue 3 and vite, and deployed to cloudflare workers as a static site.
-
-## running it
+my portfolio, dressed up as a windows 95 desktop. vue 3 + vite, running on cloudflare workers.
 
 ```sh
 npm install
-npm run dev       # local dev server
-npm test          # unit tests (window geometry, cd player track end detection)
-npm run build     # builds everything into dist/
-npm run preview   # serves dist/ locally
+npm run dev     # local dev server
+npm test        # unit tests
+npm run build   # builds into dist/
 ```
 
-there's also a full browser check that clicks through every app. it needs playwright's chromium (`npx playwright install chromium`) and a fresh build:
-
-```sh
-npm run build
-node tests/browser-check.mjs
-```
-
-it serves the build under `/portfolio/` to make sure nothing breaks on a subpath, and it saves screenshots to `tmp/qa/`.
-
-## deploying
-
-`npm run deploy` builds and runs `wrangler deploy`. the config is in `wrangler.jsonc`. log in once first with `npx wrangler login`. pushing to `main` also deploys automatically.
-
-the site is static except `/api/contact`, a small worker in `worker/` that emails me whatever gets sent from the mail window (it opens after you beat breakout). it uses cloudflare email routing, which has to be turned on for jasontang.dev with my gmail verified as a destination. `npx wrangler dev` runs it locally and saves sent emails as `.eml` files in `.wrangler/tmp/email/` instead of sending them.
-
-## writing blog posts from the site
-
-when i'm signed in, the blog window gets New Post, Edit and Delete buttons. posts are saved by the worker into a workers kv namespace, and anyone can read them. signing in goes through cloudflare access, so there's no password code in the repo. one-time setup:
-
-1. `npx wrangler kv namespace create BLOG` and paste the id into `wrangler.jsonc`
-2. in the cloudflare dashboard, zero trust → access → applications → add a self-hosted app for `jasontang.dev/api/admin`, with a policy that only allows my email (one-time pin login is fine)
-3. copy the app's audience (aud) tag and the team domain (`<team>.cloudflareaccess.com`) into `ACCESS_AUD` and `ACCESS_TEAM_DOMAIN` in `wrangler.jsonc`, then deploy
-
-to sign in, go to `jasontang.dev/api/admin/login`. access asks for the email code, then drops me back in the blog. sign out is in the blog toolbar. the worker checks the access token itself too, so if the access app is ever misconfigured, writes fail instead of being open to everyone.
-
-the editor format: blank lines split paragraphs, `## ` starts a heading, `![alt](url "caption")` on its own line adds an image, and ``` fences a code block. drafts are kept in localstorage until published.
-
-## where things live
-
-- `src/content.mjs`: bio, jobs, projects and email. most text edits happen here
-- `src/registry.js`: the list of apps, their icons and default window sizes
-- `src/components/AppContent.vue`: what shows inside each window
-- `src/components/DesktopWindow.vue` + `src/window-state.mjs`: dragging, resizing, maximizing
-- `src/theme.css`: all the styling, split into sections per app
-- `src/components/RetroIcon.vue`: the pixel icons, drawn as svg
-- `src/breakout.js`: the breakout game in the contact window. clearing it reveals my email
-- `src/music.mjs`: the album the cd player plays
-- `src/photos.mjs`: photos for my pictures. full size webps plus 200px thumbnails live in `assets/photos/`
-- `src/blog.mjs`: blog posts kept in the repo (empty for now). the supported block types are listed at the top of the file
-- `worker/blog.mjs` + `src/blog-markup.mjs`: posts written from the site itself (see below)
+pushing to `main` deploys it. most of the text lives in `src/content.mjs`.
 
 ## credits
 
@@ -66,40 +24,3 @@ the editor format: blank lines split paragraphs, `## ` starts a heading, `![alt]
 - don chia's [win95](https://github.com/DonChiaQE/win95)
 - [lucasjin.ca](https://lucasjin.ca), thank you for video-to-ascii
 - [expensive.toys](https://expensive.toys/)
-
-
-### Analytics
-
-The Analytics desktop window shows public visitor counts, the highest recorded Snake
-score, and Minesweeper / Breakout completions for the selected 7, 30, or 90 days.
-Viewers are interacting page loads, not unique people. Replays count as separate
-completions. Analytics Engine retains three months of events and can sample data,
-so counts may be estimates and high scores are the highest retained observations.
-Client-reported game results are a casual scoreboard, not verified competition scores.
-
-Everything in the analytics window is public, from `/api/analytics`. It's all anonymous
-totals; contact form names, emails and messages are never recorded. Only jasontang.dev sends events, after
-the first interaction, using an in-memory visit identifier with no analytics cookies.
-The snake leaderboard is the one exception: it keeps a random player id (and the optional
-name) in localStorage, so a browser's scores stay one row across visits.
-
-Create a Cloudflare API token with Account / Account Analytics / Read for the account
-in wrangler.jsonc, then run `npx wrangler secret put ANALYTICS_TOKEN`. Deploy with
-`npm run deploy`. Until configured, the window shows an unavailable state rather
-than invented numbers. Official setup: https://developers.cloudflare.com/analytics/analytics-engine/sql-api/
-
-For a JSON report, set `CLOUDFLARE_ACCOUNT_ID` and `ANALYTICS_TOKEN` in your environment
-and run `node scripts/analytics-report.mjs 30`. Do not commit the token or report.
-Run `npm test`, `npm run build`, and `node tests/analytics-browser.mjs` to verify.
-
-### All-time game stats and presence
-
-`LIVE_STATS` is a SQLite Durable Object configured with the `v1-live-stats` migration.
-Deploying the worker provisions it automatically. `/api/stats` exposes aggregate visit
-and game totals, online tabs (90-second expiry), and the top ten anonymous Snake
-session scores. Totals start with this deployment; earlier Analytics Engine history
-is still available in the period charts and is not backfilled. Scores are reported
-by browsers, so this is a casual scoreboard, not a cheat-proof competition.
-
-Sticky Notes saves every note as you type, only in this browser's localStorage. It does not sync or send
-notes to the worker. Clearing browser storage removes saved notes.
