@@ -53,8 +53,6 @@ the editor format: blank lines split paragraphs, `## ` starts a heading, `![alt]
 - `src/blog.mjs`: blog posts kept in the repo (empty for now). the supported block types are listed at the top of the file
 - `worker/blog.mjs` + `src/blog-markup.mjs`: posts written from the site itself (see below)
 
-the old address, jason-tang5.github.io, is now just a redirect: `github-pages/index.html` is published there by `.github/workflows/pages-redirect.yml` and sends old links like `/about/` to the matching window on jasontang.dev.
-
 ## credits
 
 - window chrome and palette adapted from don chia's [vuejs-os-template](https://github.com/DonChiaQE/vuejs-os-template) (mit, `licenses/vuejs-os-template-MIT.txt`)
