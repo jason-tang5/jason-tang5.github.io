@@ -3,6 +3,8 @@
 // or, instead of blocks, source: the same markup as the editor on the site
 // (blog-markup.mjs), read from a .md file in posts/
 // (subtitle is optional, one line under the title in the post list)
+// (thumbnail is the post list picture for a post that opens with a figure, made by
+// scripts/blog-thumbnails.mjs)
 //
 // block types:
 //   paragraph { text }
@@ -23,6 +25,7 @@ import durableObject from './posts/one-durable-object-as-the-whole-backend.md?ra
 
 // the lead is also kept as leadImage, which the editor fills in when one is edited
 const lead = (src, alt) => ({ lead: { type: 'image', src, alt }, leadImage: src });
+const thumbnail = slug => `/assets/blog/thumbs/${slug}.png`;
 
 export const posts = [
   {
@@ -31,6 +34,7 @@ export const posts = [
     subtitle: 'letters you can smash, games that play themselves, and figures you can poke',
     date: '2026-09-28',
     ...lead('/figures/ui/smash', 'Pocky the dog drawn in coloured ASCII letters, ready to be smashed'),
+    thumbnail: thumbnail('a-crash-course-in-this-sites-ui'),
     source: uiCrashCourse,
   },
   {
@@ -39,6 +43,7 @@ export const posts = [
     subtitle: 'counting visitors without cookies, and numbers that never go backwards',
     date: '2026-09-28',
     ...lead('/figures/analytics/journey', 'An event’s trip from a click to the Analytics window'),
+    thumbnail: thumbnail('how-the-analytics-work'),
     source: analytics,
   },
   {
@@ -47,6 +52,7 @@ export const posts = [
     subtitle: 'four tables, one class, and nothing to coordinate',
     date: '2026-09-28',
     ...lead('/figures/backend/race', 'Two wins arriving at the same moment'),
+    thumbnail: thumbnail('one-durable-object-as-the-whole-backend'),
     source: durableObject,
   },
 ];
